@@ -1,0 +1,23 @@
+#### ----------------------- Imports ----------------------- ####
+
+import pandas as pd 
+from os.path import join
+
+#### -------------------- Configuration -------------------- ####
+
+configfile: "config.yml"
+
+#### ----------------------- Targets ----------------------- ####
+
+rule all:
+    input: 
+
+#### ------------------------ Rules ------------------------ ####
+
+rule clean:
+    shell:
+        """
+        rm -rf logs/
+        rm -rf tmp/
+        rm -f slurm*.out
+        """

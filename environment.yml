@@ -1,0 +1,12 @@
+name: ngs-neuts
+
+channels:
+  - conda-forge
+  - defaults
+  - bioconda
+
+dependencies:
+  - jupyterlab
+  - pandas=1.4
+  - python=3.9
+  - snakemake=7.18
