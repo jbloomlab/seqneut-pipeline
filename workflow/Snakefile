@@ -8,9 +8,11 @@ from os.path import join
 configfile: "config.yml"
 
 #### ----------------------- Targets ----------------------- ####
+runs = []
 
 rule all:
     input: 
+        expand(join(config["barcode_counts"], "{sample}_counts.csv"), sample = runs)
 
 #### ------------------------ Rules ------------------------ ####
 
@@ -21,3 +23,22 @@ rule clean:
         rm -rf tmp/
         rm -f slurm*.out
         """
+
+rule count_barcodes:
+    """Count barcodes for each sample."""
+    input:
+        fastq_R1=config["fastq_R1"],
+        variants=config["codon_variants"],
+    output:
+        counts=join(config[barcode_counts], "{sample}_counts.csv"),
+        invalid=join(config[barcode_counts], "{sample}_invalid.csv"),
+        fates=join(config[barcode_counts], "{sample}_fates.csv"),
+    params:
+        parser_params=config["illumina_barcode_parser_params"],
+        library=lambda wc: sample_to_library[wc.sample],
+    conda:
+        "count_barcodes.yml"
+    log:
+        join(config[barcode_counts], "count_barcodes_fates.txt")
+    script:
+        "scripts/count_barcodes.py"
