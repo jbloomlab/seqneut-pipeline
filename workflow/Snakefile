@@ -7,12 +7,46 @@ from os.path import join
 
 configfile: "config.yml"
 
+#### ------------------------ Input ------------------------ ####
+
+# Read in the barcode runs 
+barcode_runs = pd.read_csv(config["barcode_runs"])
+
+# Check for the necessary columns
+required_columns = {
+    "library",
+    "standard_set",
+    "fastq",
+}
+required_columns.update(config["id_columns"])
+missing_columns = required_columns - set(barcode_runs.columns)
+if missing_columns:
+    raise ValueError(
+        f"The following columns must exist in the `barcode_runs` dataframe: {list(missing_columns)}"
+    )
+
+# Make the 'sample' column using the id columns
+if "sample" in barcode_runs.columns:
+    raise ValueError(
+        f"The `barcode_runs` dataframe already has a column called 'sample', please rename the column or remove it."
+    )
+barcode_runs["sample"] = barcode_runs[config["id_columns"]].apply(
+    lambda x: "-".join(x.astype(str)), axis=1
+)
+
+# Check that the sample names are unique
+if len(barcode_runs["sample"].unique()) != len(barcode_runs):
+    raise ValueError(f"The sample names derived from the provided id columns are not unique.")
+
+
+# Get a list of the sample names
+samples = barcode_runs["sample"].unique().tolist()
+
 #### ----------------------- Targets ----------------------- ####
-runs = []
 
 rule all:
     input: 
-        expand(join(config["barcode_counts"], "{sample}_counts.csv"), sample = runs)
+        expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_counts.csv"), sample = samples)
 
 #### ------------------------ Rules ------------------------ ####
 
@@ -24,21 +58,24 @@ rule clean:
         rm -f slurm*.out
         """
 
+
 rule count_barcodes:
     """Count barcodes for each sample."""
     input:
-        fastq_R1=config["fastq_R1"],
-        variants=config["codon_variants"],
+        fastq=lambda wildcards: barcode_runs.set_index("sample").at[wildcards.sample, "fastq"],
+        variants=config["strain_to_barcode"],
+        standards=config["neut_standards"],
     output:
-        counts=join(config[barcode_counts], "{sample}_counts.csv"),
-        invalid=join(config[barcode_counts], "{sample}_invalid.csv"),
-        fates=join(config[barcode_counts], "{sample}_fates.csv"),
+        counts=join(config["barcode_counts_dir"], "{sample}", "{sample}_counts.csv"),
+        invalid=join(config["barcode_counts_dir"], "{sample}", "{sample}_invalid.csv"),
+        fates=join(config["barcode_counts_dir"], "{sample}", "{sample}_fates.csv"),
     params:
-        parser_params=config["illumina_barcode_parser_params"],
-        library=lambda wc: sample_to_library[wc.sample],
+        library=lambda wildcards: barcode_runs.set_index("sample").at[wildcards.sample, "library"],
+        standard_set=lambda wildcards: barcode_runs.set_index("sample").at[wildcards.sample, "standard_set"],
+        parser_params=config["illumina_barcode_parser_params"]
     conda:
-        "count_barcodes.yml"
+        "envs/count_barcodes.yml"
     log:
-        join(config[barcode_counts], "count_barcodes_fates.txt")
+        join(config["barcode_counts_dir"], "{sample}", "count_barcodes.log")
     script:
         "scripts/count_barcodes.py"

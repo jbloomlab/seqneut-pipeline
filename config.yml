@@ -2,10 +2,30 @@
 
 #### ---------------------------- Samples --------------------------- ####
 
-barcode_runs: barcode_runs.csv
-id_columns: ['sample', 'barcode', 'run']
+# Contains the fastq file info along with library and neutralization info
+barcode_runs: data/barcode_runs.csv
 
+# Contains the barcodes for each strain in a given library 
+strain_to_barcode: data/strain_to_barcode.csv
+
+# Contains the barcodes for the neutralization standards for a given set
+neut_standards: data/neutralization_standards.csv
+
+# Columns that combine to make a unique identifier for each sample in `barcode_runs`
+id_columns: [library, antibody, concentration, replicate, date, virus_batch, plate]
 
 #### -------------------------- Parameters ------------------------- ####
 
+# Parameters for counting Illumina barcodes
+illumina_barcode_parser_params:
+  upstream: CTCCCTACAATGTCGGATTTGTATTTAATAG
+  downstream: ''
+  minq: 20
+  upstream_mismatch: 4
+  downstream_mismatch: 0
+  bc_orientation: R2
+
 #### -------------------------- Directories ------------------------- ####
+
+# Directory storing csv of barcode counts for each sample
+barcode_counts_dir: results/barcode_counts
