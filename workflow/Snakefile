@@ -46,8 +46,7 @@ samples = barcode_runs["sample"].unique().tolist()
 
 rule all:
     input: 
-        expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_counts.csv"), sample = samples)
-
+        join(config["barcode_counts_dir"], "barcode_counts.csv")
 #### ------------------------ Rules ------------------------ ####
 
 rule clean:
@@ -79,3 +78,19 @@ rule count_barcodes:
         join(config["barcode_counts_dir"], "{sample}", "count_barcodes.log")
     script:
         "scripts/count_barcodes.py"
+
+
+rule analyze_barcode_counts:
+    """Process barcode counts and perform quality control."""
+    input:
+        counts=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_counts.csv"), sample = samples),
+        invalid=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_invalid.csv"), sample = samples),
+        fates=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_fates.csv"), sample = samples)
+    output:
+        all_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
+    conda:
+        "envs/count_barcodes.yml"
+    log:
+        ipynb=join(config["barcode_counts_dir"], "analyze-barcode-counts.ipynb")
+    notebook:
+       "notebooks/analyze-barcode-counts.ipynb"
