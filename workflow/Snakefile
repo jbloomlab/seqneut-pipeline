@@ -14,6 +14,8 @@ barcode_runs = pd.read_csv(config["barcode_runs"])
 
 # Check for the necessary columns
 required_columns = {
+    "date",
+    "plate",
     "library",
     "standard_set",
     "fastq",
