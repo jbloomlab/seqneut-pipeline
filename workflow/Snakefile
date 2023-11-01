@@ -103,15 +103,23 @@ rule analyze_barcode_counts:
     input:
         counts=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_counts.csv"), sample = samples),
         invalid=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_invalid.csv"), sample = samples),
-        fates=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_fates.csv"), sample = samples)
+        fates=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_fates.csv"), sample = samples),
+        ipynb="workflow/notebooks/analyze-barcode-counts.ipynb"
     output:
-        all_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
+        ipynb=join(config["notebook_dir"], "analyze-barcode-counts.ipynb"),
+        joined_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
     conda:
         "envs/count_barcodes.yml"
     log:
-        ipynb=join(config["notebook_dir"], "analyze-barcode-counts.ipynb")
-    notebook:
-       "notebooks/analyze-barcode-counts.ipynb"
+        join(config["notebook_dir"], "logs", "analyze-barcode-counts.log")
+    shell:
+        """
+        papermill {input.ipynb} {output.ipynb} \
+            -p joined_counts {output.joined_counts} \
+            -p snakemake True \
+            &> {log}
+        """
+
 
 
 

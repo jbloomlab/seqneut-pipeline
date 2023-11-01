@@ -5,3 +5,4 @@ _*
 env/
 results/*
 !results/notebooks/
+results/notebooks/logs/*
