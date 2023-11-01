@@ -41,6 +41,22 @@ if len(barcode_runs["sample"].unique()) != len(barcode_runs):
     raise ValueError(f"The sample names derived from the provided id columns are not unique.")
 
 
+# Check that the neutralization standard file has the 'barcode' and 'standard_set' columns
+standards_required_columns = {"barcode", "standard_set"}
+standards_missing_columns = standards_required_columns - set(config["neut_standards"].columns)
+if standards_missing_columns:
+    raise ValueError(
+        f"The following columns must exist in the `neut_standards` dataframe: {list(standards_missing_columns)}"
+    )
+
+# Check that the strain to barcode file has the 'strain', 'barcode' and 'library' columns
+library_required_columns = {"strain", "barcode", "library"}
+library_missing_columns = library_required_columns - set(config["strain_to_barcode"].columns)
+if library_missing_columns:
+    raise ValueError(
+        f"The following columns must exist in the `strain_to_barcode` dataframe: {list(library_missing_columns)}"
+    )
+
 # Get a list of the sample names
 samples = barcode_runs["sample"].unique().tolist()
 
@@ -90,9 +106,14 @@ rule analyze_barcode_counts:
         fates=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_fates.csv"), sample = samples)
     output:
         all_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
+    params:
+        params=config["analyze_barcodes_params"]
     conda:
         "envs/count_barcodes.yml"
     log:
-        ipynb=join(config["barcode_counts_dir"], "analyze-barcode-counts.ipynb")
+        ipynb=join(config["notebook_dir"], "analyze-barcode-counts.ipynb")
     notebook:
        "notebooks/analyze-barcode-counts.ipynb"
+
+
+

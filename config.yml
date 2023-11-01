@@ -25,7 +25,13 @@ illumina_barcode_parser_params:
   downstream_mismatch: 0
   bc_orientation: R2
 
+# Analyze barcodes parameters
+analyze_barcodes_params:
+  dropdown_columns: ['antibody', 'virus_batch']
+
 #### -------------------------- Directories ------------------------- ####
 
 # Directory storing csv of barcode counts for each sample
 barcode_counts_dir: results/barcode_counts
+# Directory for the rendered notebook reports
+notebook_dir: results/notebooks

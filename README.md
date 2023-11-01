@@ -3,6 +3,7 @@
 ![License](https://img.shields.io/github/license/matsengrp/multidms)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥7.30-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
 
 ---
 
@@ -37,6 +38,30 @@ sbatch run_analysis.bash
 ```
 
 The output of the pipeline will be generated in the [`results`](/results/) directory. The output of `slurm` is located in a `tmp` directory that's overwritten for each run of the pipeline.
+
+
+## Input Data Requirements 
+
+There are **three** mandatory input files that are needed to run this pipeline. All of these files should be located in the [data directory](/data/) and the names of each should be specified in the [`config.yml`](/config.yml) file. I'll describe each of these files in detail below: 
+
+1. [`barcode_runs.csv`](/data/barcode_runs.csv): This table contains information for each individually sequencened well. You can specify the name of this file in the `baracode_runs` field of the [`config.yml`](/config.yml) file. The required columns (these must be the names) are: 
+    - `library`: The name of the barcode library 
+    - `standard_set`: The name of the neutraliztaion standard set
+    - `date`: The date of the experiment, must be in the format YYMMDD (i.e. 231101)
+    - `plate`: The name of the plate, it must be unique
+    - `fastq`: The absolute path to the sequencing runs
+
+    Other than these required columns, you must specify a list of column names that can be combined to create a **unique** sample name for each column. You can specify these columns and their order in the `id_columns` field of the [`config.yml`](/config.yml) file.
+
+2. [`neutralization_standards.csv`](/data/neutralization_standards.csv): This table contains the barcodes for the neutralization standards. You can specify this file in the `neut_standards` field of the [`config.yml`](/config.yml) file. There are only two required columns: 
+    - `barcodes`: The barcodes of the neutralization standard set
+    - `standard_set`: The name of the neutralization standard set that correspond to the `standard_set` for the sequenced well
+
+3. [`strain_to_barcode.csv`](/data/strain_to_barcode.csv): This table contains the barcodes for each library. You can specify this file in the `strain_to_barcode` field of the [`config.yml`](/config.yml) file. The required columns are: 
+    - `barcodes`: The barcodes in the library
+    - `library`: The name of the library; it must correspond to the name in the corresponding `barcode_runs.csv` file
+    - `strain`: The name of the strain that a barcode corresponds to
+
 
 ## Organization of the Repo
 
