@@ -3,4 +3,5 @@
 _*
 *.out
 env/
-results/
+results/*
+!results/notebooks/

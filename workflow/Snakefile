@@ -106,8 +106,6 @@ rule analyze_barcode_counts:
         fates=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_fates.csv"), sample = samples)
     output:
         all_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
-    params:
-        config["analyze_barcodes_params"]
     conda:
         "envs/count_barcodes.yml"
     log:
