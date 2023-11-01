@@ -43,7 +43,7 @@ if len(barcode_runs["sample"].unique()) != len(barcode_runs):
 
 # Check that the neutralization standard file has the 'barcode' and 'standard_set' columns
 standards_required_columns = {"barcode", "standard_set"}
-standards_missing_columns = standards_required_columns - set(config["neut_standards"].columns)
+standards_missing_columns = standards_required_columns - set(pd.read_csv(config["neut_standards"]).columns)
 if standards_missing_columns:
     raise ValueError(
         f"The following columns must exist in the `neut_standards` dataframe: {list(standards_missing_columns)}"
@@ -51,7 +51,7 @@ if standards_missing_columns:
 
 # Check that the strain to barcode file has the 'strain', 'barcode' and 'library' columns
 library_required_columns = {"strain", "barcode", "library"}
-library_missing_columns = library_required_columns - set(config["strain_to_barcode"].columns)
+library_missing_columns = library_required_columns - set(pd.read_csv(config["strain_to_barcode"]).columns)
 if library_missing_columns:
     raise ValueError(
         f"The following columns must exist in the `strain_to_barcode` dataframe: {list(library_missing_columns)}"
@@ -107,7 +107,7 @@ rule analyze_barcode_counts:
     output:
         all_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
     params:
-        params=config["analyze_barcodes_params"]
+        config["analyze_barcodes_params"]
     conda:
         "envs/count_barcodes.yml"
     log:
