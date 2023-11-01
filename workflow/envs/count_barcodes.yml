@@ -13,4 +13,5 @@ dependencies:
   - papermill=2.4
   - pip
   - pip:
+    - nbconvert
     - dms_variants==1.4.3

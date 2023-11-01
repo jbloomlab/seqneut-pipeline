@@ -99,7 +99,7 @@ rule count_barcodes:
 
 
 rule analyze_barcode_counts:
-    """Process barcode counts and perform quality control."""
+    """Process barcode counts and perform basic quality control."""
     input:
         counts=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_counts.csv"), sample = samples),
         invalid=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_invalid.csv"), sample = samples),
@@ -107,6 +107,7 @@ rule analyze_barcode_counts:
         ipynb="workflow/notebooks/analyze-barcode-counts.ipynb"
     output:
         ipynb=join(config["notebook_dir"], "analyze-barcode-counts.ipynb"),
+        html=join(config["notebook_dir"], "analyze-barcode-counts.html"),
         joined_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
     conda:
         "envs/count_barcodes.yml"
@@ -118,7 +119,11 @@ rule analyze_barcode_counts:
             -p joined_counts {output.joined_counts} \
             -p snakemake True \
             &> {log}
+
+        jupyter nbconvert --to html {output.ipynb}
         """
+
+
 
 
 
