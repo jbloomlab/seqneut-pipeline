@@ -12,7 +12,7 @@ strain_to_barcode: data/strain_to_barcode.csv
 neut_standards: data/neutralization_standards.csv
 
 # Columns that combine to make a unique identifier for each sample in `barcode_runs`
-id_columns: [library, antibody, concentration, replicate, date, virus_batch, plate]
+id_columns: [library, antibody, concentration, replicate, date, plate]
 
 #### -------------------------- Parameters ------------------------- ####
 
@@ -27,7 +27,7 @@ illumina_barcode_parser_params:
 
 # Analyze barcodes parameters
 analyze_barcodes_params:
-  dropdown_columns: ['antibody', 'virus_batch']
+  dropdown_columns: ['antibody']
 
 #### -------------------------- Directories ------------------------- ####
 
