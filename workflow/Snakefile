@@ -67,7 +67,7 @@ plates = barcode_runs["plate"].unique().tolist()
 
 rule all:
     input: 
-        expand(join(config["selection_dir"], "{plate}", "{plate}_fractioninfectivity.csv"), plate = plates)
+        expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates)
 
 
 #### ------------------------ Rules ------------------------ ####
@@ -132,11 +132,11 @@ rule calculate_fraction_infectivity:
     input:
         variants=config["strain_to_barcode"],
         standards=config["neut_standards"],
-        counts=expand(join(config["barcode_counts_dir"], "{plate}_barcode_counts.csv"), plate = plates),
+        counts=join(config["barcode_counts_dir"], "{plate}_barcode_counts.csv"),
     output:
-        fraction_infectivity=join(config["selection_dir"], "{plate}", "{plate}_fractioninfectivity.csv"),
+        fraction_infectivity=join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"),
     log:
-        join(config["selection_dir"], "{plate}", "fraction-infectivity.log")
+        join(config["fraction_infectivity_dir"], "{plate}_fraction-infectivity.log")
     script:
         "scripts/calculate_fraction_infectivity-perplate.py"
 

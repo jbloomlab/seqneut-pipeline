@@ -2,6 +2,10 @@
 
 import os
 import pandas as pd
+import sys
+
+# Write the log file to the specified location
+sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
 
 ## ====== Inputs ====== ##
 variants = snakemake.input.variants

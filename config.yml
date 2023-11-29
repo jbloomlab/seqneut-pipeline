@@ -35,6 +35,8 @@ analyze_barcodes_params:
 barcode_counts_dir: results/barcode_counts
 # Directory for the rendered notebook reports
 notebook_dir: results/notebooks
+# Directory for storing fraction infectivity calculations
+fraction_infectivity_dir: results/fraction_infectivity
 # Directory for storing neutralization assay data
 selection_dir: results/selections
 
