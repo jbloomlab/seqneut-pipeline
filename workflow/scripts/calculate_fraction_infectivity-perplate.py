@@ -28,6 +28,9 @@ fraction_infectivity_csv = snakemake.output.fraction_infectivity
 variant_counts_samples = pd.read_csv(counts_csv)
 variants_in_pool = pd.read_csv(variants).drop(columns=['library'])
 
+#Remove counts for samples that are labelled to not be retained
+variant_counts_samples = variant_counts_samples.query("retain")
+
 #create a dataframe that merges the barcode counts with the variant names and has the amino acid information
 variants_named_counts = pd.merge(variant_counts_samples, variants_in_pool, on="barcode", how="outer", validate="many_to_one")
 
