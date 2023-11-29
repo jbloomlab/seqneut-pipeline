@@ -14,15 +14,6 @@ counts_csv = snakemake.input.counts
 
 ## ====== Output ====== ##
 fraction_infectivity_csv = snakemake.output.fraction_infectivity
-
-#Change working directory to directory of repo
-#os.chdir('../../')
-#os.getcwd()
-
-#Read the barcode run information:
-#First, we read in the barcodes that correspond to the neutralization standard, then we make separate dataframes for the counts for the controls and for the target strains that we are interested in assessing neutralization potency.
-#with open('config.yml') as f:
-#    config = yaml.safe_load(f)
     
 ##Here, I am reading in a file that contains all of the barcode counts and a file that contains the linkage between the barcodes and the variants, such that we can link this information later on
 variant_counts_samples = pd.read_csv(counts_csv)
