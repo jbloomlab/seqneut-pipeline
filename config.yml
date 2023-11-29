@@ -35,3 +35,16 @@ analyze_barcodes_params:
 barcode_counts_dir: results/barcode_counts
 # Directory for the rendered notebook reports
 notebook_dir: results/notebooks
+# Directory for storing neutralization assay data
+selection_dir: results/selections
+
+####-------------------- Generated Output Files --------------------  ####
+
+# File containing all barcode counts
+barcode_counts_file: results/barcode_counts/barcode_counts.csv
+# File containing normalized barcode counts
+fraction_infectivity_file: results/selections/fraction_infectivity2.csv
+# File containing NT50s for each barcode
+neutralization_titers_by_barcode: results/selections/nt50_measurements_by_barcode.csv
+# File containing NT50s calculated for each strain
+neutralization_titers_by_strain: results/selections/nt50_measurements_by_strain.csv

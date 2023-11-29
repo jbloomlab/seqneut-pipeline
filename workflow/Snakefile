@@ -57,14 +57,19 @@ if library_missing_columns:
         f"The following columns must exist in the `strain_to_barcode` dataframe: {list(library_missing_columns)}"
     )
 
+
 # Get a list of the sample names
 samples = barcode_runs["sample"].unique().tolist()
+# Get a list of plate names
+plates = barcode_runs["plate"].unique().tolist()
 
 #### ----------------------- Targets ----------------------- ####
 
 rule all:
     input: 
-        join(config["barcode_counts_dir"], "barcode_counts.csv")
+        expand(join(config["selection_dir"], "{plate}", "{plate}_fractioninfectivity.csv"), plate = plates)
+
+
 #### ------------------------ Rules ------------------------ ####
 
 rule clean:
@@ -74,7 +79,6 @@ rule clean:
         rm -rf tmp/
         rm -f slurm*.out
         """
-
 
 rule count_barcodes:
     """Count barcodes for each sample."""
@@ -123,8 +127,18 @@ rule analyze_barcode_counts:
         jupyter nbconvert --to html {output.ipynb}
         """
 
-
-
+rule calculate_fraction_infectivity:
+    """Process counts files by plate and calculate fraction infectivity."""
+    input:
+        variants=config["strain_to_barcode"],
+        standards=config["neut_standards"],
+        counts=expand(join(config["barcode_counts_dir"], "{plate}", "{plate}_counts.csv"), plate = plates),
+    output:
+        fraction_infectivity=join(config["selection_dir"], "{plate}", "{plate}_fractioninfectivity.csv"),
+    log:
+        join(config["selection_dir"], "{plate}", "fraction-infectivity.log")
+    script:
+        "scripts/calculate_fraction_infectivity-perplate.py"
 
 
 
