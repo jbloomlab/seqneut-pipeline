@@ -136,7 +136,7 @@ rule calculate_fraction_infectivity:
     output:
         fraction_infectivity=join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"),
     log:
-        join(config["fraction_infectivity_dir"], "{plate}_fraction-infectivity.log")
+        join(config["fraction_infectivity_dir"], "logs", "{plate}_fraction-infectivity.log")
     script:
         "scripts/calculate_fraction_infectivity-perplate.py"
 
