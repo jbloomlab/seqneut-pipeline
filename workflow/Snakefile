@@ -132,7 +132,7 @@ rule calculate_fraction_infectivity:
     input:
         variants=config["strain_to_barcode"],
         standards=config["neut_standards"],
-        counts=expand(join(config["barcode_counts_dir"], "{plate}", "{plate}_counts.csv"), plate = plates),
+        counts=expand(join(config["barcode_counts_dir"], "{plate}_barcode_counts.csv"), plate = plates),
     output:
         fraction_infectivity=join(config["selection_dir"], "{plate}", "{plate}_fractioninfectivity.csv"),
     log:
