@@ -67,7 +67,8 @@ plates = barcode_runs["plate"].unique().tolist()
 
 rule all:
     input: 
-        expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates)
+        config["neutralization_titers_by_strain"]
+       # expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates)
 
 
 #### ------------------------ Rules ------------------------ ####
@@ -141,4 +142,26 @@ rule calculate_fraction_infectivity:
         "scripts/calculate_fraction_infectivity-perplate.py"
 
 
+rule calculate_neutralization_potency:
+    """Process fraction infectivity files to calculate NT50s and generate plots."""
+    input:
+        fractioninfectivity=expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates),
+        ipynb="workflow/notebooks/calculate-neutralization-potency.ipynb"
+    output:
+        ipynb=join(config["notebook_dir"], "calculate-neutralization-potency.ipynb"),
+        html=join(config["notebook_dir"], "calculate-neutralization-potency.html"),
+        median_ic50s=config["neutralization_titers_by_strain"],
+    conda:
+        "envs/calculate-neutralization-potency.yml"
+    log:
+        join(config["notebook_dir"], "logs", "calculate-neutralization-potency.log")
+    shell:
+        """
+        papermill {input.ipynb} {output.ipynb} \
+            -p snakemake True \
+            -p median_ic50s {output.median_ic50s} \
+            &> {log}
+
+        jupyter nbconvert --to html {output.ipynb}
+        """
 
