@@ -57,14 +57,20 @@ if library_missing_columns:
         f"The following columns must exist in the `strain_to_barcode` dataframe: {list(library_missing_columns)}"
     )
 
+
 # Get a list of the sample names
 samples = barcode_runs["sample"].unique().tolist()
+# Get a list of plate names
+plates = barcode_runs["plate"].unique().tolist()
 
 #### ----------------------- Targets ----------------------- ####
 
 rule all:
     input: 
-        join(config["barcode_counts_dir"], "barcode_counts.csv")
+        config["neutralization_titers_by_strain"]
+       # expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates)
+
+
 #### ------------------------ Rules ------------------------ ####
 
 rule clean:
@@ -74,7 +80,6 @@ rule clean:
         rm -rf tmp/
         rm -f slurm*.out
         """
-
 
 rule count_barcodes:
     """Count barcodes for each sample."""
@@ -109,6 +114,7 @@ rule analyze_barcode_counts:
         ipynb=join(config["notebook_dir"], "analyze-barcode-counts.ipynb"),
         html=join(config["notebook_dir"], "analyze-barcode-counts.html"),
         joined_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
+        counts_by_plate=expand(join(config["barcode_counts_dir"], "{plate}_barcode_counts.csv"), plate = plates),
     conda:
         "envs/count_barcodes.yml"
     log:
@@ -123,8 +129,40 @@ rule analyze_barcode_counts:
         jupyter nbconvert --to html {output.ipynb}
         """
 
+rule calculate_fraction_infectivity:
+    """Process counts files by plate and calculate fraction infectivity."""
+    input:
+        variants=config["strain_to_barcode"],
+        standards=config["neut_standards"],
+        counts=join(config["barcode_counts_dir"], "{plate}_barcode_counts.csv"),
+    output:
+        fraction_infectivity=join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"),
+    log:
+        join(config["fraction_infectivity_dir"], "logs", "{plate}_fraction-infectivity.log")
+    script:
+        "scripts/calculate_fraction_infectivity-perplate.py"
 
 
+rule calculate_neutralization_potency:
+    """Process fraction infectivity files to calculate NT50s and generate plots."""
+    input:
+        fractioninfectivity=expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates),
+        ipynb="workflow/notebooks/calculate-neutralization-potency.ipynb"
+    output:
+        ipynb=join(config["notebook_dir"], "calculate-neutralization-potency.ipynb"),
+        html=join(config["notebook_dir"], "calculate-neutralization-potency.html"),
+        median_ic50s=config["neutralization_titers_by_strain"],
+    conda:
+        "envs/calculate-neutralization-potency.yml"
+    log:
+        join(config["notebook_dir"], "logs", "calculate-neutralization-potency.log")
+    shell:
+        """
+        papermill {input.ipynb} {output.ipynb} \
+            -p snakemake True \
+            -p median_ic50s {output.median_ic50s} \
+            &> {log}
 
-
+        jupyter nbconvert --to html {output.ipynb}
+        """
 
