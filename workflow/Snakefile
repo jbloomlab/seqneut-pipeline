@@ -114,6 +114,7 @@ rule analyze_barcode_counts:
         ipynb=join(config["notebook_dir"], "analyze-barcode-counts.ipynb"),
         html=join(config["notebook_dir"], "analyze-barcode-counts.html"),
         joined_counts=join(config["barcode_counts_dir"], "barcode_counts.csv"),
+        counts_by_plate=expand(join(config["barcode_counts_dir"], "{plate}_barcode_counts.csv"), plate = plates),
     conda:
         "envs/count_barcodes.yml"
     log:

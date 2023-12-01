@@ -46,8 +46,8 @@ variants_named_counts_withneut = variants_named_counts_withneut.loc[~variants_na
 variants_named_counts_neut_standard = variants_named_counts.loc[variants_named_counts['barcode'].isin(neut_standard_barcodes_list)].groupby(by=['sample','replicate'], as_index=False).sum(numeric_only=True).rename(columns={"count":"neutstandard_count"}).drop(columns=['concentration','replicate','retain'])
 
 # Create dataframes for selections and controls, use names that can be used every time, and rename columns
-variants_named_counts_selections_withneut = variants_named_counts_withneut.loc[~variants_named_counts_withneut['sample'].str.contains('Noselection|CellsOnly|Noserum')].rename(columns={"sample": "antibody_sample", "count": "postselection_count", "neutstandard_count":"neutstandard_count_post"}).drop(columns=['library'])
-variants_named_counts_controls_withneut = variants_named_counts_withneut.loc[variants_named_counts_withneut['sample'].str.contains('Noselection|Noserum')].rename(columns={"sample": "no-antibody_sample", "count": "preselection_count", "neutstandard_count":"neutstandard_count_pre"}).drop(columns=['library'])
+variants_named_counts_selections_withneut = variants_named_counts_withneut.loc[~variants_named_counts_withneut['sample'].str.contains('Noselection|CellsOnly|Noserum')].rename(columns={"sample": "serum_sample", "count": "postselection_count", "neutstandard_count":"neutstandard_count_post"}).drop(columns=['library'])
+variants_named_counts_controls_withneut = variants_named_counts_withneut.loc[variants_named_counts_withneut['sample'].str.contains('Noselection|Noserum')].rename(columns={"sample": "no-serum_sample", "count": "preselection_count", "neutstandard_count":"neutstandard_count_pre"}).drop(columns=['library'])
 
 ### As we have multiple control wells per plate, we need to merge these replicate control wells into a single ratio of each barcode to the neut standard barcodes for the whole plate
 #### To do this, I am creating a dataframe where I first calculate the ratio of counts of each barcode to the sum of all neutralization standard barcodes for each of the control wells and then take the median value of this for all wells on the plates, I can use the plate name control for normalization
@@ -78,15 +78,15 @@ variant_counts_withpreselection['normalized_count'] = variant_counts_withpresele
 #Remove unnecessary columns to get the simplified dataframe
 variant_counts_normalized = variant_counts_withpreselection.drop(columns = ['postselection_count','neutstandard_count_post','postselection_count_normalized','neutstandard_count_pre','preselection_count','preselection_count_normalized','retain_x','retain_y','standard_set'])
 
-#Add columns which correspond to antibody concentration from dilution factor
-variant_counts_normalized = variant_counts_normalized.rename(columns={"concentration_x": "antibody_dilution"})
-variant_counts_normalized['antibody_dilution'] = pd.to_numeric(variant_counts_normalized['antibody_dilution'], errors='ignore')
-variant_counts_normalized['antibody_concentration'] = 1/variant_counts_normalized['antibody_dilution']
+#Add columns which correspond to serum concentration from dilution factor
+variant_counts_normalized = variant_counts_normalized.rename(columns={"concentration_x": "serum_dilution"})
+variant_counts_normalized['serum_dilution'] = pd.to_numeric(variant_counts_normalized['serum_dilution'], errors='ignore')
+variant_counts_normalized['serum_concentration'] = 1/variant_counts_normalized['serum_dilution']
 
 #rename columns for loading into neutcurve to fit Hill curve and calculate NT50
-fractioninfectivity_df = variant_counts_normalized[['antibody','barcode','antibody_concentration','normalized_count','strain','antibody_sample','replicate']].copy()
+fractioninfectivity_df = variant_counts_normalized[['serum','individual','condition','barcode','serum_concentration','normalized_count','strain','serum_sample','replicate']].copy()
 fractioninfectivity_df['virus'] = fractioninfectivity_df['barcode']+"_"+fractioninfectivity_df['replicate'].astype(str)
-fractioninfectivity_df = fractioninfectivity_df.rename(columns={"antibody": "serum","antibody_concentration":"concentration","normalized_count":"fraction infectivity","antibody_sample":"sample"})
+fractioninfectivity_df = fractioninfectivity_df.rename(columns={"serum_concentration":"concentration","normalized_count":"fraction infectivity","serum_sample":"sample"})
 
 #Save fraction infectivity to file
 #os.mkdir(config["selection_dir"])
