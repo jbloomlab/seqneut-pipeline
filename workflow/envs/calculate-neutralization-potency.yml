@@ -1,0 +1,17 @@
+name: count-barcodes
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - jupyterlab
+  - pandas=2.0
+  - python=3.11
+  - altair=5.1.2
+  - papermill=2.4
+  - pip
+  - pip:
+    - nbconvert
+    - neutcurve
