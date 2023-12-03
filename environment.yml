@@ -9,9 +9,12 @@ dependencies:
   - altair=5.1.2
   - black
   - jupyterlab
+  - mamba
   - pandas=2.1
+  - papermill=2.4
   - pip
   - python=3.11
+  - ruamel.yaml=0.18.5
   - snakemake=7.32
   - ruff
   - pip:

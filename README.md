@@ -1,9 +1,9 @@
 # NGS Neutralization Assay Pipeline
 
-![License](https://img.shields.io/github/license/matsengrp/multidms)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Snakemake](https://img.shields.io/badge/snakemake-≥7.30-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥7.32-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
 
 ---
 
