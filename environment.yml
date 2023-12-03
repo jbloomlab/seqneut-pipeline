@@ -1,4 +1,4 @@
-name: ngs-neuts
+name: seqneut-pipeline
 
 channels:
   - conda-forge
@@ -6,9 +6,13 @@ channels:
   - defaults
 
 dependencies:
+  - altair=5.1.2
+  - black
   - jupyterlab
-  - pandas=2.0
+  - pandas=2.1
+  - pip
   - python=3.11
   - snakemake=7.32
   - ruff
-  - black
+  - pip:
+    - neutcurve==0.6.0

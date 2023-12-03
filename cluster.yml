@@ -1,8 +1,0 @@
-#### ============== sbatch configuration file ============== ####
-
-__default__:
-  cpus: 4
-  partition: campus-new
-  time: 0-2
-  mem: 32000
-  name: "{rule}"

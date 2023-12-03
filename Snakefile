@@ -3,11 +3,12 @@
 import pandas as pd 
 from os.path import join
 
-#### -------------------- Configuration -------------------- ####
-
-configfile: "config.yml"
-
 #### ------------------------ Input ------------------------ ####
+
+if "pipeline_subdir" in config:
+    pipeline_subdir = config["pipeline_subdir"]
+else:
+    pipeline_subdir = "seqneut_pipeline"
 
 # Read in the barcode runs 
 barcode_runs = pd.read_csv(config["barcode_runs"])
@@ -63,13 +64,6 @@ samples = barcode_runs["sample"].unique().tolist()
 # Get a list of plate names
 plates = barcode_runs["plate"].unique().tolist()
 
-#### ----------------------- Targets ----------------------- ####
-
-rule all:
-    input: 
-        config["neutralization_titers_by_strain"]
-       # expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates)
-
 
 #### ------------------------ Rules ------------------------ ####
 
@@ -109,7 +103,7 @@ rule analyze_barcode_counts:
         counts=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_counts.csv"), sample = samples),
         invalid=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_invalid.csv"), sample = samples),
         fates=expand(join(config["barcode_counts_dir"], "{sample}", "{sample}_fates.csv"), sample = samples),
-        ipynb="workflow/notebooks/analyze-barcode-counts.ipynb"
+        ipynb=os.path.join(pipeline_subdir, "notebooks/analyze-barcode-counts.ipynb"),
     output:
         ipynb=join(config["notebook_dir"], "analyze-barcode-counts.ipynb"),
         html=join(config["notebook_dir"], "analyze-barcode-counts.html"),
@@ -147,7 +141,7 @@ rule calculate_neutralization_potency:
     """Process fraction infectivity files to calculate NT50s and generate plots."""
     input:
         fractioninfectivity=expand(join(config["fraction_infectivity_dir"], "{plate}_fractioninfectivity.csv"), plate = plates),
-        ipynb="workflow/notebooks/calculate-neutralization-potency.ipynb"
+        ipynb=os.path.join(pipeline_subdir, "notebooks/calculate-neutralization-potency.ipynb"),
     output:
         ipynb=join(config["notebook_dir"], "calculate-neutralization-potency.ipynb"),
         html=join(config["notebook_dir"], "calculate-neutralization-potency.html"),
