@@ -47,7 +47,22 @@ counts, fates = parser.parse(snakemake.input.fastq)
     .to_csv(snakemake.output.invalid, index=False)
 )
 
-# write fates
-fates.sort_values(["count", "fate"], ascending=False).to_csv(
-    snakemake.output.fates, index=False,
+# write fates, note we have to add valid and invalid fates
+(
+    pd.concat(
+        [
+            fates.query("fate not in ['valid barcode', 'invalid barcode']"),
+            pd.DataFrame(
+                {
+                    "fate": ["valid barcode", "invalid barcode"],
+                    "count": [
+                        counts.query("barcode in @valid_barcodes")["count"].sum(),
+                        counts.query("barcode not in @valid_barcodes")["count"].sum(),
+                    ],
+                }
+            )
+        ]
+    )
+    .sort_values(["count", "fate"], ascending=False)
+    .to_csv(snakemake.output.fates, index=False)
 )
