@@ -168,10 +168,6 @@ rule process_plate:
             rules.count_barcodes.output.fates,
             sample=plates[wc.plate]["samples"]["sample"],
         ),
-        invalid_count_csvs=lambda wc: expand(
-            rules.count_barcodes.output.invalid,
-            sample=plates[wc.plate]["samples"]["sample"],
-        ),
         viral_library_csv=lambda wc: (
             viral_libraries[plates[wc.plate]["viral_library"]]
         ),
