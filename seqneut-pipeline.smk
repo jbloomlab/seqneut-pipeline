@@ -103,6 +103,10 @@ def process_plate(plate, plate_params):
     if not ((samples_df["dilution_factor"] >= 1) | (samples_df["serum"] == "none")).all():
         raise ValueError(f"{plate=} has dilution factors not >= 1 for non-none serum")
 
+    # make sure there is at least one "none" sample
+    if "none" not in set(samples_df["serum"]):
+        raise ValueError(f"{plate=} has no samples with serum set to 'none'")
+
     # make sure fastqs are unique
     dup_fastqs = (
         samples_df
