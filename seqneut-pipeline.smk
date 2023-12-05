@@ -175,12 +175,14 @@ rule process_plate:
             neut_standard_sets[plates[wc.plate]["neut_standard_set"]]
         ),
     output:
+        qc_failures="results/plates/{plate}/qc_failures.txt",
         frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
     log:
         notebook="results/plates/{plate}/process_{plate}.ipynb",
     params:
         samples=lambda wc: plates[wc.plate]["samples"]["sample"],
         plate_params=lambda wc: plates[wc.plate],
+        qc_thresholds=config["process_plate_qc_thresholds"],
     conda:
         "environment.yml"
     notebook:
