@@ -43,7 +43,7 @@ def process_plate(plate, plate_params):
     req_sample_cols = {"serum", "dilution_factor", "replicate", "fastq"}
     samples_df = pd.read_csv(plate_params["samples_csv"])
     if not req_sample_cols.issubset(samples_df.columns):
-        raise ValueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
+        raise alueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
 
     if samples_df["serum"].isnull().any():
         raise ValueError(f"{plate=} 'samples_csv' has null values in 'serum' column")
@@ -60,17 +60,17 @@ def process_plate(plate, plate_params):
         n_serum_replicates=lambda x: (
             x.groupby("serum")["replicate"].transform("nunique", dropna=False)
         ),
-        plate_serum_replicate=lambda x: x.apply(
+        serum_replicate=lambda x: x.apply(
             lambda row: (
-                f"{plate}_{row['serum']}" + (
+                str(row["serum"]) + (
                     "" if row["n_serum_replicates"] == 1 else f"-{row['replicate']}"
                 )
             ),
             axis=1,
         ),
-        sample=lambda x: x.apply(
+        sample_noplate=lambda x: x.apply(
             lambda row: (
-                row["plate_serum_replicate"] + (
+                row["serum_replicate"] + (
                     ""
                     if pd.isnull(row["dilution_factor"])
                     else f"_{row['dilution_factor']}"
@@ -78,6 +78,7 @@ def process_plate(plate, plate_params):
             ),
             axis=1,
         ),
+        sample=lambda x: plate + "_" + x["sample_noplate"],
         plate=plate,
     ).drop(columns="n_serum_replicates")
 
@@ -87,7 +88,7 @@ def process_plate(plate, plate_params):
     dup_rows = (
         samples_df.assign(
             duplicates=lambda x: (
-                x.groupby(["plate_serum_replicate", "dilution_factor"], dropna=False)
+                x.groupby(["serum_replicate", "dilution_factor"], dropna=False)
                 ["sample"]
                 .transform("count")
             ),
@@ -118,7 +119,7 @@ def process_plate(plate, plate_params):
 
 
 plates = {
-    plate: process_plate(plate, plate_params)
+    str(plate): process_plate(str(plate), plate_params)
     for (plate, plate_params) in config["plates"].items()
 }
 
@@ -156,50 +157,44 @@ rule count_barcodes:
         "scripts/count_barcodes.py"
 
 
-rule analyze_barcode_counts:
-    """Process barcode counts and perform basic quality control."""
+rule process_plate:
+    """Process a plate."""
     input:
-        counts=expand(rules.count_barcodes.output.counts, sample=samples),
-        invalid=expand(rules.count_barcodes.output.invalid, sample=samples),
-        fates=expand(rules.count_barcodes.output.fates, sample=samples),
-        ipynb=os.path.join(pipeline_subdir, "notebooks/analyze-barcode-counts.ipynb"),
+        count_csvs=lambda wc: expand(
+            rules.count_barcodes.output.counts,
+            sample=plates[wc.plate]["samples"]["sample"],
+        ),
+        fate_csvs=lambda wc: expand(
+            rules.count_barcodes.output.fates,
+            sample=plates[wc.plate]["samples"]["sample"],
+        ),
+        invalid_count_csvs=lambda wc: expand(
+            rules.count_barcodes.output.invalid,
+            sample=plates[wc.plate]["samples"]["sample"],
+        ),
+        viral_library_csv=lambda wc: (
+            viral_libraries[plates[wc.plate]["viral_library"]]
+        ),
+        neut_standard_set_csv=lambda wc: (
+            neut_standard_sets[plates[wc.plate]["neut_standard_set"]]
+        ),
     output:
-        ipynb="results/notebooks/analyze-barcode-counts.ipynb",
-        html="results/notebooks/analyze-barcode-counts.html",
-        joined_counts="results/barcode_counts/barcode_counts.csv",
-        counts_by_plate=expand("results/barcode_counts/{plate}_barcode_counts.csv", plate=plates),
+        frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
+    log:
+        notebook="results/plates/{plate}/process_{plate}.ipynb",
+    params:
+        samples=lambda wc: plates[wc.plate]["samples"]["sample"],
+        plate_params=lambda wc: plates[wc.plate],
     conda:
         "environment.yml"
-    log:
-        "results/logs/analyze_barcode_counts.txt",
-    shell:
-        """
-        papermill {input.ipynb} {output.ipynb} \
-            -p joined_counts {output.joined_counts} \
-            -p snakemake True \
-            &> {log}
-
-        jupyter nbconvert --to html {output.ipynb}
-        """
-
-rule calculate_fraction_infectivity:
-    """Process counts files by plate and calculate fraction infectivity."""
-    input:
-#        variants=config["strain_to_barcode"],
-#        standards=config["neut_standards"],
-#        counts="results/barcode_counts/{plate}_barcode_counts.csv",
-    output:
-        fraction_infectivity="results/fraction_infectivity/{plate}_fractioninfectivity.csv",
-    log:
-        "results/logs/calculate_fraction_infectivity_{plate}.txt",
-    script:
-        "scripts/calculate_fraction_infectivity-perplate.py"
+    notebook:
+        "notebooks/process_plate.py.ipynb"
 
 
 rule calculate_neutralization_potency:
     """Process fraction infectivity files to calculate NT50s and generate plots."""
     input:
-        fractioninfectivity=expand(rules.calculate_fraction_infectivity.output.fraction_infectivity, plate=plates),
+#        fractioninfectivity=expand(rules.calculate_fraction_infectivity.output.fraction_infectivity, plate=plates),
         ipynb=os.path.join(pipeline_subdir, "notebooks/calculate-neutralization-potency.ipynb"),
     output:
         ipynb="results/notebooks/calculate-neutralization-potency.ipynb",
