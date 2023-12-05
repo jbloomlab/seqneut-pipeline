@@ -12,6 +12,7 @@ import pandas as pd
 
 
 # --- Process configuration ------------------------------------------------------------
+
 pipeline_subdir = config["seqneut-pipeline"]
 
 viral_libraries = config["viral_libraries"]
@@ -59,22 +60,34 @@ def process_plate(plate, plate_params):
         n_serum_replicates=lambda x: (
             x.groupby("serum")["replicate"].transform("nunique", dropna=False)
         ),
-        serum_replicate=lambda x: x.apply(
+        plate_serum_replicate=lambda x: x.apply(
             lambda row: (
-                f"{row['serum']}_{plate}" + (
+                f"{plate}_{row['serum']}" + (
                     "" if row["n_serum_replicates"] == 1 else f"-{row['replicate']}"
                 )
             ),
             axis=1,
         ),
-        sample=lambda x: x["serum_replicate"] + "_" + x["dilution_factor"].astype(str),
+        sample=lambda x: x.apply(
+            lambda row: (
+                row["plate_serum_replicate"] + (
+                    ""
+                    if pd.isnull(row["dilution_factor"])
+                    else f"_{row['dilution_factor']}"
+                )
+            ),
+            axis=1,
+        ),
+        plate=plate,
     ).drop(columns="n_serum_replicates")
+
+    assert len(samples_df) == samples_df["sample"].nunique(), plate
 
     # make sure serum_replicate and dilution_factor are unique
     dup_rows = (
         samples_df.assign(
             duplicates=lambda x: (
-                x.groupby(["serum_replicate", "dilution_factor"], dropna=False)
+                x.groupby(["plate_serum_replicate", "dilution_factor"], dropna=False)
                 ["sample"]
                 .transform("count")
             ),
@@ -109,27 +122,34 @@ plates = {
     for (plate, plate_params) in config["plates"].items()
 }
 
-print(plates)
+samples = pd.concat(
+    [plate_d["samples"] for plate_d in plates.values()],
+    ignore_index=True,
+)
+assert samples["sample"].nunique() == samples["fastq"].nunique() == len(samples)
+samples = samples.set_index("sample").to_dict(orient="index")
 
 
 # --- Snakemake rules -------------------------------------------------------------------
 
 rule count_barcodes:
-    """Count barcodes for each sample."""
+    """Count barcodes for a sample."""
     input:
-        fastq=lambda wildcards: barcode_runs.set_index("sample").at[wildcards.sample, "fastq"],
-        variants=config["strain_to_barcode"],
-        standards=config["neut_standards"],
+        fastq=lambda wc: samples[wc.sample]["fastq"],
+        viral_library=lambda wc: (
+            viral_libraries[plates[samples[wc.sample]["plate"]]["viral_library"]]
+        ),
+        neut_standard_set=lambda wc: (
+            neut_standard_sets[plates[samples[wc.sample]["plate"]]["neut_standard_set"]]
+        ),
     output:
-        counts="results/barcode_counts/{sample}/{sample}_counts.csv",
-        invalid="results/barcode_counts/{sample}/{sample}_invalid.csv",
-        fates="results/barcode_counts/{sample}/{sample}_fates.csv",
+        counts="results/barcode_counts/{sample}.csv",
+        invalid="results/barcode_invalid/{sample}.csv",
+        fates="results/barcode_fates/{sample}.csv",
     params:
-        library=lambda wildcards: barcode_runs.set_index("sample").at[wildcards.sample, "library"],
-        standard_set=lambda wildcards: barcode_runs.set_index("sample").at[wildcards.sample, "standard_set"],
-        parser_params=config["illumina_barcode_parser_params"]
+        illumina_barcode_parser_params=config["illumina_barcode_parser_params"],
     conda:
-        "envs/count_barcodes.yml"
+        "environment.yml"
     log:
         "results/logs/count_barcodes_{sample}.txt"   
     script:
@@ -149,7 +169,7 @@ rule analyze_barcode_counts:
         joined_counts="results/barcode_counts/barcode_counts.csv",
         counts_by_plate=expand("results/barcode_counts/{plate}_barcode_counts.csv", plate=plates),
     conda:
-        "envs/count_barcodes.yml"
+        "environment.yml"
     log:
         "results/logs/analyze_barcode_counts.txt",
     shell:
@@ -165,9 +185,9 @@ rule analyze_barcode_counts:
 rule calculate_fraction_infectivity:
     """Process counts files by plate and calculate fraction infectivity."""
     input:
-        variants=config["strain_to_barcode"],
-        standards=config["neut_standards"],
-        counts="results/barcode_counts/{plate}_barcode_counts.csv",
+#        variants=config["strain_to_barcode"],
+#        standards=config["neut_standards"],
+#        counts="results/barcode_counts/{plate}_barcode_counts.csv",
     output:
         fraction_infectivity="results/fraction_infectivity/{plate}_fractioninfectivity.csv",
     log:
