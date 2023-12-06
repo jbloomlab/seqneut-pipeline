@@ -167,8 +167,8 @@ rule count_barcodes:
         "scripts/count_barcodes.py"
 
 
-rule process_plate:
-    """Process a plate."""
+rule process_counts:
+    """Process a plate to QC and convert counts to fraction infectivity."""
     input:
         count_csvs=lambda wc: expand(
             rules.count_barcodes.output.counts,
@@ -185,18 +185,18 @@ rule process_plate:
             neut_standard_sets[plates[wc.plate]["neut_standard_set"]]
         ),
     output:
-        qc_failures="results/plates/{plate}/qc_failures.txt",
+        qc_failures="results/plates/{plate}/process_counts_qc_failures.txt",
         frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
     log:
-        notebook="results/plates/{plate}/process_{plate}.ipynb",
+        notebook="results/plates/{plate}/process_counts_{plate}.ipynb",
     params:
         samples=lambda wc: plates[wc.plate]["samples"]["sample"],
         plate_params=lambda wc: plates[wc.plate],
-        qc_thresholds=config["process_plate_qc_thresholds"],
+        qc_thresholds=config["process_counts_qc_thresholds"],
     conda:
         "environment.yml"
     notebook:
-        "notebooks/process_plate.py.ipynb"
+        "notebooks/process_counts.py.ipynb"
 
 
 rule calculate_neutralization_potency:
