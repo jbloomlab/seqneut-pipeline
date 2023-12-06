@@ -41,7 +41,7 @@ def process_plate(plate, plate_params):
 
     # Process samples_csv to create the sample data frame
     req_sample_cols = {"serum", "dilution_factor", "replicate", "fastq"}
-    samples_df = pd.read_csv(plate_params["samples_csv"])
+    samples_df = pd.read_csv(plate_params["samples_csv"], comment="#")
     if not req_sample_cols.issubset(samples_df.columns):
         raise alueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
 
