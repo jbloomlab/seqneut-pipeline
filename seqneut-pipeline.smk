@@ -57,13 +57,13 @@ def process_plate(plate, plate_params):
 
     # make serum_replicate that defines serum and replicate if needed
     samples_df = samples_df.assign(
-        n_serum_replicates=lambda x: (
-            x.groupby("serum")["replicate"].transform("nunique", dropna=False)
+        one_serum_replicate=lambda x: (
+            x.groupby("serum")["replicate"].transform("nunique", dropna=False) == 1
         ),
         serum_replicate=lambda x: x.apply(
             lambda row: (
                 str(row["serum"]) + (
-                    "" if row["n_serum_replicates"] == 1 else f"-{row['replicate']}"
+                    "" if row["one_serum_replicate"] == 1 else f"-{row['replicate']}"
                 )
             ),
             axis=1,
@@ -80,7 +80,13 @@ def process_plate(plate, plate_params):
         ),
         sample=lambda x: plate + "_" + x["sample_noplate"],
         plate=plate,
-    ).drop(columns="n_serum_replicates")
+        plate_replicate=lambda x: x.apply(
+            lambda row: (
+                plate + ("" if row["one_serum_replicate"] else f"{-row['replicate']}")
+            ),
+            axis=1,
+        ),
+    ).drop(columns="one_serum_replicate")
 
     assert len(samples_df) == samples_df["sample"].nunique(), plate
 
