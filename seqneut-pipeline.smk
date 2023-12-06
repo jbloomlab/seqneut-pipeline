@@ -23,7 +23,13 @@ def process_plate(plate, plate_params):
     """Process a plot from the configuration."""
 
     # Process plate parameters
-    req_plate_params = {"date", "viral_library", "neut_standard_set", "samples_csv"}
+    req_plate_params = {
+        "date",
+        "viral_library",
+        "neut_standard_set",
+        "samples_csv",
+        "process_counts_qc_thresholds",
+    }
     if not req_plate_params.issubset(plate_params):
         raise ValueError(f"{plate=} {plate_params=} lacks {req_plate_params=}")
     if plate_params["viral_library"] not in viral_libraries:
@@ -192,7 +198,6 @@ rule process_counts:
     params:
         samples=lambda wc: plates[wc.plate]["samples"]["sample"],
         plate_params=lambda wc: plates[wc.plate],
-        qc_thresholds=config["process_counts_qc_thresholds"],
     conda:
         "environment.yml"
     notebook:
