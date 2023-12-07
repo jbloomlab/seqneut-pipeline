@@ -207,13 +207,30 @@ rule process_counts:
         "notebooks/process_counts.py.ipynb"
 
 
+rule qc_process_counts:
+    """Check QC results on `process_counts` rule."""
+    input:
+        qc_failures=expand(rules.process_counts.output.qc_failures, plate=plates),
+        process_counts_htmls=expand(
+            "results/plates/{plate}/process_counts_{plate}.html",
+            plate=plates,
+        ),
+    output:
+        qc_summary="results/plates/qc_process_counts_summary.txt",
+    params:
+        plates=list(plates),
+    log:
+        "results/logs/qc_process_counts.txt",
+    script:
+        "scripts/qc_process_counts.py"
+
+
 rule fit_neutcurves:
     """Fit neutralization curves for a plate."""
     input:
-        qc_failures=rules.process_counts.output.qc_failures,
         frac_infectivity_csv=rules.process_counts.output.frac_infectivity_csv,
     output:
-#        curve_fit_params="results/plates/{plate}/curve_fit_params.csv",
+        curve_fit_params="results/plates/{plate}/curve_fit_params.csv",
     log:
         notebook="results/plates/{plate}/fit_neutcurves_{plate}.ipynb",
     params:
@@ -242,6 +259,5 @@ rule notebook_to_html:
 seqneut_pipeline_outputs = [
     expand(rules.count_barcodes.output.counts, sample=samples),
     expand(rules.process_counts.output.frac_infectivity_csv, plate=plates),
-    expand(rules.process_counts.output.qc_failures, plate=plates),
-    [f"results/plates/{plate}/process_counts_{plate}.html" for plate in plates],
+    rules.qc_process_counts.output.qc_summary,
 ]
