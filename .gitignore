@@ -2,7 +2,3 @@
 !.git*
 _*
 *.out
-env/
-results/*
-!results/notebooks/
-results/notebooks/logs/*
