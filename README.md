@@ -260,3 +260,26 @@ Designed to make sure we have enough dilutions to actually fit a curve.
 If there are barcodes that are failing some of the QC above, you can specify them here and they will be excluded.
 As you add barcodes to drop for a plate, you should add a comment in the YAML on why the barcode is being dropped.
 Note that if a barcode is entirely missing from the viral library for many plates, you may want to update the `viral_barcodes` entry instead to just remove it.
+
+## Output of the pipeline
+The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
+We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
+The set of full created outputs are as follows (note only some will be tracked depending on your `.gitignore`):
+
+  - `./results/barcode_counts/`: files giving the barcode counts for each sample. You should track this in the repo.
+  - `./results/barcode_fates/`: files giving the statistics (fates) of reads in the barcode counting for each sample. You do not need to track this in the repo as the results are plotted.
+  - `./results/barcode_invalid/`: files giving counts of invalid barcodes for each sample. You do not need to track this in the repo, but it could be helpful to look at these identities in counts if QC shows you are getting many invalid barcodes.
+  - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
+  - `./results/plates/{plate}/process_counts_{plate}.ipynb`: Jupyter notebook processing counts for a plate. You do not need to track this, look at the HTMl version of notebook instead.
+  - `./results/plates/{plate}/process_counts_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in docs when pipeline runs successfully.
+  - `./results/plates/{plate}/process_counts_qc_failures.txt`: List of QC failures when processing counts for plate. You do not need to track this as the summary for all plates is tracked instead.
+  - `./results/plates/qc_process_counts_summary.txt`: summary of QC for processing counts for all plates. You should track this in the repo.
+  - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures.
+
+## Running pipeline to identify QC failures and fixing them
+If you run the pipeline via `snakemake` with the `--keep-going` flag as recommended above, the pipeline will run as far as possible.
+However, if there are any QC failures that will keep it from running to completion.
+
+For the processing of counts to fraction infectivity, the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
+You then need to address these QC failures by adjusting the `process_counts_qc_thresholds` for that plate, or adding offending barcodes to `drop_barcodes` or removing from library altogether.
+It is expected that you may have to perform several iterations of running and fixing QC failures.
