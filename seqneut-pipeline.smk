@@ -49,7 +49,7 @@ def process_plate(plate, plate_params):
     req_sample_cols = {"serum", "dilution_factor", "replicate", "fastq"}
     samples_df = pd.read_csv(plate_params["samples_csv"], comment="#")
     if not req_sample_cols.issubset(samples_df.columns):
-        raise alueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
+        raise ValueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
 
     if samples_df["serum"].isnull().any():
         raise ValueError(f"{plate=} 'samples_csv' has null values in 'serum' column")
@@ -204,26 +204,41 @@ rule process_counts:
         "notebooks/process_counts.py.ipynb"
 
 
-rule calculate_neutralization_potency:
-    """Process fraction infectivity files to calculate NT50s and generate plots."""
+rule fit_neutcurves:
+    """Fit neutralization curves for a plate."""
     input:
-#        fractioninfectivity=expand(rules.calculate_fraction_infectivity.output.fraction_infectivity, plate=plates),
-        ipynb=os.path.join(pipeline_subdir, "notebooks/calculate-neutralization-potency.ipynb"),
+        qc_failures=rules.process_counts.output.qc_failures,
+        frac_infectivity_csv=rules.process_counts.output.frac_infectivity_csv,
     output:
-        ipynb="results/notebooks/calculate-neutralization-potency.ipynb",
-        html="results/notebooks/calculate-neutralization-potency.html",
-        median_ic50s="results/selections/nt50_measurements_by_strain.csv",
-    conda:
-        "envs/calculate-neutralization-potency.yml"
+#        curve_fit_params="results/plates/{plate}/curve_fit_params.csv",
     log:
-        "results/logs/calculate_neutralization_potency.txt",
+        notebook="results/plates/{plate}/fit_neutcurves_{plate}.ipynb",
+    params:
+        plate_params=lambda wc: plates[wc.plate],
+    conda:
+        "environment.yml"
+    notebook:
+        "notebooks/fit_neutcurves.py.ipynb"
+
+
+rule notebook_to_html:
+    """Convert Jupyter notebook to HTML"""
+    input:
+        notebook="{notebook}.ipynb",
+    output:
+        html="{notebook}.html",
+    log:
+        "results/logs/notebook_to_html_{notebook}.txt",
+    conda:
+        "environment.yml"
     shell:
-        """
-        papermill {input.ipynb} {output.ipynb} \
-            -p snakemake True \
-            -p median_ic50s {output.median_ic50s} \
-            &> {log}
+        "jupyter nbconvert --to html {input.notebook} &> {log}"
 
-        jupyter nbconvert --to html {output.ipynb}
-        """
 
+
+seqneut_pipeline_outputs = [
+    expand(rules.count_barcodes.output.counts, sample=samples),
+    expand(rules.process_counts.output.frac_infectivity_csv, plate=plates),
+    expand(rules.process_counts.output.qc_failures, plate=plates),
+    [f"results/plates/{plate}/process_counts_{plate}.html" for plate in plates],
+]
