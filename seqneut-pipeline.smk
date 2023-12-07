@@ -11,6 +11,9 @@ import os
 import pandas as pd 
 
 
+snakemake.utils.min_version("7.32")
+
+
 # --- Process configuration ------------------------------------------------------------
 
 pipeline_subdir = config["seqneut-pipeline"]
