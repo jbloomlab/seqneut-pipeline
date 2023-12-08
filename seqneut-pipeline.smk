@@ -202,7 +202,11 @@ rule process_counts:
         notebook="results/plates/{plate}/process_counts_{plate}.ipynb",
     params:
         samples=lambda wc: plates[wc.plate]["samples"]["sample"],
-        plate_params=lambda wc: plates[wc.plate],
+        plate_params=lambda wc: {
+            param: val
+            for (param, val) in plates[wc.plate].items()
+            if param not in {"curvefit_params"}
+        },
     conda:
         "environment.yml"
     notebook:

@@ -7,7 +7,7 @@
 
 ---
 
-This is modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://research.fredhutch.org/bloom/en.html).
+This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://research.fredhutch.org/bloom/en.html).
 See **[add link to Loes et al when available]** for a description of these assays.
 That paper is also the scientific citation for this analysis pipeline.
 
@@ -202,6 +202,7 @@ default_process_counts_qc_thresholds: &default_process_counts_qc_thresholds
   min_neut_standard_count: 1000
   min_no_serum_viral_barcode_count: 10
   min_dilutions_per_serum_replicate: 4
+  max_frac_infectivity: 5
 ```
 and then for specific plates you can merge it in and overwrite.
 For instance, below would merge the above defaults but then overwrite the `min_viral_barcode_frac` to a different value:
@@ -253,8 +254,12 @@ Require each viral barcode has at least this number of counts in each no-serum s
 Designed to make sure each viral barcode adequately represented to get good estimates.
 
 ##### min_dilutions_per_serum_replicate
-Require at least this many differet dilutions for each serum-replicate on a plate.
+Require at least this many different dilutions for each serum-replicate on a plate.
 Designed to make sure we have enough dilutions to actually fit a curve.
+
+##### max_frac_infectivity
+Require all fraction infectivity values to be <= this number.
+They should really all be <= one, but sometimes they will be larger due to noise but it's a bad sign if they get too large.
 
 #### barcodes_to_drop
 If there are barcodes that are failing some of the QC above, you can specify them here and they will be excluded.
