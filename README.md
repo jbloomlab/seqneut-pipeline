@@ -150,6 +150,7 @@ plates:
       - AATCTCCTCACGCAGC  # viral barcode w no counts in no-serum samples
       - ATGCAATATTAAGGAA  # viral barcode w no counts in no-serum samples
       - GGTCCATCTCAGATCG  # neut standard barcode w inconsistently low counts in Y106d0_4860
+    wells_to_drop: []
 
   <additional_plates>
 ```
@@ -169,20 +170,19 @@ The `neut_standard_set` key gives the name of a key in `neut_standard_sets` that
 The `samples_csv` key gives the name of a CSV file specifying the samples for that plate.
 The recommended way to organize these sample CSVs is to put them in `./data/plates/` subdirectory.
 The CSV file must have the following columns:
+ - *well*: well in plate in which sample was run, typically names like "A1", "B1", etc.
  - *serum*: name of the serum in this well, or "none" if it is a no-serum sample.
  - *dilution_factor*: dilution factor of the serum (should be a number > 1), leave blank for the no-serum samples (*serum* of "none")
  - *replicate*: the replicate of this serum, which you only need to specify if there are multiple different samples with the same *serum* and *dilution_factor* in the plate.
  - *fastq*: path to the FASTQ file, can be gzipped
- - other columns (e.g., *notes*, *well*, etc) are allowed but are ignored by the pipeline
+ - other columns (e.g., *notes*, etc) are allowed but are ignored by the pipeline
 
 Here are a few lines of an example CSV file:
 ```
-serum,dilution_factor,replicate,fastq
-D002d0,20,1,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/D002_d0_conc1_S16_R1_001.fastq.gz
-D002d0,60,1,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/D002_d0_conc2_S24_R1_001.fastq.gz
+well,serum,dilution_factor,replicate,fastq
+A1,none,,1,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/Plate1_Noserum1_S1_R1_001.fastq.gz
+A2,Y106d182,20.0,1,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/Y106_d182_conc1_S9_R1_001.fastq.gz
 <additional lines>
-none,,15,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/Plate1_Noserum8_S8_R1_001.fastq.gz
-none,,16,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/Plate1_Noserum9_S89_R1_001.fastq.gz
 ```
 
 #### process_counts_qc_thresholds
@@ -261,6 +261,10 @@ If there are barcodes that are failing some of the QC above, you can specify the
 As you add barcodes to drop for a plate, you should add a comment in the YAML on why the barcode is being dropped.
 Note that if a barcode is entirely missing from the viral library for many plates, you may want to update the `viral_barcodes` entry instead to just remove it.
 
+#### wells_to_drop
+If there are samples that are failing some of the QC above, you can specify their well identifiers in a list here and they will be dropped.
+As you add wells (samples) to drop for a plate, you should add a comment in the YAML on why the sample is being dropped.
+
 ## Output of the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
 We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
@@ -281,5 +285,12 @@ If you run the pipeline via `snakemake` with the `--keep-going` flag as recommen
 However, if there are any QC failures that will keep it from running to completion.
 
 For the processing of counts to fraction infectivity, the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
-You then need to address these QC failures by adjusting the `process_counts_qc_thresholds` for that plate, or adding offending barcodes to `drop_barcodes` or removing from library altogether.
+You then need to address these QC failures by doing one of the following:
+
+ - Removing the offending barcodes by adding them to `barcodes_to_drop` for that plate. (If the barcode is missing in all plates, you might remove from `viral_barcodes` or `neut_standard_sets`.)
+
+ - Remove the offending samples by adding them to `wells_to_drop` for that plate.
+
+ - Adjusting the `process_counts_qc_thresholds` for that plate to be more lenient.
+
 It is expected that you may have to perform several iterations of running and fixing QC failures.

@@ -32,6 +32,8 @@ def process_plate(plate, plate_params):
         "neut_standard_set",
         "samples_csv",
         "process_counts_qc_thresholds",
+        "barcodes_to_drop",
+        "wells_to_drop",
     }
     if not req_plate_params.issubset(plate_params):
         raise ValueError(f"{plate=} {plate_params=} lacks {req_plate_params=}")
@@ -49,9 +51,9 @@ def process_plate(plate, plate_params):
         raise ValueError(f"{plate=} {plate_d['date']=} not in YYYY-MM-DD format")
 
     # Process samples_csv to create the sample data frame
-    req_sample_cols = {"serum", "dilution_factor", "replicate", "fastq"}
+    req_sample_cols = ["well", "serum", "dilution_factor", "replicate", "fastq"]
     samples_df = pd.read_csv(plate_params["samples_csv"], comment="#")
-    if not req_sample_cols.issubset(samples_df.columns):
+    if not set(req_sample_cols).issubset(samples_df.columns):
         raise ValueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
 
     if samples_df["serum"].isnull().any():
@@ -65,7 +67,7 @@ def process_plate(plate, plate_params):
             pass     
 
     # make serum_replicate that defines serum and replicate if needed
-    samples_df = samples_df.assign(
+    samples_df = samples_df[req_sample_cols].assign(
         one_serum_replicate=lambda x: (
             x.groupby("serum")["replicate"].transform("nunique", dropna=False) == 1
         ),
