@@ -20,4 +20,4 @@ dependencies:
   - ruff
   - pip:
     - dms_variants==1.4.3
-    - neutcurve==0.6.0
+    - neutcurve==0.7.0
