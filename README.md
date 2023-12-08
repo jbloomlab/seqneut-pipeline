@@ -97,6 +97,24 @@ GCATGGATCCTTTACT,A/Togo/845/2020
 <additional lines>
 ```
 
+### viral_strain_plot_order
+An optional dictionary (mapping) of viral library names (as specified in `viral_libraries`) to a CSV with a column titled "strain" that lists the strains in the order they should be plotted.
+If not specified (or set to "null"), plotting is just alphabetical.
+So in general, this key will look like:
+```
+viral_strain_plot_order:
+  pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes_strain_order.csv
+  <potentially more viral libraries specified as name: CSV pairs>
+```
+
+The CSV files themselves will just have a column named "strain" specifying the order, such as:
+```
+strain
+A/California/07/2009
+A/Michigan/45/2015
+<additional lines>
+```
+
 ### neut_standard_sets
 A dictionary (mapping) of neutralization-standard set names to CSV files holding the barcodes for the neutralization standard set.
 So in general, this key will look like:
@@ -151,6 +169,8 @@ plates:
       - ATGCAATATTAAGGAA  # viral barcode w no counts in no-serum samples
       - GGTCCATCTCAGATCG  # neut standard barcode w inconsistently low counts in Y106d0_4860
     wells_to_drop: []
+    curvefit_params:
+      <<: *default_curvefit_params
 
   <additional_plates>
 ```
@@ -269,6 +289,34 @@ Note that if a barcode is entirely missing from the viral library for many plate
 #### wells_to_drop
 If there are samples that are failing some of the QC above, you can specify their well identifiers in a list here and they will be dropped.
 As you add wells (samples) to drop for a plate, you should add a comment in the YAML on why the sample is being dropped.
+
+#### curvefit_params
+This key defines some parameters specifying how the neutralization curves are fit, which is done using the Hill curves defined in the [neutcurve](https://jbloomlab.github.io/neutcurve/) package.
+
+You may want to use the [YAML anchor/merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
+The default can be defined like this:
+```
+default_curvefit_params: &default_curvefit_params
+  frac_infectivity_ceiling: 1
+  fixtop: false
+  fixbottom: 0
+```
+
+The specific meaning of these curve-fitting parameters are as follows:
+
+##### frac_infectivity_ceiling
+If any fraction infectivity values are greater than this value, reduce them to this value before fitting.
+Typically you might set this to one to put a ceiling on all values >1.
+In principle, no values should be >1 in the absence of experimental noise.
+Set to "null" to have no ceiling.
+
+##### fixtop
+Fix the top plateau of the neutralization curve to this value.
+Typically you might either set to 1, or "false" if you want to let the top be a free parameter.
+
+##### fixbottom
+Fix the bottom plateau of the neutralization curve to this value.
+Typicallyou might either set to 0, or "false" if you want to let the bottom be a free parameter.
 
 ## Output of the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
