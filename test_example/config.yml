@@ -4,12 +4,20 @@
 # --- Configuration for `seqneut-pipeline` ---------------------------------------------
 
 # Location of `seqneut-pipeline` submodule, typically "seqneut-pipeline"
-seqneut-pipeline: seqneut-pipeline
+# **FOR THIS TEST EXAMPLE ONLY, THIS LOCATION IS "../" BUT IT SHOULD
+# ALMOST CERTAINLY BE "seqneut-pipeline" FOR REAL ANALYSES**
+seqneut-pipeline: ../
 
 # Specify each viral library and corresponding CSV matching barcode to strain name
 # CSV must have columns "barcode" and "strain"
 viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
+
+# If you want to plot the strains in a viral library (in `viral_libraries`) in a
+# specific order, provide a CSV with column "strain" ordered in that order. If you
+# omit or set to "null", will be plotted alphabetically.
+viral_strain_plot_order:
+  pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes_strain_order.csv
 
 # Specify the name of each set of neutralization standards and corresponding CSV
 # with a column "barcode" listing the barcodes
@@ -25,19 +33,6 @@ illumina_barcode_parser_params:
   upstream_mismatch: 4
   bc_orientation: R2
 
-# Quality control thresholds for processing plates. Plates with samples that do not meet
-# these thresholds are flagged and an error is raised.
-process_counts_qc_thresholds:
-  avg_barcode_counts: 500
-  min_neut_standard_frac: 0.01
-  max_neut_standard_frac_no_serum: 0.1
-  barcode_frac_consistency: 3
-  min_viral_barcode_frac: 0.001
-  min_neut_standard_barcode_frac: 0.01
-  min_neut_standard_count: 1000
-  min_no_serum_viral_barcode_count: 10
-  min_dilutions_per_serum_replicate: 4
-
 # Specify the data for each neutralization plate in `plates`. Specify each plate as
 #
 #  plate_name:
@@ -51,14 +46,20 @@ process_counts_qc_thresholds:
 #      max_neut_standard_frac_no_serum: <no more than this frac counts from neut-standard in no-serum samples>
 #      barcode_consistency_frac: <max fold-change in barcode from medium in samples where should be consistent>
 #      min_viral_barcode_frac: <require this frac viral barcode counts for each barcode in no-serum sample>
-#      min_neut_standard_barcode_frac: <require this frac each neut-standard barcode in no-serum samples>
+#      min_neut_standard_barcode_frac: <require this frac each neut-standard barcode in all samples>
 #      min_neut_standard_counts: <require this many total neut-standard counts per sample>
 #      min_no_serum_viral_barcode_count: <require this many counts for each viral barcode in each no-serum sample>
 #      min_dilutions_per_serum_replicate: <require this many different dilutions per serum replicate>
+#      max_frac_infectivity: <require frac infectivity estimates to be no greater than this>
 #    barcodes_to_drop: <list of barcodes to drop for this plate>
+#    wells_to_drop: <list of wells to drop for this plate>
+#    curvefit_params:
+#      frac_infectivity_ceiling: <ceiling to apply to frac infectivity before curve fitting, typically 1 if used>
+#      fixtop: <do we fix top of neutralization curves in fitting, typically either 1 or false>
+#      fixbottom: <do we fix bottom of neutralization curves in fitting, typically either 0 or false>
 #
-# The samples_csv must have columns "serum", "dilution_factor", "replicate", and "fastq".
-# Other columns (eg,  "well", "notes") are allowed but are not used by the pipeline.
+# The samples_csv must have columns "well", "serum", "dilution_factor", "replicate", and "fastq".
+# Other columns (eg,  "notes") are allowed but are not used by the pipeline.
 #
 # Rows beginning with '#' are considered comments and are ignored.
 #
@@ -73,30 +74,24 @@ process_counts_qc_thresholds:
 # default `process_counts_qc_thresholds` that can be used with merge key
 # (https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html)
 default_process_counts_qc_thresholds: &default_process_counts_qc_thresholds
-  avg_barcode_counts: 500
-  min_neut_standard_frac: 0.01
+  avg_barcode_counts: 250  # reduced to 250 for this test example, but should probably be >= 500 for real experiments
+  min_neut_standard_frac: 0.005
   max_neut_standard_frac_no_serum: 0.1
-  barcode_frac_consistency: 3
-  min_viral_barcode_frac: 0.001
-  min_neut_standard_barcode_frac: 0.01
-  min_neut_standard_count: 1000
-  min_no_serum_viral_barcode_count: 10
+  barcode_frac_consistency: 4
+  min_viral_barcode_frac: 0.0005
+  min_neut_standard_barcode_frac: 0.005
+  min_neut_standard_count: 350  # reduced to 500 for this test example, but should probably be >= 1000 for real experiments
+  min_no_serum_viral_barcode_count: 5  # reduced to 5 for this test example, but should probably be >= 10 for real experiments
   min_dilutions_per_serum_replicate: 4
+  max_frac_infectivity: 8  # set to high value for this test example, possibly should be ~5 for real experiments
+
+# default `curvefit_params` that can be used with merge key
+default_curvefit_params: &default_curvefit_params
+  frac_infectivity_ceiling: 1
+  fixtop: false
+  fixbottom: 0
 
 plates:
-
-  plate1:
-    date: 2023-08-01
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate1_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop:
-      - AAAACAGTATAGAAGA  # viral barcode w no counts in no-serum samples
-      - AATCTCCTCACGCAGC  # viral barcode w no counts in no-serum samples
-      - ATGCAATATTAAGGAA  # viral barcode w no counts in no-serum samples
-      - GGTCCATCTCAGATCG  # neut standard barcode w inconsistently low counts in Y106d0_4860
 
   plate2:
     date: 2023-08-01
@@ -105,88 +100,13 @@ plates:
     samples_csv: data/plates/plate2_samples.csv
     process_counts_qc_thresholds:
       <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate3:
-    date: 2023-08-02
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate3_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate4:
-    date: 2023-08-02
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate4_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate5:
-    date: 2023-08-04
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate5_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate6:
-    date: 2023-08-04
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate6_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate7:
-    date: 2023-08-05
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate7_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate8:
-    date: 2023-08-05
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate8_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate9:
-    date: 2023-08-05
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate9_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate10:
-    date: 2023-08-06
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate10_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
+    barcodes_to_drop:
+      - GGTCCATCTCAGATCG
+    wells_to_drop:
+      - C1  # low neut standard frac
+      - D12  # low neut standard frac
+    curvefit_params:
+      <<: *default_curvefit_params
 
   plate11:
     date: 2023-09-26
@@ -195,15 +115,10 @@ plates:
     samples_csv: data/plates/plate11_samples.csv
     process_counts_qc_thresholds:
       <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
-
-  plate12:
-    date: 2023-09-26
-    viral_library: pdmH1N1_lib2023_loes
-    neut_standard_set: loes2023
-    samples_csv: data/plates/plate12_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop: []
-    sera_replicates_to_drop: []
+    barcodes_to_drop:
+      - GGTCCATCTCAGATCG
+    wells_to_drop:
+      - D6  # low overall barcode counts
+      - C12  # low neut standard frac
+    curvefit_params:
+      <<: *default_curvefit_params
