@@ -1,0 +1,15 @@
+"""Top-level ``snakemake`` file that runs analysis."""
+
+
+import os
+
+
+configfile: "config.yml"
+
+
+include: os.path.join(config["seqneut-pipeline"], "seqneut-pipeline.smk")
+
+
+rule all:
+    input:
+        seqneut_pipeline_outputs
