@@ -75,7 +75,8 @@ Note also that a few rules have rule-specific `conda` environments in [./envs/](
 
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
-An example configuration file is in [./test_example/config.yml](test_example/config.yml).
+An example configuration file is in [./test_example/config.yml](test_example/config.yml) (although note some of the QC thresholds are set more leniently to make the test example work for small data as described in the comments in that YAML).
+
 Here we describe the required keys in this YAML file (you can also add additional information specific to your repo, but we advise adding comments to put that in a separate part of the YAML from the `seqneut-pipeline` configuration).
 For background on YAML format, including on the anchor (`&`) and merge (`<<: *`) operators that can be helpful to simplify the YAML file, see [here](https://spacelift.io/blog/yaml) and [here](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html).
 
@@ -367,3 +368,6 @@ You then need to address these QC failures by doing one of the following:
  - Adjusting the `process_counts_qc_thresholds` for that plate to be more lenient.
 
 It is expected that you may have to perform several iterations of running and fixing QC failures.
+
+## Test example
+The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
