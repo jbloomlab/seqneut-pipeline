@@ -20,6 +20,31 @@ pipeline_subdir = config["seqneut-pipeline"]
 
 viral_libraries = config["viral_libraries"]
 
+# process viral_strain_plot_order
+viral_strain_plot_order = {viral_library: None for viral_library in viral_libraries}
+if "viral_strain_plot_order" in config:
+    viral_strain_plot_order = viral_strain_plot_order | config["viral_strain_plot_order"]
+    if set(viral_strain_plot_order) != set(viral_libraries):
+        raise ValueError(
+            f"{viral_strain_plot_order.keys()=} != {viral_libraries.keys()=}"
+        )
+for _viral_library, _csv in viral_strain_plot_order.items():
+    _viral_library_strains = sorted(
+        set(pd.read_csv(viral_libraries[_viral_library])["strain"])
+    )
+    if _csv:
+        _viral_order = pd.read_csv(_csv)["strain"].tolist()
+        if len(_viral_order) != len(set(_viral_order)):
+            raise ValueError(f"duplicate strains in viral_strain_order CSV {_csv}")
+        if set(_viral_order) != set(_viral_library_strains):
+            raise ValueError(
+                f"viral_strain_order does not have correct strains for {_viral_library}"
+            )
+        viral_strain_plot_order[_viral_library] = _viral_order
+    else:
+        viral_strain_plot_order[_viral_library] = _viral_library_strains
+
+
 neut_standard_sets = config["neut_standard_sets"]
 
 def process_plate(plate, plate_params):
@@ -34,6 +59,7 @@ def process_plate(plate, plate_params):
         "process_counts_qc_thresholds",
         "barcodes_to_drop",
         "wells_to_drop",
+        "curvefit_params",
     }
     if not req_plate_params.issubset(plate_params):
         raise ValueError(f"{plate=} {plate_params=} lacks {req_plate_params=}")
@@ -171,7 +197,7 @@ rule count_barcodes:
     params:
         illumina_barcode_parser_params=config["illumina_barcode_parser_params"],
     conda:
-        "environment.yml"
+        "envs/count_barcodes.yml"
     log:
         "results/logs/count_barcodes_{sample}.txt"   
     script:
@@ -231,20 +257,22 @@ rule qc_process_counts:
         "scripts/qc_process_counts.py"
 
 
-rule fit_neutcurves:
+rule curvefits:
     """Fit neutralization curves for a plate."""
     input:
+        qc_failures=rules.process_counts.output.qc_failures,
         frac_infectivity_csv=rules.process_counts.output.frac_infectivity_csv,
     output:
-        curve_fit_params="results/plates/{plate}/curve_fit_params.csv",
+        csv="results/plates/{plate}/curvefits.csv",
+        pdf="results/plates/{plate}/curvefits.pdf",
     log:
-        notebook="results/plates/{plate}/fit_neutcurves_{plate}.ipynb",
+        notebook="results/plates/{plate}/curvefits_{plate}.ipynb",
     params:
-        plate_params=lambda wc: plates[wc.plate],
+        curvefit_params=lambda wc: plates[wc.plate]["curvefit_params"],
     conda:
         "environment.yml"
     notebook:
-        "notebooks/fit_neutcurves.py.ipynb"
+        "notebooks/curvefits.py.ipynb"
 
 
 rule notebook_to_html:
@@ -265,5 +293,6 @@ rule notebook_to_html:
 seqneut_pipeline_outputs = [
     expand(rules.count_barcodes.output.counts, sample=samples),
     expand(rules.process_counts.output.frac_infectivity_csv, plate=plates),
+    expand(rules.curvefits.output.csv, plate=plates),
     rules.qc_process_counts.output.qc_summary,
 ]

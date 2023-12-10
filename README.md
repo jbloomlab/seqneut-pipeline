@@ -11,6 +11,12 @@ This is a modular analysis pipeline for analyzing high-throughput sequencing-bas
 See **[add link to Loes et al when available]** for a description of these assays.
 That paper is also the scientific citation for this analysis pipeline.
 
+Essentially, this pipeline goes from the FASTQ files that represent the counts of each barcoded viral variant to the computed neutralization titers for each sera.
+The titers are computed by fitting Hill-curve style neutralization curves using the [neutcurve](https://jbloomlab.github.io/neutcurve/) package; see the documentation for the details of these curves.
+The titers are summarized by the neutralization titer 50% (NT50), which is the serum dilution factor at which the serum neutralizations half of the viral infectivity.
+So a NT50 of 200 means that at a 1:200 dilution of the serum, half the viral infectivity is neutralized.
+Note that the NT50 is the reciprocal of the IC50 (concentration of serum at which 50% of viral infectivity is neutralized).
+
 ## Using this pipeline
 This pipeline is designed to be included as a modular portion of a larger [snakemake](https://snakemake.readthedocs.io/) analysis.
 This pipeline processes FASTQ files to get the counts of each barcode, analyzes those to determine the fraction infectivity at each serum concentration, and then fits and plots neutralization curves.
@@ -65,6 +71,8 @@ snakemake -j <n_jobs> --use-conda --keep-going
 
 The use of `--keep-going` is recommended for the QC steps below as it will create the notebooks helpful for manually doing the QC.
 
+Note also that a few rules have rule-specific `conda` environments in [./envs/](envs).
+
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
 An example configuration file is in [./test_example/config.yml](test_example/config.yml).
@@ -94,6 +102,24 @@ The CSV files themselves will have columns specifying the viral barcode and the 
 barcode,strain
 ACGGAATCCCCTGAGA,A/Washington/23/2020
 GCATGGATCCTTTACT,A/Togo/845/2020
+<additional lines>
+```
+
+### viral_strain_plot_order
+An optional dictionary (mapping) of viral library names (as specified in `viral_libraries`) to a CSV with a column titled "strain" that lists the strains in the order they should be plotted.
+If not specified (or set to "null"), plotting is just alphabetical.
+So in general, this key will look like:
+```
+viral_strain_plot_order:
+  pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes_strain_order.csv
+  <potentially more viral libraries specified as name: CSV pairs>
+```
+
+The CSV files themselves will just have a column named "strain" specifying the order, such as:
+```
+strain
+A/California/07/2009
+A/Michigan/45/2015
 <additional lines>
 ```
 
@@ -151,6 +177,8 @@ plates:
       - ATGCAATATTAAGGAA  # viral barcode w no counts in no-serum samples
       - GGTCCATCTCAGATCG  # neut standard barcode w inconsistently low counts in Y106d0_4860
     wells_to_drop: []
+    curvefit_params:
+      <<: *default_curvefit_params
 
   <additional_plates>
 ```
@@ -270,24 +298,64 @@ Note that if a barcode is entirely missing from the viral library for many plate
 If there are samples that are failing some of the QC above, you can specify their well identifiers in a list here and they will be dropped.
 As you add wells (samples) to drop for a plate, you should add a comment in the YAML on why the sample is being dropped.
 
+#### curvefit_params
+This key defines some parameters specifying how the neutralization curves are fit, which is done using the Hill curves defined in the [neutcurve](https://jbloomlab.github.io/neutcurve/) package.
+
+You may want to use the [YAML anchor/merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
+The default can be defined like this:
+```
+default_curvefit_params: &default_curvefit_params
+  frac_infectivity_ceiling: 1
+  fixtop: false
+  fixbottom: 0
+```
+
+The specific meaning of these curve-fitting parameters are as follows:
+
+##### frac_infectivity_ceiling
+If any fraction infectivity values are greater than this value, reduce them to this value before fitting.
+Typically you might set this to one to put a ceiling on all values >1.
+In principle, no values should be >1 in the absence of experimental noise.
+Set to "null" to have no ceiling.
+
+##### fixtop
+Fix the top plateau of the neutralization curve to this value.
+Typically you might either set to 1, or "false" if you want to let the top be a free parameter.
+
+##### fixbottom
+Fix the bottom plateau of the neutralization curve to this value.
+Typicallyou might either set to 0, or "false" if you want to let the bottom be a free parameter.
+
 ## Output of the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
 We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
 The set of full created outputs are as follows (note only some will be tracked depending on your `.gitignore`):
 
-  - `./results/barcode_counts/`: files giving the barcode counts for each sample. You should track this in the repo.
-  - `./results/barcode_fates/`: files giving the statistics (fates) of reads in the barcode counting for each sample. You do not need to track this in the repo as the results are plotted.
-  - `./results/barcode_invalid/`: files giving counts of invalid barcodes for each sample. You do not need to track this in the repo, but it could be helpful to look at these identities in counts if QC shows you are getting many invalid barcodes.
-  - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
-  - `./results/plates/{plate}/process_counts_{plate}.ipynb`: Jupyter notebook processing counts for a plate. You do not need to track this, look at the HTMl version of notebook instead.
-  - `./results/plates/{plate}/process_counts_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in docs when pipeline runs successfully.
-  - `./results/plates/{plate}/process_counts_qc_failures.txt`: List of QC failures when processing counts for plate. You do not need to track this as the summary for all plates is tracked instead.
-  - `./results/plates/qc_process_counts_summary.txt`: summary of QC for processing counts for all plates. You should track this in the repo.
-  - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures.
+  - Outputs related to barcode counting:
+    - `./results/barcode_counts/`: files giving the barcode counts for each sample. You should track this in the repo.
+    - `./results/barcode_fates/`: files giving the statistics (fates) of reads in the barcode counting for each sample. You do not need to track this in the repo as the results are plotted.
+    - `./results/barcode_invalid/`: files giving counts of invalid barcodes for each sample. You do not need to track this in the repo, but it could be helpful to look at these identities in counts if QC shows you are getting many invalid barcodes.
+
+  - Outputs related to computing the fraction infectivity from the barcode counts for each plate:
+    - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
+    - `./results/plates/{plate}/process_counts_{plate}.ipynb`: Jupyter notebook processing counts for a plate. You do not need to track this, look at the HTMl version of notebook instead.
+    - `./results/plates/{plate}/process_counts_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
+    - `./results/plates/{plate}/process_counts_qc_failures.txt`: List of QC failures when processing counts for plate. You do not need to track this as the summary for all plates is tracked instead.
+    - `./results/plates/qc_process_counts_summary.txt`: summary of QC for processing counts for all plates. You should track this in the repo.
+
+  - Outputs related to fitting the neutralization curves for each plate:
+    - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate, including the NT50s. You should track this in repo.
+    - `./results/plates/{plate}/curvefits.pdf`: PDF rendering the neutralization curves for the plate. You do not need to track this in the repo as a HTML version of a notebook containing the plot is tracked in `./docs/`.
+    - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
+    - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
+    - `./results/plates/{plate}/curvefits_{plate}.html`: HTML rendering of Jupyter notebook that does the curve fitting. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+
+  - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures. They do not need to be tracked in the repo.
 
 ## Running pipeline to identify QC failures and fixing them
 If you run the pipeline via `snakemake` with the `--keep-going` flag as recommended above, the pipeline will run as far as possible.
 However, if there are any QC failures that will keep it from running to completion.
+You will then need to manually look at the results, identify the problem (typically problematic barcodes or samples / wells), and decide how to fix the problem by using the YAML configuration file to exclude problematic barcodes / samples.
 
 For the processing of counts to fraction infectivity, the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
 You then need to address these QC failures by doing one of the following:
