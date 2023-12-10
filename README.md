@@ -65,6 +65,8 @@ snakemake -j <n_jobs> --use-conda --keep-going
 
 The use of `--keep-going` is recommended for the QC steps below as it will create the notebooks helpful for manually doing the QC.
 
+Note also that a few rules have rule-specific `conda` environments in [./envs/](envs).
+
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
 An example configuration file is in [./test_example/config.yml](test_example/config.yml).
@@ -331,7 +333,7 @@ The set of full created outputs are as follows (note only some will be tracked d
   - `./results/plates/{plate}/process_counts_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in docs when pipeline runs successfully.
   - `./results/plates/{plate}/process_counts_qc_failures.txt`: List of QC failures when processing counts for plate. You do not need to track this as the summary for all plates is tracked instead.
   - `./results/plates/qc_process_counts_summary.txt`: summary of QC for processing counts for all plates. You should track this in the repo.
-  - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures.
+  - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures. They do not need to be tracked in the repo.
 
 ## Running pipeline to identify QC failures and fixing them
 If you run the pipeline via `snakemake` with the `--keep-going` flag as recommended above, the pipeline will run as far as possible.
