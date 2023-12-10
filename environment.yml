@@ -10,6 +10,7 @@ dependencies:
   - black-jupyter
   - jupyterlab
   - mamba
+  - nbqa
   - pandas=2.1
   - papermill=2.4
   - pip
