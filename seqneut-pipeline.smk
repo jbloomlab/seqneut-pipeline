@@ -197,7 +197,7 @@ rule count_barcodes:
     params:
         illumina_barcode_parser_params=config["illumina_barcode_parser_params"],
     conda:
-        "environment.yml"
+        "envs/count_barcodes.yml"
     log:
         "results/logs/count_barcodes_{sample}.txt"   
     script:
@@ -264,12 +264,11 @@ rule curvefits:
         frac_infectivity_csv=rules.process_counts.output.frac_infectivity_csv,
     output:
         csv="results/plates/{plate}/curvefits.csv",
-        pdf="reesults/plates/{plate}/curvefits.pdf",
+        pdf="results/plates/{plate}/curvefits.pdf",
     log:
         notebook="results/plates/{plate}/curvefits_{plate}.ipynb",
     params:
         curvefit_params=lambda wc: plates[wc.plate]["curvefit_params"],
-        viral_strain_order=lambda wc: viral_strain_plot_order[plates[wc.plate]["viral_library"]],
     conda:
         "environment.yml"
     notebook:
