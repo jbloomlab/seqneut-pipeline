@@ -142,6 +142,22 @@ rule curvefits:
         "notebooks/curvefits.py.ipynb"
 
 
+checkpoint sera_by_plate:
+    """Get list of all sera and plates they are on."""
+    input:
+        csvs=expand(rules.curvefits.output.csv, plate=plates),
+    output:
+        csv="results/sera/sera_by_plate.csv",
+    params:
+        plates=list(plates),
+    log:
+        "results/logs/sera_by_plate.txt",
+    conda:
+        "environment.yml"
+    script:
+        "scripts/sera_by_plate.py"
+
+
 rule notebook_to_html:
     """Convert Jupyter notebook to HTML"""
     input:
@@ -161,4 +177,5 @@ seqneut_pipeline_outputs = [
     expand(rules.process_counts.output.frac_infectivity_csv, plate=plates),
     expand(rules.curvefits.output.csv, plate=plates),
     rules.qc_process_counts.output.qc_summary,
+    rules.sera_by_plate.output.csv,
 ]

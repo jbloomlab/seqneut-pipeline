@@ -352,6 +352,9 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
     - `./results/plates/{plate}/curvefits_{plate}.html`: HTML rendering of Jupyter notebook that does the curve fitting. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
 
+  - Output related to analyzing neutralization titers on a per-serum basis:
+    - `./results/sera/sera_by_plate.csv` summarizes which plate(s) each serum was run on.
+
   - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures. They do not need to be tracked in the repo.
 
 ## Running pipeline to identify QC failures and fixing them
