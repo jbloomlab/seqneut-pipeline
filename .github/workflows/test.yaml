@@ -1,0 +1,69 @@
+name: Run tests
+
+on:
+  push:
+    branches:
+      - main
+      - add-tests
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: build conda environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: seqneut-pipeline
+          environment-file: environment.yml
+          auto-activate-base: false
+          auto-update-conda: true
+          channel-priority: strict
+
+      - name: lint code with ruff
+        # NOTE: must specify the shell so that conda init updates bashrc see:
+        #      https://github.com/conda-incubator/setup-miniconda#IMPORTANT
+        shell: bash -el {0}
+        run: ruff check .
+
+      - name: lint Jupyter notebooks with ruff
+        shell: bash -el {0}
+        run: nbqa ruff .
+
+      - name: check code format with black
+        shell: bash -el {0}
+        run: black --check .
+
+      - name: check snakemake files format with snakefmt
+        shell: bash -el {0}
+        run: snakefmt --check .
+
+      - name: lint snakemake files with snakemake --lint
+        shell: bash -el {0}
+        run: cd test_example && snakemake -s ../Snakefile --lint && cd ..
+
+      - name: run pipeline with default config
+        shell: bash -el {0}
+        run: >
+          rm -rf docs
+          && cd test_example
+          && rm -rf results
+          && snakemake -s ../Snakefile -j 2
+          && cd ..
+
+      - name: Upload log files in case of error
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: log-files
+          path: test_example/results/logs
+          retention-days: 7
