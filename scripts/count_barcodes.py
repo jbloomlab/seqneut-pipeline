@@ -1,6 +1,6 @@
 """Count barcodes from FASTQ barcodes."""
 
-import os
+
 import sys
 
 import dms_variants.illuminabarcodeparser
@@ -11,7 +11,9 @@ import pandas as pd
 sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
 
 viral_barcodes = pd.read_csv(snakemake.input.viral_library)["barcode"].tolist()
-neut_standard_barcodes = pd.read_csv(snakemake.input.neut_standard_set)["barcode"].tolist()
+neut_standard_barcodes = pd.read_csv(snakemake.input.neut_standard_set)[
+    "barcode"
+].tolist()
 
 valid_barcodes = list({bc.upper() for bc in viral_barcodes + neut_standard_barcodes})
 if len(valid_barcodes) != (len(viral_barcodes) + len(neut_standard_barcodes)):
@@ -41,8 +43,7 @@ counts, fates = parser.parse(snakemake.input.fastq)
 
 # write invalid barcodes
 (
-    counts
-    .query("barcode not in @valid_barcodes")
+    counts.query("barcode not in @valid_barcodes")
     .sort_values(["count", "barcode"], ascending=[False, True])
     .to_csv(snakemake.output.invalid, index=False)
 )
@@ -60,7 +61,7 @@ counts, fates = parser.parse(snakemake.input.fastq)
                         counts.query("barcode not in @valid_barcodes")["count"].sum(),
                     ],
                 }
-            )
+            ),
         ]
     )
     .sort_values(["count", "fate"], ascending=False)

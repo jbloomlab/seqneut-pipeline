@@ -12,4 +12,4 @@ include: os.path.join(config["seqneut-pipeline"], "seqneut-pipeline.smk")
 
 rule all:
     input:
-        seqneut_pipeline_outputs
+        seqneut_pipeline_outputs,

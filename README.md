@@ -1,5 +1,6 @@
 # `seqneut-pipeline` for analyzing sequencing-based neutralization assays
 
+[![Build Status](https://github.com/jbloomlab/seqneut-pipeline/actions/workflows/test.yaml/badge.svg)](https://github.com/jbloomlab/seqneut-pipeline/actions/workflows/test.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -369,5 +370,7 @@ You then need to address these QC failures by doing one of the following:
 
 It is expected that you may have to perform several iterations of running and fixing QC failures.
 
-## Test example
+## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
+
+The code is tested by running this example, as well as formatted with [black](https://github.com/psf/black) and [snakefmt](https://github.com/snakemake/snakefmt) and linted with [ruff](https://github.com/astral-sh/ruff) and [snakemake --lint](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html) via the GitHub Action specified in [.github/workflows/test.yaml](.github/workflows/test.yaml).
