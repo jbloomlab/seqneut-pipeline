@@ -5,6 +5,11 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 """
 
 
+import copy
+import functools
+import os
+
+
 def get_viral_strain_plot_order(viral_libs, config):
     """Get the viral strain plot order."""
     viral_strain_plot_order = {viral_library: None for viral_library in viral_libs}
@@ -162,3 +167,15 @@ def process_plate(plate, plate_params):
     plate_d["samples"] = samples_df
 
     return plate_d
+
+
+@functools.lru_cache
+def sera_plates():
+    """Get dict keyed by serum with values lists of plates with titers for serum."""
+    csv_file = checkpoints.sera_by_plate.get().output.csv
+    return (
+        pd.read_csv(csv_file)
+        .assign(plates=lambda x: x["plates"].str.split(";"))
+        .set_index("serum")["plates"]
+        .to_dict()
+    )

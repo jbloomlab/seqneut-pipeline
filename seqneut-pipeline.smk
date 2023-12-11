@@ -5,9 +5,6 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 """
 
 
-import copy
-import os
-
 import pandas as pd
 
 
@@ -158,6 +155,26 @@ checkpoint sera_by_plate:
         "scripts/sera_by_plate.py"
 
 
+rule serum_titers:
+    """Aggregate and analyze titers for a serum."""
+    input:
+        plate_fits=lambda wc: [
+            rules.curvefits.output.csv.format(plate=plate)
+            for plate in sera_plates()[wc.serum]
+        ],
+    output:
+        per_rep_titers="results/sera/{serum}/titers_per_replicate.csv",
+        median_titers="results/sera/{serum}/titers_median.csv",
+    params:
+        viral_strain_plot_order=viral_strain_plot_order,
+    log:
+        notebook="results/sera/{serum}/titers_{serum}.ipynb",
+    conda:
+        "environment.yml"
+    notebook:
+        "notebooks/serum_titers.py.ipynb"
+
+
 rule notebook_to_html:
     """Convert Jupyter notebook to HTML"""
     input:
@@ -176,6 +193,6 @@ seqneut_pipeline_outputs = [
     expand(rules.count_barcodes.output.counts, sample=samples),
     expand(rules.process_counts.output.frac_infectivity_csv, plate=plates),
     expand(rules.curvefits.output.csv, plate=plates),
+    lambda wc: expand(rules.serum_titers.output.median_titers, serum=sera_plates()),
     rules.qc_process_counts.output.qc_summary,
-    rules.sera_by_plate.output.csv,
 ]
