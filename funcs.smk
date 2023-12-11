@@ -10,35 +10,6 @@ import functools
 import os
 
 
-def get_viral_strain_plot_order(viral_libs, config):
-    """Get the viral strain plot order."""
-    viral_strain_plot_order = {viral_library: None for viral_library in viral_libs}
-    if "viral_strain_plot_order" in config:
-        viral_strain_plot_order = (
-            viral_strain_plot_order | config["viral_strain_plot_order"]
-        )
-        if set(viral_strain_plot_order) != set(viral_libs):
-            raise ValueError(
-                f"{viral_strain_plot_order.keys()=} != {viral_lib.keys()=}"
-            )
-    for viral_library, csv in viral_strain_plot_order.items():
-        viral_library_strains = sorted(
-            set(pd.read_csv(viral_libs[viral_library])["strain"])
-        )
-        if csv:
-            viral_order = pd.read_csv(csv)["strain"].tolist()
-            if len(viral_order) != len(set(viral_order)):
-                raise ValueError(f"duplicate strains in viral_strain_order CSV {csv}")
-            if set(viral_order) != set(viral_library_strains):
-                raise ValueError(
-                    f"viral_strain_order does not have correct strains for {viral_library}"
-                )
-            viral_strain_plot_order[viral_library] = viral_order
-        else:
-            viral_strain_plot_order[viral_library] = viral_library_strains
-    return viral_strain_plot_order
-
-
 def process_plate(plate, plate_params):
     """Process a plot from the configuration."""
 

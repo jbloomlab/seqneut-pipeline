@@ -108,16 +108,15 @@ GCATGGATCCTTTACT,A/Togo/845/2020
 ```
 
 ### viral_strain_plot_order
-An optional dictionary (mapping) of viral library names (as specified in `viral_libraries`) to a CSV with a column titled "strain" that lists the strains in the order they should be plotted.
-If not specified (or set to "null"), plotting is just alphabetical.
-So in general, this key will look like:
+A a CSV with a column named "strain" that lists the strains in the order they should be plotted.
+If not specified or set to "null", then plotting is just alphabetical.
+Must include all strains being used if specified.
+So should look like this:
 ```
-viral_strain_plot_order:
-  pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes_strain_order.csv
-  <potentially more viral libraries specified as name: CSV pairs>
+viral_strain_plot_order: data/viral_strain_plot_order.csv
 ```
 
-The CSV files themselves will just have a column named "strain" specifying the order, such as:
+The CSV file itself will just have a column named "strain" specifying the order, such as:
 ```
 strain
 A/California/07/2009

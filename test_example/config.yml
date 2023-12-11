@@ -13,11 +13,10 @@ seqneut-pipeline: ../
 viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
 
-# If you want to plot the strains in a viral library (in `viral_libraries`) in a
-# specific order, provide a CSV with column "strain" ordered in that order. If you
-# omit or set to "null", will be plotted alphabetically.
-viral_strain_plot_order:
-  pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes_strain_order.csv
+# If you want to plot the viral strains in a specific order, provide a CSV with
+# column "strain" ordered in that order. If you omit or set to "null", strains
+# will be plotted alphabetically.
+viral_strain_plot_order: data/viral_strain_plot_order.csv
 
 # Specify the name of each set of neutralization standards and corresponding CSV
 # with a column "barcode" listing the barcodes

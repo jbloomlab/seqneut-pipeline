@@ -20,7 +20,15 @@ pipeline_subdir = config["seqneut-pipeline"]
 
 viral_libraries = config["viral_libraries"]
 
-viral_strain_plot_order = get_viral_strain_plot_order(viral_libraries, config)
+if ("viral_strain_plot_order" not in config) or (
+    config["viral_strain_plot_order"] is None
+):
+    viral_strain_plot_order = None
+else:
+    viral_strain_plot_order = pd.read_csv(config["viral_strain_plot_order"])[
+        "strain"
+    ].tolist()
+    assert len(viral_strain_plot_order) == len(set(viral_strain_plot_order))
 
 neut_standard_sets = config["neut_standard_sets"]
 
