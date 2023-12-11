@@ -1,6 +1,6 @@
 """Count barcodes from FASTQ barcodes."""
 
-import os
+
 import sys
 
 import dms_variants.illuminabarcodeparser
