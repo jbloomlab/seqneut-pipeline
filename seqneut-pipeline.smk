@@ -8,7 +8,7 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 import copy
 import os
 
-import pandas as pd 
+import pandas as pd
 
 
 snakemake.utils.min_version("7.32")
@@ -42,6 +42,7 @@ samples = samples.set_index("sample").to_dict(orient="index")
 
 # --- Snakemake rules -------------------------------------------------------------------
 
+
 rule count_barcodes:
     """Count barcodes for a sample."""
     input:
@@ -50,7 +51,9 @@ rule count_barcodes:
             viral_libraries[plates[samples[wc.sample]["plate"]]["viral_library"]]
         ),
         neut_standard_set=lambda wc: (
-            neut_standard_sets[plates[samples[wc.sample]["plate"]]["neut_standard_set"]]
+            neut_standard_sets[
+                plates[samples[wc.sample]["plate"]]["neut_standard_set"]
+            ]
         ),
     output:
         counts="results/barcode_counts/{sample}.csv",
@@ -61,7 +64,7 @@ rule count_barcodes:
     conda:
         "envs/count_barcodes.yml"
     log:
-        "results/logs/count_barcodes_{sample}.txt"   
+        "results/logs/count_barcodes_{sample}.txt",
     script:
         "scripts/count_barcodes.py"
 
@@ -151,7 +154,6 @@ rule notebook_to_html:
         "environment.yml"
     shell:
         "jupyter nbconvert --to html {input.notebook} &> {log}"
-
 
 
 seqneut_pipeline_outputs = [

@@ -9,7 +9,9 @@ def get_viral_strain_plot_order(viral_libs, config):
     """Get the viral strain plot order."""
     viral_strain_plot_order = {viral_library: None for viral_library in viral_libs}
     if "viral_strain_plot_order" in config:
-        viral_strain_plot_order = viral_strain_plot_order | config["viral_strain_plot_order"]
+        viral_strain_plot_order = (
+            viral_strain_plot_order | config["viral_strain_plot_order"]
+        )
         if set(viral_strain_plot_order) != set(viral_libs):
             raise ValueError(
                 f"{viral_strain_plot_order.keys()=} != {viral_lib.keys()=}"
@@ -75,40 +77,49 @@ def process_plate(plate, plate_params):
         try:
             samples_df[col] = samples_df[col].astype("Int64")
         except TypeError:
-            pass     
+            pass
 
     # make serum_replicate that defines serum and replicate if needed
-    samples_df = samples_df[req_sample_cols].assign(
-        one_serum_replicate=lambda x: (
-            x.groupby("serum")["replicate"].transform("nunique", dropna=False) == 1
-        ),
-        serum_replicate=lambda x: x.apply(
-            lambda row: (
-                str(row["serum"]) + (
-                    "" if row["one_serum_replicate"] == 1 else f"-{row['replicate']}"
-                )
+    samples_df = (
+        samples_df[req_sample_cols]
+        .assign(
+            one_serum_replicate=lambda x: (
+                x.groupby("serum")["replicate"].transform("nunique", dropna=False) == 1
             ),
-            axis=1,
-        ),
-        sample_noplate=lambda x: x.apply(
-            lambda row: (
-                row["serum_replicate"] + (
-                    ""
-                    if pd.isnull(row["dilution_factor"])
-                    else f"_{row['dilution_factor']}"
-                )
+            serum_replicate=lambda x: x.apply(
+                lambda row: (
+                    str(row["serum"])
+                    + (
+                        ""
+                        if row["one_serum_replicate"] == 1
+                        else f"-{row['replicate']}"
+                    )
+                ),
+                axis=1,
             ),
-            axis=1,
-        ),
-        sample=lambda x: x["sample_noplate"].map(lambda s: f"{plate}_{s}"),
-        plate=plate,
-        plate_replicate=lambda x: x.apply(
-            lambda row: (
-                plate + ("" if row["one_serum_replicate"] else f"{-row['replicate']}")
+            sample_noplate=lambda x: x.apply(
+                lambda row: (
+                    row["serum_replicate"]
+                    + (
+                        ""
+                        if pd.isnull(row["dilution_factor"])
+                        else f"_{row['dilution_factor']}"
+                    )
+                ),
+                axis=1,
             ),
-            axis=1,
-        ),
-    ).drop(columns="one_serum_replicate")
+            sample=lambda x: x["sample_noplate"].map(lambda s: f"{plate}_{s}"),
+            plate=plate,
+            plate_replicate=lambda x: x.apply(
+                lambda row: (
+                    plate
+                    + ("" if row["one_serum_replicate"] else f"{-row['replicate']}")
+                ),
+                axis=1,
+            ),
+        )
+        .drop(columns="one_serum_replicate")
+    )
 
     assert len(samples_df) == samples_df["sample"].nunique(), plate
 
@@ -116,9 +127,9 @@ def process_plate(plate, plate_params):
     dup_rows = (
         samples_df.assign(
             duplicates=lambda x: (
-                x.groupby(["serum_replicate", "dilution_factor"], dropna=False)
-                ["sample"]
-                .transform("count")
+                x.groupby(["serum_replicate", "dilution_factor"], dropna=False)[
+                    "sample"
+                ].transform("count")
             ),
         )
         .query("duplicates > 1")
@@ -128,7 +139,9 @@ def process_plate(plate, plate_params):
         raise ValueError(f"{plate=} has duplicated serum / replicates:\n{dup_rows}")
 
     # make sure dilution_factor is valid
-    if not ((samples_df["dilution_factor"] >= 1) | (samples_df["serum"] == "none")).all():
+    if not (
+        (samples_df["dilution_factor"] >= 1) | (samples_df["serum"] == "none")
+    ).all():
         raise ValueError(f"{plate=} has dilution factors not >= 1 for non-none serum")
 
     # make sure there is at least one "none" sample
@@ -137,8 +150,9 @@ def process_plate(plate, plate_params):
 
     # make sure fastqs are unique
     dup_fastqs = (
-        samples_df
-        .assign(duplicates=lambda x: x.groupby("fastq")["fastq"].transform("count"))
+        samples_df.assign(
+            duplicates=lambda x: x.groupby("fastq")["fastq"].transform("count")
+        )
         .query("duplicates > 1")
         .drop(columns="duplicates")
     )
