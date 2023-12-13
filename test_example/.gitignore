@@ -16,3 +16,10 @@ results/barcode_counts/*
 results/plates/*/*
 !results/plates/qc_process_counts_summary.txt
 !results/plates/*/frac_infectivity.csv
+!results/plates/*/curvefits.csv
+
+!results/sera
+results/sera/*/*
+!results/sera/sera_by_plate.csv
+!results/sera/*/titers_median.csv
+!results/sera/*/titers_per_replicate.csv
