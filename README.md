@@ -347,6 +347,7 @@ The set of full created outputs are as follows (note only some will be tracked d
   - Outputs related to fitting the neutralization curves for each plate:
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate, including the NT50s. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pdf`: PDF rendering the neutralization curves for the plate. You do not need to track this in the repo as a HTML version of a notebook containing the plot is tracked in `./docs/`.
+    - `./results/plates/{plate}/curvefits.pickle`: pickle files with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
     - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
     - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
     - `./results/plates/{plate}/curvefits_{plate}.html`: HTML rendering of Jupyter notebook that does the curve fitting. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.

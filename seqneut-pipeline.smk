@@ -137,6 +137,7 @@ rule curvefits:
     output:
         csv="results/plates/{plate}/curvefits.csv",
         pdf="results/plates/{plate}/curvefits.pdf",
+        pickle="results/plates/{plate}/curvefits.pickle",
     log:
         notebook="results/plates/{plate}/curvefits_{plate}.ipynb",
     params:
@@ -168,6 +169,10 @@ rule serum_titers:
     input:
         plate_fits=lambda wc: [
             rules.curvefits.output.csv.format(plate=plate)
+            for plate in sera_plates()[wc.serum]
+        ],
+        pickles=lambda wc: [
+            rules.curvefits.output.pickle.format(plate=plate)
             for plate in sera_plates()[wc.serum]
         ],
     output:
