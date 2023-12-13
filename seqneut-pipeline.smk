@@ -178,6 +178,7 @@ rule serum_titers:
     output:
         per_rep_titers="results/sera/{serum}/titers_per_replicate.csv",
         median_titers="results/sera/{serum}/titers_median.csv",
+        curves_pdf="results/sera/{serum}/curves.pdf",
     params:
         viral_strain_plot_order=viral_strain_plot_order,
     log:
