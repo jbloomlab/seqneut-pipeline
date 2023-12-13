@@ -179,14 +179,43 @@ rule serum_titers:
         per_rep_titers="results/sera/{serum}/titers_per_replicate.csv",
         median_titers="results/sera/{serum}/titers_median.csv",
         curves_pdf="results/sera/{serum}/curves.pdf",
+        qc_failures="results/sera/{serum}/qc_failures.txt",
     params:
         viral_strain_plot_order=viral_strain_plot_order,
+        qc_thresholds=config["serum_titers_qc_thresholds"],
+        qc_exclusions=lambda wc: (
+            config["serum_titers_qc_exclusions"][wc.serum]
+            if wc.serum in config["serum_titers_qc_exclusions"]
+            else {}
+        ),
     log:
-        notebook="results/sera/{serum}/titers_{serum}.ipynb",
+        notebook="results/sera/{serum}/serum_titers_{serum}.ipynb",
     conda:
         "environment.yml"
     notebook:
         "notebooks/serum_titers.py.ipynb"
+
+
+rule qc_serum_titers:
+    """Check QC serum titeres from `serum_titers` rule."""
+    input:
+        qc_failures=lambda wc: expand(
+            rules.serum_titers.output.qc_failures, serum=sera_plates(),
+        ),
+        serum_titers_htmls=lambda wc: expand(
+            "results/sera/{serum}/serum_titers_{serum}.html",
+            serum=sera_plates(),
+        ),
+    output:
+        qc_summary="results/sera/qc_serum_titers_summary.txt",
+    conda:
+        "environment.yml"
+    params:
+        sera=lambda wc: list(sera_plates()),
+    log:
+        "results/logs/qc_serum_titers.txt",
+    script:
+        "scripts/qc_serum_titers.py"
 
 
 rule notebook_to_html:
@@ -209,4 +238,5 @@ seqneut_pipeline_outputs = [
     expand(rules.curvefits.output.csv, plate=plates),
     lambda wc: expand(rules.serum_titers.output.median_titers, serum=sera_plates()),
     rules.qc_process_counts.output.qc_summary,
+    rules.qc_serum_titers.output.qc_summary,
 ]

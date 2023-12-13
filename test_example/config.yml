@@ -60,8 +60,6 @@ illumina_barcode_parser_params:
 # The samples_csv must have columns "well", "serum", "dilution_factor", "replicate", and "fastq".
 # Other columns (eg,  "notes") are allowed but are not used by the pipeline.
 #
-# Rows beginning with '#' are considered comments and are ignored.
-#
 # The "replicate" column indicates readings that go together as a replicate for that
 # serum, and only has to be unique for that serum within that plate (so you can put any
 # any value if the serum is only run once on that plate).
@@ -121,3 +119,21 @@ plates:
       - C12  # low neut standard frac
     curvefit_params:
       <<: *default_curvefit_params
+
+# QC thresholds on per-serum virus titers. Each serum-virus titer must meet these QC
+# thresholds or be specified in `serum_titers_qc_exclusions`. Otherwise titer is flagged
+# as failing.
+serum_titers_qc_thresholds:
+  min_replicates: 2  # require at least this many replicates for a serum-virus pair
+  max_fold_change_from_median: 3  # no replicate can have a titer more than this fold different from repicate median
+
+# Specify exclusions from `serum_titers_qc_thresholds. For any serum that is failing the QC, put
+# a key under `serum_titer_qc_thresholds` with the name of that serum. Under that serum, in
+# turn put a key with the name of the virus strain. You then have two options. You can either
+# put the subkey `ignore_qc: true` to totally ignore the `serum_tiers_qc_thresholds` for that
+# serum-virus pair. Alternatively, you can put `replicates_to_drop` as key followed by a
+# list of the replicate names to drop (if you put all of the replicates, that virus will be
+# dropped altogether for the tiers). The replicate names here are those rendered in the plots
+# by the `serum_titers` notebook, which are usually of the form "{plate}-{barcode}" possibly
+# with an additional plate-replicate specifier.
+serum_titers_qc_exclusions: {}
