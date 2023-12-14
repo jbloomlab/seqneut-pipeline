@@ -180,6 +180,7 @@ rule serum_titers:
         median_titers="results/sera/{serum}/titers_median.csv",
         curves_pdf="results/sera/{serum}/curves.pdf",
         qc_failures="results/sera/{serum}/qc_failures.txt",
+        pickle="results/sera/{serum}/curvefits.pickle",
     params:
         viral_strain_plot_order=viral_strain_plot_order,
         qc_thresholds=config["serum_titers_qc_thresholds"],
