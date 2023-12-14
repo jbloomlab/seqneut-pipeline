@@ -453,6 +453,10 @@ You will need to address these QC failures by adjusting `serum_titers_qc_exclusi
 It is expected that you may have to perform several iterations of running and fixing QC failures.
 The pipeline will only run to completion when all all QC filters are passed.
 
+## Rendering HTML plots and notebooks in docs
+If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, and per-plate analyses in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).
+This HTML documentation can be rendered via [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) from the `./docs/` directory.
+
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
 
