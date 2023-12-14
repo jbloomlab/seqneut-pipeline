@@ -226,7 +226,8 @@ rule aggregate_titers:
         qc_serum_titer_failures=rules.qc_serum_titers.output.qc_summary,
         pickles=lambda wc: expand(rules.serum_titers.output.pickle, serum=sera_plates()),
         titers=lambda wc: expand(
-            rules.serum_titers.output.median_titers, serum=sera_plates(),
+            rules.serum_titers.output.median_titers,
+            serum=sera_plates(),
         ),
     output:
         pickle="results/aggregated_titers/curvefits.pickle",
