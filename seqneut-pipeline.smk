@@ -201,7 +201,8 @@ rule qc_serum_titers:
     """Check QC serum titeres from `serum_titers` rule."""
     input:
         qc_failures=lambda wc: expand(
-            rules.serum_titers.output.qc_failures, serum=sera_plates(),
+            rules.serum_titers.output.qc_failures,
+            serum=sera_plates(),
         ),
         serum_titers_htmls=lambda wc: expand(
             "results/sera/{serum}/serum_titers_{serum}.html",
