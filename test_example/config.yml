@@ -136,4 +136,16 @@ serum_titers_qc_thresholds:
 # dropped altogether for the tiers). The replicate names here are those rendered in the plots
 # by the `serum_titers` notebook, which are usually of the form "{plate}-{barcode}" possibly
 # with an additional plate-replicate specifier.
-serum_titers_qc_exclusions: {}
+serum_titers_qc_exclusions:
+  M099d0:
+    A/Bangladesh/8002/2021:
+      ignore_qc: true  # many replicates, so ignore the extra variation around median
+    A/Brisbane/02/2018:
+      ignore_qc: true  # many replicates, so ignore the extra variation around median
+    A/Norway/25089/2022:
+      replicates_to_drop:
+        - plate11-CGGATAAAAATGATAT  # NT50 is an outlier
+    A/Wisconsin/588/2019:
+      replicates_to_drop:
+        - plate11-AGTCCTATCCTCAAAT  # NT50 is an outlier
+
