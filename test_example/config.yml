@@ -149,4 +149,27 @@ serum_titers_qc_exclusions:
     A/Wisconsin/588/2019:
       replicates_to_drop:
         - plate11-AGTCCTATCCTCAAAT  # NT50 is an outlier
+    A/SouthAfrica/R16462/2021:
+      replicates_to_drop:
+        - plate2-CTAGCAGATTGTATAA  # NT50 is an outlier
 
+  M099d30:
+    A/Chester/5355/2022:
+      replicates_to_drop:
+        - plate11-CCTCAAAATAACAAGC  # NT50 is an outlier
+    A/Michigan/45/2015:
+      ignore_qc: true  # replicates are close enough to probably be OK
+    A/Paris/31196/2021:
+      ignore_qc: true  # replicates are close enough to probably be OK
+
+  Y044d30:
+    A/Bangladesh/8036/2021:
+      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
+    A/Brisbane/48/2022:
+      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
+    A/India-PUN-NIV328484/2021:
+      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
+    A/Perth/1/2022:
+      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
+    A/Washington/23/2020:
+      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers

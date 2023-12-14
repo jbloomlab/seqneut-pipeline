@@ -24,3 +24,7 @@ results/sera/*/*
 !results/sera/sera_by_plate.csv
 !results/sera/*/titers_median.csv
 !results/sera/*/titers_per_replicate.csv
+
+!results/aggregated_titers
+results/aggregated_titers/*
+!results/aggregated_titers/titers.csv
