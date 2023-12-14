@@ -457,6 +457,8 @@ The pipeline will only run to completion when all all QC filters are passed.
 If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, and per-plate analyses in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).
 This HTML documentation can be rendered via [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) from the `./docs/` directory.
 
+The documentation for the test example for this pipeline is at [https://jbloomlab.github.io/seqneut-pipeline/](https://jbloomlab.github.io/seqneut-pipeline/).
+
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
 

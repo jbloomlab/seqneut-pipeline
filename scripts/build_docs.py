@@ -34,12 +34,12 @@ md_text = [
 
 assert len(snakemake.params.sera) == len(snakemake.input.serum_titers_htmls)
 for serum, f in zip(snakemake.params.sera, snakemake.input.serum_titers_htmls):
-    md_text.append(f"  - [{serum}]({copied_files[f]})")
+    md_text.append(f"  - [{serum}]({os.path.basename(copied_files[f])})")
 
 md_text += ["", "## Analyses of per-plate counts and curve fits"]
 assert len(snakemake.params.plates) == len(snakemake.input.process_counts_htmls)
 for plate, f in zip(snakemake.params.plates, snakemake.input.process_counts_htmls):
-    md_text.append(f"  - [{plate}]({copied_files[f]})")
+    md_text.append(f"  - [{plate}]({os.path.basename(copied_files[f])})")
 
 md_text = "\n".join(md_text)
 
