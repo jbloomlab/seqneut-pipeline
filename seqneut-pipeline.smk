@@ -220,6 +220,28 @@ rule qc_serum_titers:
         "scripts/qc_serum_titers.py"
 
 
+rule aggregate_titers:
+    """Aggregate all serum titers."""
+    input:
+        qc_serum_titer_failures=rules.qc_serum_titers.output.qc_summary,
+        pickles=lambda wc: expand(rules.serum_titers.output.pickle, serum=sera_plates()),
+        titers=lambda wc: expand(
+            rules.serum_titers.output.median_titers, serum=sera_plates(),
+        ),
+    output:
+        pickle="results/aggregated_titers/curvefits.pickle",
+        titers="results/aggregated_titers/titers.csv",
+        titers_chart="results/aggregated_titers/titers.html",
+    params:
+        viral_strain_plot_order=viral_strain_plot_order,
+    conda:
+        "environment.ymml"
+    log:
+        notebook="results/aggregated_titers/aggregate_titers.ipynb",
+    notebook:
+        "notebooks/aggregate_titers.py.ipynb"
+
+
 rule notebook_to_html:
     """Convert Jupyter notebook to HTML"""
     input:
@@ -235,10 +257,8 @@ rule notebook_to_html:
 
 
 seqneut_pipeline_outputs = [
-    expand(rules.count_barcodes.output.counts, sample=samples),
-    expand(rules.process_counts.output.frac_infectivity_csv, plate=plates),
-    expand(rules.curvefits.output.csv, plate=plates),
-    lambda wc: expand(rules.serum_titers.output.median_titers, serum=sera_plates()),
     rules.qc_process_counts.output.qc_summary,
     rules.qc_serum_titers.output.qc_summary,
+    rules.aggregate_titers.output.titers,
+    rules.aggregate_titers.output.pickle,
 ]
