@@ -59,10 +59,14 @@ jobs:
           && snakemake --use-conda -j 2
           && cd ..
 
-      - name: Upload log files in case of error
+      - name: test titers as expected
+        shell: bash -el {0}
+        run: cd test_example && python test_titers_as_expected.py && cd ..
+
+      - name: upload results in case of error
         uses: actions/upload-artifact@v3
         if: failure()
         with:
-          name: log-files
+          name: results
           path: test_example/results
           retention-days: 7
