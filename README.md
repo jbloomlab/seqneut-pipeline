@@ -329,6 +329,44 @@ Typically you might either set to 1, or "false" if you want to let the top be a 
 Fix the bottom plateau of the neutralization curve to this value.
 Typicallyou might either set to 0, or "false" if you want to let the bottom be a free parameter.
 
+### serum_titers_qc_thresholds
+This key defines quality-control thresholds to apply in `serum_titers` when aggregating replicate titers for each virus for each serum.
+These thresholds are designed to ensure that the serum titers reported by the pipeline are robust (sufficient replicates and sufficiently similar to the median).
+It defines two variables, `min_replicates` and `max_fold_change_from_median` as follows:
+```
+serum_titers_qc_thresholds:
+  min_replicates: 2
+  max_fold_change_from_median: 3
+```
+
+The `min_replicates` key defines the minimum number of replicates that must be measured for each serum, and the `max_fold_change` specifies the maximum fold-change from the serum-virus median that any replicate can have.
+
+### serum_titers_qc_exclusions
+This key defines exclusions of replicates and QC thresholds in `serum_titers` to pass `serum_titers_qc_thresholds`.
+Typically, you would set this if you have serum titers failing `serum_titer_qc_thresholds`.
+It is keyed by each serum, then any viruses for that serum where we need to exclude replicates or thresholds.
+Specifically, it should look like this:
+```
+serum_titers_qc_exclusions:
+
+  M099d0:
+    A/Bangladesh/8002/2021:
+      ignore_qc: true  # many replicates, so ignore the extra variation around median
+    A/Brisbane/02/2018:
+      ignore_qc: true  # many replicates, so ignore the extra variation around median
+    A/Norway/25089/2022:
+      replicates_to_drop:
+        - plate11-CGGATAAAAATGATAT  # NT50 is an outlier
+    A/Wisconsin/588/2019:
+      replicates_to_drop:
+        - plate11-AGTCCTATCCTCAAAT  # NT50 is an outlier
+
+  <keys for additional sera>
+```
+Under each virus, you can set `ignore_qc: true` if you simply want to ignore any QC failures for that virus for that serum.
+
+If you want to exclude specific replicates, instead under the virus key set `replicates_to_drop` to be a name of the replicate for that serum-virus as named in `serum_titers`.
+
 ## Output of the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
 We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
@@ -369,7 +407,7 @@ If you run the pipeline via `snakemake` with the `--keep-going` flag as recommen
 However, if there are any QC failures that will keep it from running to completion.
 You will then need to manually look at the results, identify the problem (typically problematic barcodes or samples / wells), and decide how to fix the problem by using the YAML configuration file to exclude problematic barcodes / samples.
 
-For the processing of counts to fraction infectivity, the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
+For the processing of counts to fraction infectivity (`process_counts`), the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
 You then need to address these QC failures by doing one of the following:
 
  - Removing the offending barcodes by adding them to `barcodes_to_drop` for that plate. (If the barcode is missing in all plates, you might remove from `viral_barcodes` or `neut_standard_sets`.)
@@ -378,7 +416,11 @@ You then need to address these QC failures by doing one of the following:
 
  - Adjusting the `process_counts_qc_thresholds` for that plate to be more lenient.
 
+For the computation of serum titers against specific viruses, the file `./results/sera/qc_serum_titers_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
+You will need to address these QC failures by adjusting `serum_titers_qc_exclusions` to either not worry if a serum-virus pair fails the QC filters or dropping specific serum-virus-replicate measurements.
+
 It is expected that you may have to perform several iterations of running and fixing QC failures.
+The pipeline will only run to completion when all all QC filters are passed.
 
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.

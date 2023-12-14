@@ -137,6 +137,7 @@ serum_titers_qc_thresholds:
 # by the `serum_titers` notebook, which are usually of the form "{plate}-{barcode}" possibly
 # with an additional plate-replicate specifier.
 serum_titers_qc_exclusions:
+
   M099d0:
     A/Bangladesh/8002/2021:
       ignore_qc: true  # many replicates, so ignore the extra variation around median
