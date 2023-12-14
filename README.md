@@ -11,6 +11,7 @@
 This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://research.fredhutch.org/bloom/en.html).
 See **[add link to Loes et al when available]** for a description of these assays.
 That paper is also the scientific citation for this analysis pipeline.
+See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a list of the contributors to this pipeline.
 
 Essentially, this pipeline goes from the FASTQ files that represent the counts of each barcoded viral variant to the computed neutralization titers for each sera.
 The titers are computed by fitting Hill-curve style neutralization curves using the [neutcurve](https://jbloomlab.github.io/neutcurve/) package; see the documentation for the details of these curves.
@@ -93,6 +94,26 @@ Location of the `seqneut-pipeline` relative to the top-level repo.
 This will almost always be a subdirectory of the same name, so this key will be as shown below unless you have a good reason to do otherwise:
 
         seqneut-pipeline: seqneut-pipeline
+
+### docs
+Location where we create the `./docs/` subdirectory with HTMLs for rendering on GitHub pages.
+This will almost always be `docs`, so this key will be as shown below unless you have a good reason to do otherwise:
+
+        docs: docs
+
+### description
+Description of pipeline, used in the HTML docs rendering.
+Should include title (with markdown `#` heading, authors and/or citation, and link to GitHub repo.
+For instance:
+```
+description: |
+  # <title>
+  <short description>
+
+  <authors and/or link to citation>
+
+  See <GitHub repo link> for code and numerical data.
+```
 
 ### viral_libraries
 A dictionary (mapping) of viral library names to CSV files holding these libraries.

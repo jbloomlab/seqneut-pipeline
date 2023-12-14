@@ -8,6 +8,24 @@
 # ALMOST CERTAINLY BE "seqneut-pipeline" FOR REAL ANALYSES**
 seqneut-pipeline: ../
 
+# Location where we place the docs for rendering on GitHub Pages, typically "docs"
+# **FOR THIS TEST EXAMPLE ONLY, THIS LOCATION IS "../docs" BUT IT SHOULD
+# ALMOST CERTAINLY BE "docs" FOR REAL ANALYSES**
+docs: ../docs
+
+# Description of the project in markdown, should have title, authors and/or citation,
+# and link to the GitHub repo.
+# **CHANGE THIS TO A GOOD DESCRIPTION OF YOUR PROJECT**
+description: |
+  # Test example for [seqneut-pipeline](https://github.com/jbloomlab/seqneut-pipeline)
+  This is a small toy-example created by subsetting a real experiment dataset.
+
+  See [https://github.com/jbloomlab/seqneut-pipeline](https://github.com/jbloomlab/seqneut-pipeline)
+  for the computer code and underlying numerical data.
+
+  See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a
+  list of all contributors to the pipeline.
+
 # Specify each viral library and corresponding CSV matching barcode to strain name
 # CSV must have columns "barcode" and "strain"
 viral_libraries:
