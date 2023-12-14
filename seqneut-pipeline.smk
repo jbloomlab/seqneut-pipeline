@@ -270,18 +270,7 @@ rule build_docs:
             plate=plates,
         ),
     output:
-        index=os.path.join(config["docs"], "index.html"),
-        titers_chart=os.path.join(
-            config["docs"], os.path.basename(rules.aggregate_titers.output.titers_chart),
-        ),
-        serum_titers_htmls=lambda wc: expand(
-            os.path.join(config["docs"], "serum_titers_{serum}.html"),
-            serum=sera_plates(),
-        ),
-        process_counts_htmls=expand(
-            os.path.join(config["docs"], "process_counts_{plate}.html"),
-            plate=plates,
-        ),
+        docs=directory(config["docs"]),
     params:
         description=config["description"],
         sera=lambda wc: list(sera_plates()),
@@ -299,5 +288,5 @@ seqneut_pipeline_outputs = [
     rules.qc_serum_titers.output.qc_summary,
     rules.aggregate_titers.output.titers,
     rules.aggregate_titers.output.pickle,
-    rules.build_docs.output.index,
+    rules.build_docs.output.docs,
 ]
