@@ -17,6 +17,9 @@ The titers are computed by fitting Hill-curve style neutralization curves using 
 The titers are summarized by the neutralization titer 50% (NT50), which is the serum dilution factor at which the serum neutralizations half of the viral infectivity.
 So a NT50 of 200 means that at a 1:200 dilution of the serum, half the viral infectivity is neutralized.
 Note that the NT50 is the reciprocal of the IC50 (concentration of serum at which 50% of viral infectivity is neutralized).
+Typically there will be multiple replicates, and the reported titer is the median among replicates.
+
+Note also there are several quality control steps with thresholds and exclusions specified in the configuration YAML (see below), and the pipeline will only run to completion once all quality-control is passed.
 
 ## Using this pipeline
 This pipeline is designed to be included as a modular portion of a larger [snakemake](https://snakemake.readthedocs.io/) analysis.
@@ -367,9 +370,10 @@ Under each virus, you can set `ignore_qc: true` if you simply want to ignore any
 
 If you want to exclude specific replicates, instead under the virus key set `replicates_to_drop` to be a name of the replicate for that serum-virus as named in `serum_titers`.
 
-## Output of the pipeline
+## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
 We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
+The key results file if the pipeline runs to completion in `./results/aggregated_titers/titers.csv`.
 The set of full created outputs are as follows (note only some will be tracked depending on your `.gitignore`):
 
   - Outputs related to barcode counting:
@@ -387,7 +391,7 @@ The set of full created outputs are as follows (note only some will be tracked d
   - Outputs related to fitting the neutralization curves for each plate:
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate, including the NT50s. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pdf`: PDF rendering the neutralization curves for the plate. You do not need to track this in the repo as a HTML version of a notebook containing the plot is tracked in `./docs/`.
-    - `./results/plates/{plate}/curvefits.pickle`: pickle files with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
+    - `./results/plates/{plate}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
     - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
     - `./results/plates/{plate}/curvefits_{plate}.html`: HTML rendering of Jupyter notebook that does the curve fitting. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
 
@@ -396,9 +400,15 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/sera/{serum}/titers_median.csv`: titer for each virus against the serum, reported as the median across replicates. You should track this file in the repo.
     - `./results/sera/{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the serum. You should track this file in the repo.
     - `./results/sera/{serum}/curves.pdf`: PDF rendering of the neutralization curves for the serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
-    - `./results/sera/{serum}/curvefits.pickle`: pickle files with the `neutcurve.CurveFits` object for this serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
+    - `./results/sera/{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
     - `./results/sera/{serum}/serum_titers_{serum}.ipynb`: Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
     - `./results/sera/{serum}/serum_titers_{serum}.html`: HTML rendering of the Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+
+  - Results related to aggregated titers across all sera after applying all quality control:
+    - `./results/aggregated_titers/titers.csv`: titers for all sera / virus (median of replicates). You should track this file as it has the final processed results.
+    - `./results/aggregated_titers/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object holding all final curves. You do not need to track this in the repo, but if you have further code that makes specific plots you may want to use this.
+    - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this in the repo as it is rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/aggregated_titers/aggregate_titers.ipynb`: Jupyter notebook that aggregates all the titers. You do not need to track this in the repo.
 
   - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures. They do not need to be tracked in the repo.
 
