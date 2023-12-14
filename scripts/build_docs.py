@@ -27,7 +27,7 @@ md_text = [
     "[TOC]",
     "",
     "## Plot of titers for all sera",
-    f"[Interactive chart of titers]({copied_files[snakemake.input.titers_chart]})",
+    f"[Interactive chart of titers]({os.path.basename(copied_files[snakemake.input.titers_chart])})",
     "",
     "## Analyses of per-serum neutralization titers",
 ]
