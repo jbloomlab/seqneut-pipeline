@@ -149,6 +149,9 @@ serum_titers_qc_exclusions:
     A/Wisconsin/588/2019:
       replicates_to_drop:
         - plate11-AGTCCTATCCTCAAAT  # NT50 is an outlier
+    A/SouthAfrica/R16462/2021:
+      replicates_to_drop:
+        - plate2-CTAGCAGATTGTATAA  # NT50 is an outlier
 
   M099d30:
     A/Chester/5355/2022:
