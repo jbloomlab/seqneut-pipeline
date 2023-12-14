@@ -64,5 +64,5 @@ jobs:
         if: failure()
         with:
           name: log-files
-          path: test_example/results/logs
+          path: test_example/results
           retention-days: 7
