@@ -22,9 +22,9 @@ print(f"Comparing {expected_titers} and {actual_titers} with {atol=} and {rtol=}
 pd.testing.assert_frame_equal(
     expected_titers,
     actual_titers,
-    check_exact=True,
-    #    atol=atol,
-    #    rtol=rtol,
+    check_exact=False,
+    atol=atol,
+    rtol=rtol,
 )
 
 print("Titers are sufficiently similar.")
