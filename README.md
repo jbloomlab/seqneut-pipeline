@@ -63,6 +63,8 @@ rule all:
 
 In addition, you need to create the configuration file `config.yml` and ensure it includes the appropriate configuration for `seqneut-pipeline` as described below.
 
+To track the correct files in the created results, we suggest you copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
+
 Finally, you need to create a `conda` environment that minimally includes the packages needed to run the pipeline, which are a recent version of [snakemake](https://snakemake.readthedocs.io/) and [pandas](https://pandas.pydata.org/).
 You can either create your own environment containing these, or simply build and use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. So if you are using that environment, you can simply run the pipeline with:
 ```
@@ -108,16 +110,15 @@ GCATGGATCCTTTACT,A/Togo/845/2020
 ```
 
 ### viral_strain_plot_order
-An optional dictionary (mapping) of viral library names (as specified in `viral_libraries`) to a CSV with a column titled "strain" that lists the strains in the order they should be plotted.
-If not specified (or set to "null"), plotting is just alphabetical.
-So in general, this key will look like:
+A a CSV with a column named "strain" that lists the strains in the order they should be plotted.
+If not specified or set to "null", then plotting is just alphabetical.
+Must include all strains being used if specified.
+So should look like this:
 ```
-viral_strain_plot_order:
-  pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes_strain_order.csv
-  <potentially more viral libraries specified as name: CSV pairs>
+viral_strain_plot_order: data/viral_strain_plot_order.csv
 ```
 
-The CSV files themselves will just have a column named "strain" specifying the order, such as:
+The CSV file itself will just have a column named "strain" specifying the order, such as:
 ```
 strain
 A/California/07/2009
@@ -328,6 +329,44 @@ Typically you might either set to 1, or "false" if you want to let the top be a 
 Fix the bottom plateau of the neutralization curve to this value.
 Typicallyou might either set to 0, or "false" if you want to let the bottom be a free parameter.
 
+### serum_titers_qc_thresholds
+This key defines quality-control thresholds to apply in `serum_titers` when aggregating replicate titers for each virus for each serum.
+These thresholds are designed to ensure that the serum titers reported by the pipeline are robust (sufficient replicates and sufficiently similar to the median).
+It defines two variables, `min_replicates` and `max_fold_change_from_median` as follows:
+```
+serum_titers_qc_thresholds:
+  min_replicates: 2
+  max_fold_change_from_median: 3
+```
+
+The `min_replicates` key defines the minimum number of replicates that must be measured for each serum, and the `max_fold_change` specifies the maximum fold-change from the serum-virus median that any replicate can have.
+
+### serum_titers_qc_exclusions
+This key defines exclusions of replicates and QC thresholds in `serum_titers` to pass `serum_titers_qc_thresholds`.
+Typically, you would set this if you have serum titers failing `serum_titer_qc_thresholds`.
+It is keyed by each serum, then any viruses for that serum where we need to exclude replicates or thresholds.
+Specifically, it should look like this:
+```
+serum_titers_qc_exclusions:
+
+  M099d0:
+    A/Bangladesh/8002/2021:
+      ignore_qc: true  # many replicates, so ignore the extra variation around median
+    A/Brisbane/02/2018:
+      ignore_qc: true  # many replicates, so ignore the extra variation around median
+    A/Norway/25089/2022:
+      replicates_to_drop:
+        - plate11-CGGATAAAAATGATAT  # NT50 is an outlier
+    A/Wisconsin/588/2019:
+      replicates_to_drop:
+        - plate11-AGTCCTATCCTCAAAT  # NT50 is an outlier
+
+  <keys for additional sera>
+```
+Under each virus, you can set `ignore_qc: true` if you simply want to ignore any QC failures for that virus for that serum.
+
+If you want to exclude specific replicates, instead under the virus key set `replicates_to_drop` to be a name of the replicate for that serum-virus as named in `serum_titers`.
+
 ## Output of the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
 We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
@@ -348,9 +387,18 @@ The set of full created outputs are as follows (note only some will be tracked d
   - Outputs related to fitting the neutralization curves for each plate:
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate, including the NT50s. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pdf`: PDF rendering the neutralization curves for the plate. You do not need to track this in the repo as a HTML version of a notebook containing the plot is tracked in `./docs/`.
-    - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
+    - `./results/plates/{plate}/curvefits.pickle`: pickle files with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
     - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
     - `./results/plates/{plate}/curvefits_{plate}.html`: HTML rendering of Jupyter notebook that does the curve fitting. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+
+  - Output related to analyzing neutralization titers on a per-serum basis, aggregating across plates:
+    - `./results/sera/sera_by_plate.csv` summarizes which plate(s) each serum was run on.
+    - `./results/sera/{serum}/titers_median.csv`: titer for each virus against the serum, reported as the median across replicates. You should track this file in the repo.
+    - `./results/sera/{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the serum. You should track this file in the repo.
+    - `./results/sera/{serum}/curves.pdf`: PDF rendering of the neutralization curves for the serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
+    - `./results/sera/{serum}/curvefits.pickle`: pickle files with the `neutcurve.CurveFits` object for this serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
+    - `./results/sera/{serum}/serum_titers_{serum}.ipynb`: Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
+    - `./results/sera/{serum}/serum_titers_{serum}.html`: HTML rendering of the Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
 
   - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures. They do not need to be tracked in the repo.
 
@@ -359,7 +407,7 @@ If you run the pipeline via `snakemake` with the `--keep-going` flag as recommen
 However, if there are any QC failures that will keep it from running to completion.
 You will then need to manually look at the results, identify the problem (typically problematic barcodes or samples / wells), and decide how to fix the problem by using the YAML configuration file to exclude problematic barcodes / samples.
 
-For the processing of counts to fraction infectivity, the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
+For the processing of counts to fraction infectivity (`process_counts`), the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
 You then need to address these QC failures by doing one of the following:
 
  - Removing the offending barcodes by adding them to `barcodes_to_drop` for that plate. (If the barcode is missing in all plates, you might remove from `viral_barcodes` or `neut_standard_sets`.)
@@ -368,7 +416,11 @@ You then need to address these QC failures by doing one of the following:
 
  - Adjusting the `process_counts_qc_thresholds` for that plate to be more lenient.
 
+For the computation of serum titers against specific viruses, the file `./results/sera/qc_serum_titers_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
+You will need to address these QC failures by adjusting `serum_titers_qc_exclusions` to either not worry if a serum-virus pair fails the QC filters or dropping specific serum-virus-replicate measurements.
+
 It is expected that you may have to perform several iterations of running and fixing QC failures.
+The pipeline will only run to completion when all all QC filters are passed.
 
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.

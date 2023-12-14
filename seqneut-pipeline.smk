@@ -5,9 +5,6 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 """
 
 
-import copy
-import os
-
 import pandas as pd
 
 
@@ -23,7 +20,15 @@ pipeline_subdir = config["seqneut-pipeline"]
 
 viral_libraries = config["viral_libraries"]
 
-viral_strain_plot_order = get_viral_strain_plot_order(viral_libraries, config)
+if ("viral_strain_plot_order" not in config) or (
+    config["viral_strain_plot_order"] is None
+):
+    viral_strain_plot_order = None
+else:
+    viral_strain_plot_order = pd.read_csv(config["viral_strain_plot_order"])[
+        "strain"
+    ].tolist()
+    assert len(viral_strain_plot_order) == len(set(viral_strain_plot_order))
 
 neut_standard_sets = config["neut_standard_sets"]
 
@@ -132,6 +137,7 @@ rule curvefits:
     output:
         csv="results/plates/{plate}/curvefits.csv",
         pdf="results/plates/{plate}/curvefits.pdf",
+        pickle="results/plates/{plate}/curvefits.pickle",
     log:
         notebook="results/plates/{plate}/curvefits_{plate}.ipynb",
     params:
@@ -140,6 +146,78 @@ rule curvefits:
         "environment.yml"
     notebook:
         "notebooks/curvefits.py.ipynb"
+
+
+checkpoint sera_by_plate:
+    """Get list of all sera and plates they are on."""
+    input:
+        csvs=expand(rules.curvefits.output.csv, plate=plates),
+    output:
+        csv="results/sera/sera_by_plate.csv",
+    params:
+        plates=list(plates),
+    log:
+        "results/logs/sera_by_plate.txt",
+    conda:
+        "environment.yml"
+    script:
+        "scripts/sera_by_plate.py"
+
+
+rule serum_titers:
+    """Aggregate and analyze titers for a serum."""
+    input:
+        plate_fits=lambda wc: [
+            rules.curvefits.output.csv.format(plate=plate)
+            for plate in sera_plates()[wc.serum]
+        ],
+        pickles=lambda wc: [
+            rules.curvefits.output.pickle.format(plate=plate)
+            for plate in sera_plates()[wc.serum]
+        ],
+    output:
+        per_rep_titers="results/sera/{serum}/titers_per_replicate.csv",
+        median_titers="results/sera/{serum}/titers_median.csv",
+        curves_pdf="results/sera/{serum}/curves.pdf",
+        qc_failures="results/sera/{serum}/qc_failures.txt",
+        pickle="results/sera/{serum}/curvefits.pickle",
+    params:
+        viral_strain_plot_order=viral_strain_plot_order,
+        qc_thresholds=config["serum_titers_qc_thresholds"],
+        qc_exclusions=lambda wc: (
+            config["serum_titers_qc_exclusions"][wc.serum]
+            if wc.serum in config["serum_titers_qc_exclusions"]
+            else {}
+        ),
+    log:
+        notebook="results/sera/{serum}/serum_titers_{serum}.ipynb",
+    conda:
+        "environment.yml"
+    notebook:
+        "notebooks/serum_titers.py.ipynb"
+
+
+rule qc_serum_titers:
+    """Check QC serum titeres from `serum_titers` rule."""
+    input:
+        qc_failures=lambda wc: expand(
+            rules.serum_titers.output.qc_failures,
+            serum=sera_plates(),
+        ),
+        serum_titers_htmls=lambda wc: expand(
+            "results/sera/{serum}/serum_titers_{serum}.html",
+            serum=sera_plates(),
+        ),
+    output:
+        qc_summary="results/sera/qc_serum_titers_summary.txt",
+    conda:
+        "environment.yml"
+    params:
+        sera=lambda wc: list(sera_plates()),
+    log:
+        "results/logs/qc_serum_titers.txt",
+    script:
+        "scripts/qc_serum_titers.py"
 
 
 rule notebook_to_html:
@@ -160,5 +238,7 @@ seqneut_pipeline_outputs = [
     expand(rules.count_barcodes.output.counts, sample=samples),
     expand(rules.process_counts.output.frac_infectivity_csv, plate=plates),
     expand(rules.curvefits.output.csv, plate=plates),
+    lambda wc: expand(rules.serum_titers.output.median_titers, serum=sera_plates()),
     rules.qc_process_counts.output.qc_summary,
+    rules.qc_serum_titers.output.qc_summary,
 ]

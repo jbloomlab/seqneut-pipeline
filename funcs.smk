@@ -5,33 +5,9 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 """
 
 
-def get_viral_strain_plot_order(viral_libs, config):
-    """Get the viral strain plot order."""
-    viral_strain_plot_order = {viral_library: None for viral_library in viral_libs}
-    if "viral_strain_plot_order" in config:
-        viral_strain_plot_order = (
-            viral_strain_plot_order | config["viral_strain_plot_order"]
-        )
-        if set(viral_strain_plot_order) != set(viral_libs):
-            raise ValueError(
-                f"{viral_strain_plot_order.keys()=} != {viral_lib.keys()=}"
-            )
-    for viral_library, csv in viral_strain_plot_order.items():
-        viral_library_strains = sorted(
-            set(pd.read_csv(viral_libs[viral_library])["strain"])
-        )
-        if csv:
-            viral_order = pd.read_csv(csv)["strain"].tolist()
-            if len(viral_order) != len(set(viral_order)):
-                raise ValueError(f"duplicate strains in viral_strain_order CSV {csv}")
-            if set(viral_order) != set(viral_library_strains):
-                raise ValueError(
-                    f"viral_strain_order does not have correct strains for {viral_library}"
-                )
-            viral_strain_plot_order[viral_library] = viral_order
-        else:
-            viral_strain_plot_order[viral_library] = viral_library_strains
-    return viral_strain_plot_order
+import copy
+import functools
+import os
 
 
 def process_plate(plate, plate_params):
@@ -162,3 +138,15 @@ def process_plate(plate, plate_params):
     plate_d["samples"] = samples_df
 
     return plate_d
+
+
+@functools.lru_cache
+def sera_plates():
+    """Get dict keyed by serum with values lists of plates with titers for serum."""
+    csv_file = checkpoints.sera_by_plate.get().output.csv
+    return (
+        pd.read_csv(csv_file)
+        .assign(plates=lambda x: x["plates"].str.split(";"))
+        .set_index("serum")["plates"]
+        .to_dict()
+    )
