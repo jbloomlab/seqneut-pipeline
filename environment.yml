@@ -10,6 +10,7 @@ dependencies:
   - black-jupyter
   - jupyterlab
   - mamba
+  - markdown=3.5
   - nbqa
   - pandas=2.1
   - papermill=2.4

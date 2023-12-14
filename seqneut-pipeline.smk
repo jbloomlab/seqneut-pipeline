@@ -257,9 +257,36 @@ rule notebook_to_html:
         "jupyter nbconvert --to html {input.notebook} &> {log}"
 
 
+rule build_docs:
+    """Build the HTML documentation."""
+    input:
+        titers_chart=rules.aggregate_titers.output.titers_chart,
+        serum_titers_htmls=lambda wc: expand(
+            "results/sera/{serum}/serum_titers_{serum}.html",
+            serum=sera_plates(),
+        ),
+        process_counts_htmls=expand(
+            "results/plates/{plate}/process_counts_{plate}.html",
+            plate=plates,
+        ),
+    output:
+        docs=directory(config["docs"]),
+    params:
+        description=config["description"],
+        sera=lambda wc: list(sera_plates()),
+        plates=list(plates),
+    conda:
+        "environment.yml"
+    log:
+        "results/logs/build_docs.txt",
+    script:
+        "scripts/build_docs.py"
+
+
 seqneut_pipeline_outputs = [
     rules.qc_process_counts.output.qc_summary,
     rules.qc_serum_titers.output.qc_summary,
     rules.aggregate_titers.output.titers,
     rules.aggregate_titers.output.pickle,
+    rules.build_docs.output.docs,
 ]
