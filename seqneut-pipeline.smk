@@ -97,9 +97,10 @@ rule process_counts:
     log:
         notebook="results/plates/{plate}/process_counts_{plate}.ipynb",
     params:
-        samples=lambda wc: plates[wc.plate]["samples"]["sample"],
+        # pass DataFrames/Series as dict/list for snakemake params rerun triggers
+        samples=lambda wc: plates[wc.plate]["samples"]["sample"].tolist(),
         plate_params=lambda wc: {
-            param: val
+            param: (val if param != "samples" else val.to_dict())
             for (param, val) in plates[wc.plate].items()
             if param not in {"curvefit_params"}
         },
