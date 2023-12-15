@@ -65,6 +65,11 @@ rule all:
         seqneut_pipeline_outputs
 ```
 
+In this `Snakefile`, the `seqneut_pipeline_outputs` specify files created by the pipeline.
+Two of these may be of interest for you to use in additional rules you define in `Snakefile`:
+  - `./results/aggregated_titers/titers.csv`: CSV with the final (median across replicates) titers for each serum-virus pair after applying quality control filters.
+  - `./results/aggregated_titers/curvefits.pickle`: a pickled [neutcurve.CurveFits](https://jbloomlab.github.io/neutcurve/neutcurve.curvefits.html#neutcurve.curvefits.CurveFits) object with all of the curve fits for all serum-virus-replicates after applying the QC filters. You can use the methods of this object to make plots of neutralization curves for specific sera / viruses / replicates.
+
 In addition, you need to create the configuration file `config.yml` and ensure it includes the appropriate configuration for `seqneut-pipeline` as described below.
 
 To track the correct files in the created results, we suggest you copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
@@ -359,11 +364,22 @@ These thresholds are designed to ensure that the serum titers reported by the pi
 It defines two variables, `min_replicates` and `max_fold_change_from_median` as follows:
 ```
 serum_titers_qc_thresholds:
+  min_frac_infecitivity: 0.7
   min_replicates: 2
   max_fold_change_from_median: 3
 ```
 
-The `min_replicates` key defines the minimum number of replicates that must be measured for each serum, and the `max_fold_change` specifies the maximum fold-change from the serum-virus median that any replicate can have.
+Specifically:
+
+#### min_frac_infectivity
+At least one dilution for a serum-virus pair must be > this to fit a curve. If `min_frac_infectivity` is not >0.5, there is no guarantee there will even be an IC50 after fitting.
+
+#### min_replicates
+Minimum number of replicates that must be measured for each serum-virus to report a titer.
+
+#### max_fold_change
+Maximum fold change any individual neutralization titer can have from median for that serum-virus.
+Designed to identify outliers.
 
 ### serum_titers_qc_exclusions
 This key defines exclusions of replicates and QC thresholds in `serum_titers` to pass `serum_titers_qc_thresholds`.
