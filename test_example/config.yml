@@ -142,6 +142,7 @@ plates:
 # thresholds or be specified in `serum_titers_qc_exclusions`. Otherwise titer is flagged
 # as failing.
 serum_titers_qc_thresholds:
+  min_frac_infectivity: 0.7  # require one concentration with frac_infectivity >= this, if not >0.5 will be no IC50
   min_replicates: 2  # require at least this many replicates for a serum-virus pair
   max_fold_change_from_median: 3  # no replicate can have a titer more than this fold different from repicate median
 
