@@ -237,7 +237,7 @@ rule aggregate_titers:
     params:
         viral_strain_plot_order=viral_strain_plot_order,
     conda:
-        "environment.ymml"
+        "environment.yml"
     log:
         notebook="results/aggregated_titers/aggregate_titers.ipynb",
     notebook:
