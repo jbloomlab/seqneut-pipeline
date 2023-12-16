@@ -467,7 +467,7 @@ For the computation of serum titers against specific viruses, the file `./result
 You will need to address these QC failures by adjusting `serum_titers_qc_exclusions` to either not worry if a serum-virus pair fails the QC filters or dropping specific serum-virus-replicate measurements.
 
 It is expected that you may have to perform several iterations of running and fixing QC failures.
-The pipeline will only run to completion when all all QC filters are passed.
+The pipeline will only run to completion when all QC filters are passed.
 
 ## Rendering HTML plots and notebooks in docs
 If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, and per-plate analyses in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).
