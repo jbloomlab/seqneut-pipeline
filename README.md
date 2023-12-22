@@ -295,7 +295,7 @@ Designed to check against excessive neutralization standard use.
 ##### barcode_consistency_frac
 Require that the frequency (fraction of counts) for each barcode has a fold-change from the median across samples that does not exceed this amount in the samples where it should be consistent.
 Specifically, in the no-serum samples all viral barcodes should be at consistent relative levels across samples, and this is checked using this threshold.
-Likewise, in all samples the neutralization standard barcodes should be at consistent levels, and this is checked using this threshold.
+Likewise, in all samples the neutralization standard barcodes should be at consistent levels, and this is checked using this threshold.This is not used as a filter, but is used to flag samples that should be examined.
 
 ##### min_viral_barcode_frac
 Require that each viral barcode comprises at least this fraction of total counts in the no-serum sample.
@@ -319,7 +319,7 @@ Designed to make sure we have enough dilutions to actually fit a curve.
 
 ##### max_frac_infectivity
 Require all fraction infectivity values to be <= this number.
-They should really all be <= one, but sometimes they will be larger due to noise but it's a bad sign if they get too large.
+They should really all be <= one, but sometimes they will be larger due to noise but it's a bad sign if they get too large. This is not used as a filter, but is used to flag samples that should be examined.
 
 #### barcodes_to_drop
 If there are barcodes that are failing some of the QC above, you can specify them here and they will be excluded.
@@ -340,6 +340,7 @@ default_curvefit_params: &default_curvefit_params
   frac_infectivity_ceiling: 1
   fixtop: false
   fixbottom: 0
+  max_fraction_infectivity: 5
 ```
 
 The specific meaning of these curve-fitting parameters are as follows:
@@ -358,6 +359,10 @@ Typically you might either set to 1, or "false" if you want to let the top be a 
 Fix the bottom plateau of the neutralization curve to this value.
 Typicallyou might either set to 0, or "false" if you want to let the bottom be a free parameter.
 
+##### max_frac_infectivity
+Require all fraction infectivity values to be <= this number.
+They should really all be <= one, but sometimes they will be larger due to noise but it's a bad sign if they get too large. This removes values that are very large prior to curve fitting.
+
 ### serum_titers_qc_thresholds
 This key defines quality-control thresholds to apply in `serum_titers` when aggregating replicate titers for each virus for each serum.
 These thresholds are designed to ensure that the serum titers reported by the pipeline are robust (sufficient replicates and sufficiently similar to the median).
@@ -367,6 +372,10 @@ serum_titers_qc_thresholds:
   min_frac_infecitivity: 0.7
   min_replicates: 2
   max_fold_change_from_median: 3
+  max_fold_change_between_nt50_and_midpoint: 4  # no replicate can have a neut titer where nt50 is more than this fold different from nt50 calculated from midpoint
+  min_top_frac_infectivity: 0.8  # check if max fraction infectivity in curve fit is below this value
+  max_top_frac_infectivity: 1.5  #check if max fraction infectivity in curve fit is above this value
+
 ```
 
 Specifically:
@@ -380,6 +389,15 @@ Minimum number of replicates that must be measured for each serum-virus to repor
 #### max_fold_change
 Maximum fold change any individual neutralization titer can have from median for that serum-virus.
 Designed to identify outliers.
+
+#### max_fold_change_between_nt50_and_midpoint
+Maximum variation between the nt50 and the midpoint. In general, the midpoint and the nt50 should result in similar values. However, the value for the top of the curve for each serum sample is impacted by the fraction of neut standard to total vRNA that was detected in these wells, sometimes due to small variations in the amount of neut standard detected, the top of the curve will be fit with a value that is higher or lower than 1. When this occurs, the midpoint of the curve may more accurately represent the nt50. In order to identify and remove curves where this type of error may yeild an innacurate nt50, curves where there is significant variation between the nt50 and the midpoint are flagged.
+
+#### min_top_frac_infectivity
+This is not used as a filter, but is used to test whether the nt50 and midpoint similarity test is due to having a curve where the top is fit at lower than a defined value.
+
+#### max_top_frac_infectivity
+This is not used as a filter, but is used to test whether the nt50 and midpoint similarity test is due to having a curve where the top is fit at greater than a defined value.
 
 ### serum_titers_qc_exclusions
 This key defines exclusions of replicates and QC thresholds in `serum_titers` to pass `serum_titers_qc_thresholds`.

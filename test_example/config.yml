@@ -105,6 +105,7 @@ default_curvefit_params: &default_curvefit_params
   frac_infectivity_ceiling: 1
   fixtop: false
   fixbottom: 0
+  max_fraction_infectivity: 5
 
 plates:
 
@@ -145,6 +146,9 @@ serum_titers_qc_thresholds:
   min_frac_infectivity: 0.7  # require one concentration with frac_infectivity >= this, if not >0.5 will be no IC50
   min_replicates: 2  # require at least this many replicates for a serum-virus pair
   max_fold_change_from_median: 3  # no replicate can have a titer more than this fold different from repicate median
+  max_fold_change_between_nt50_and_midpoint: 4  # no replicate can have a neut titer where nt50 is more than this fold different from nt50 calculated from midpoint
+  min_top_frac_infectivity: 0.8  # check if max fraction infectivity in curve fit is below this value
+  max_top_frac_infectivity: 1.5  #check if max fraction infectivity in curve fit is above this value
 
 # Specify exclusions from `serum_titers_qc_thresholds. For any serum that is failing the QC, put
 # a key under `serum_titer_qc_thresholds` with the name of that serum. Under that serum, in
