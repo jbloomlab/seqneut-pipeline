@@ -187,8 +187,7 @@ rule serum_titers:
         qc_thresholds=config["serum_titers_qc_thresholds"],
         qc_exclusions=lambda wc: (
             config["serum_titers_qc_exclusions"][wc.serum]
-            if wc.serum in config["serum_titers_qc_exclusions"]
-            else {}
+            if wc.serum in config["serum_titers_qc_exclusions"] else {}
         ),
     log:
         notebook="results/sera/{serum}/serum_titers_{serum}.ipynb",
