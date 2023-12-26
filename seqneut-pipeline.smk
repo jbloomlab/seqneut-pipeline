@@ -8,7 +8,7 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 import pandas as pd
 
 
-snakemake.utils.min_version("7.32")
+snakemake.utils.min_version("8.0")
 
 
 include: "funcs.smk"  # include functions

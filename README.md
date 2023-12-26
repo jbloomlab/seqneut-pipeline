@@ -53,12 +53,14 @@ This creates a file called `gitmodules` and the `seqneut-pipeline` submodule, wh
 If at some point you want to updated the version of the pipeline, simply `cd` into the `seqneut-pipeline` subdirectory and pull or checkout the version you want.
 
 To use the pipeline, you then need to add a few things to your main-level repo.
-The first is a top-level `Snakefile` that includes `seqneut-pipeline`, reads in your configuration, file, and contains as some of its targets the outputs of `seqneut-pipeline`.
+The first is a top-level `Snakefile` that includes your configuration, `seqneut-pipeline`, and outputs of `seqneut-pipeline` as targets of the `all` rule.
 So minimally that top-level `Snakefile` should contain the following lines (it can also contain additional stuff if you also have it running project-specific analyses on the output of the pipeline):
 ```
+import os
+
 configfile: "config.yml"
 
-include: "seqneut-pipeline/seqneut-pipeline.smk"
+include: os.path.join(config["seqneut-pipeline"], "seqneut-pipeline.smk")
 
 rule all:
     input:
@@ -78,7 +80,7 @@ Finally, you need to create a `conda` environment that minimally includes the pa
 You can either create your own environment containing these, or simply build and use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. So if you are using that environment, you can simply run the pipeline with:
 ```
 conda activate seqneut-pipeline
-snakemake -j <n_jobs> --use-conda --keep-going
+snakemake -j <n_jobs> --software-deployment-method conda --keep-going
 ```
 
 The use of `--keep-going` is recommended for the QC steps below as it will create the notebooks helpful for manually doing the QC.
