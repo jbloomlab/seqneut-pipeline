@@ -6,20 +6,19 @@ channels:
   - defaults
 
 dependencies:
-  - altair=5.1.2
+  - altair=5.2
   - black-jupyter
   - jupyterlab
   - mamba
   - markdown=3.5
-  - nbqa
   - pandas=2.1
   - papermill=2.4
   - pip
   - python=3.11
   - ruamel.yaml=0.18.5
   - snakefmt
-  - snakemake=7.32
+  - snakemake=8.0.1
   - ruff
   - pip:
     - dms_variants==1.4.3
-    - neutcurve==0.10.1
+    - neutcurve==1.0.0

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### version 1.1.0
+- Update software environment to include `neutcurve` 1.0 and `snakemake` 8.0.
+- Fix linting of notebooks with `ruff`
+
 ## version 1.0.0
 The initial version of this pipeline was created from prior code from Andrea Loes and Will Hannon.
 The pipeline was re-factored into this initial version with the following design goals:
