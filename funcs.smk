@@ -19,7 +19,7 @@ def process_plate(plate, plate_params):
         "viral_library",
         "neut_standard_set",
         "samples_csv",
-        "process_counts_qc_thresholds",
+        "qc_thresholds",
         "barcodes_to_drop",
         "wells_to_drop",
         "curvefit_params",
