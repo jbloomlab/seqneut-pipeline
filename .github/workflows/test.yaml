@@ -52,7 +52,7 @@ jobs:
           rm -rf docs
           && cd test_example
           && rm -rf results
-          && snakemake --use-conda -j 2
+          && snakemake --software-deployment-method conda -j 2
           && cd ..
 
       - name: test titers as expected
