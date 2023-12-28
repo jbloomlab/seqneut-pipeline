@@ -1,4 +1,0 @@
-M099d0 serum passed all QC
-M099d30 serum passed all QC
-Y044d30 serum passed all QC
-Y154d182 serum passed all QC

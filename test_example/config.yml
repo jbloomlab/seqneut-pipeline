@@ -57,14 +57,23 @@ illumina_barcode_parser_params:
 #    viral_library: <name of a viral library>
 #    neut_standard_set: <name of a neut standard set>
 #    samples_csv: <samples in plate as CSV> 
-#    process_counts_qc_thresholds:
-#      avg_barcode_counts: <require this many avg counts per barcode>
-#      min_neut_standard_frac: <require this frac counts from neut standard per sample>
-#      max_neut_standard_frac_no_serum: <no more than this frac counts from neut-standard in no-serum samples>
-#      barcode_consistency_frac: <max fold-change in barcode from medium in samples where should be consistent>
+#    qc_thresholds:
+#      avg_barcode_counts_per_well: <drop well if < this many avg counts per barcode>
+#      min_neut_standard_frac_per_well: <drop well if < this frac counts from neut standard>
+#      no_serum_barcode_consistency: <drop viral barcode if not consistent in frac in no-serum wells>
+#        max_fold_change: 3
+#        max_wells: 2
+#      neut_standard_barcode_consistency: <drop neut standard barcodes not consistent in frac in all wells>
+#        max_fold_change: 3
+#        max_wells: 2
+#
+#      min_neut_standard_counts: <require this many counts from neut standard per well>
 #      min_viral_barcode_frac: <require this frac viral barcode counts for each barcode in no-serum sample>
-#      min_neut_standard_barcode_frac: <require this frac each neut-standard barcode in all samples>
 #      min_neut_standard_counts: <require this many total neut-standard counts per sample>
+#      min_viral_barcode_counts: <require this many counts for each viral barcode in each no-serum sample>
+
+#      max_barcode_frac_infectivity: 
+#
 #      min_no_serum_viral_barcode_count: <require this many counts for each viral barcode in each no-serum sample>
 #      min_dilutions_per_serum_replicate: <require this many different dilutions per serum replicate>
 #      max_frac_infectivity: <require frac infectivity estimates to be no greater than this>
@@ -88,13 +97,18 @@ illumina_barcode_parser_params:
 
 # default `process_counts_qc_thresholds` that can be used with merge key
 # (https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html)
-default_process_counts_qc_thresholds: &default_process_counts_qc_thresholds
-  avg_barcode_counts: 250  # reduced to 250 for this test example, but should probably be >= 500 for real experiments
-  min_neut_standard_frac: 0.005
-  max_neut_standard_frac_no_serum: 0.1
-  barcode_frac_consistency: 4
-  min_viral_barcode_frac: 0.0005
-  min_neut_standard_barcode_frac: 0.005
+default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
+  avg_barcode_counts_per_well: 250  # 250 for this test, typically >= 500 for real experiments
+  min_neut_standard_frac_per_well: 0.005
+  no_serum_per_viral_barcode_filters:
+    min_frac: 0.0005
+    max_fold_change: 3
+    max_wells: 2
+  per_neut_standard_barcode_filters:
+    min_frac: 0.005
+    max_fold_change: 3
+    max_wells: 2
+    
   min_neut_standard_count: 350  # reduced to 500 for this test example, but should probably be >= 1000 for real experiments
   min_no_serum_viral_barcode_count: 5  # reduced to 5 for this test example, but should probably be >= 10 for real experiments
   min_dilutions_per_serum_replicate: 4
@@ -113,8 +127,8 @@ plates:
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/plates/plate2_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
     barcodes_to_drop:
       - GGTCCATCTCAGATCG
     wells_to_drop:
@@ -128,8 +142,8 @@ plates:
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/plates/plate11_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
     barcodes_to_drop:
       - GGTCCATCTCAGATCG
     wells_to_drop:
