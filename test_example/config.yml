@@ -62,6 +62,7 @@ default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
   max_frac_infectivity_at_least: 0.5
   min_R2: 0.8
   serum_replicates_ignore_curvefit_qc: []
+  barcode_serum_replicates_ignore_curvefit_qc: []
 
 plates:
 
@@ -90,6 +91,8 @@ plates:
       <<: *default_process_plate_curvefit_params
     curvefit_qc:
       <<: *default_process_plate_curvefit_qc
+      barcode_serum_replicates_ignore_curvefit_qc:
+        - [AGGTCAAGACCACAGG, M099d0]
 
 # QC thresholds on per-serum virus titers. Each serum-virus titer must meet these QC
 # thresholds or be specified in `serum_titers_qc_exclusions`. Otherwise titer is flagged
