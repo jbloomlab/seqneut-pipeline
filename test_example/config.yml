@@ -108,11 +108,10 @@ default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
     min_frac: 0.005
     max_fold_change: 3
     max_wells: 2
-  min_neut_standard_count_per_well: 1000
+  min_neut_standard_count_per_well: 500  # 500 for this test, typically >= 1000 for real experiments
   min_no_serum_count_per_viral_barcode_well: 30
   max_frac_infectivity_per_viral_barcode_well: 5
-
-  min_dilutions_per_serum_replicate: 4
+  min_dilutions_per_barcode_serum_replicate: 6
 
 # default `curvefit_params` that can be used with merge key
 default_curvefit_params: &default_curvefit_params
