@@ -92,7 +92,7 @@ rule process_plate:
             neut_standard_sets[plates[wc.plate]["neut_standard_set"]]
         ),
     output:
-        qc_failures="results/plates/{plate}/process_counts_qc_failures.yml",
+        qc_failures="results/plates/{plate}/qc_failures.yml",
         frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
         fits_csv="results/plates/{plate}/curvefits.csv",
         fits_pickle="results/plates/{plate}/curvefits.pickle",

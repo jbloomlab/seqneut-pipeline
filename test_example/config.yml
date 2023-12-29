@@ -3,19 +3,15 @@
 
 # --- Configuration for `seqneut-pipeline` ---------------------------------------------
 
-# Location of `seqneut-pipeline` submodule, typically "seqneut-pipeline"
-# **FOR THIS TEST EXAMPLE ONLY, THIS LOCATION IS "../" BUT IT SHOULD
-# ALMOST CERTAINLY BE "seqneut-pipeline" FOR REAL ANALYSES**
+# for this test example the location is "../" but for real analyses it should almost
+# certainly be "seqneut-pipeline'
 seqneut-pipeline: ../
 
-# Location where we place the docs for rendering on GitHub Pages, typically "docs"
-# **FOR THIS TEST EXAMPLE ONLY, THIS LOCATION IS "../docs" BUT IT SHOULD
-# ALMOST CERTAINLY BE "docs" FOR REAL ANALYSES**
+# for this test example the location is "../docs", but for real analyses it should
+# almost certainly be "docs"
 docs: ../docs
 
-# Description of the project in markdown, should have title, authors and/or citation,
-# and link to the GitHub repo.
-# **CHANGE THIS TO A GOOD DESCRIPTION OF YOUR PROJECT**
+# change this to a good description of your project
 description: |
   # Test example for [seqneut-pipeline](https://github.com/jbloomlab/seqneut-pipeline)
   This is a small toy-example created by subsetting a real experiment dataset.
@@ -26,23 +22,14 @@ description: |
   See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a
   list of all contributors to the pipeline.
 
-# Specify each viral library and corresponding CSV matching barcode to strain name
-# CSV must have columns "barcode" and "strain"
 viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
 
-# If you want to plot the viral strains in a specific order, provide a CSV with
-# column "strain" ordered in that order. If you omit or set to "null", strains
-# will be plotted alphabetically.
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 
-# Specify the name of each set of neutralization standards and corresponding CSV
-# with a column "barcode" listing the barcodes
 neut_standard_sets:
   loes2023: data/neut_standard_sets/loes2023_neut_standards.csv
 
-# keyword parameters for `dms_variants.illuminabarcodeparser.IlluminaBarcodeParser`
-# https://jbloomlab.github.io/dms_variants/dms_variants.illuminabarcodeparser.html#dms_variants.illuminabarcodeparser.IlluminaBarcodeParser
 illumina_barcode_parser_params:
   upstream: CTCCCTACAATGTCGGATTTGTATTTAATAG
   downstream: ''
@@ -50,53 +37,6 @@ illumina_barcode_parser_params:
   upstream_mismatch: 4
   bc_orientation: R2
 
-# Specify the data for each neutralization plate in `plates`. Specify each plate as
-#
-#  plate_name:
-#    date: <sequencing date in YYYY-MM-DD format>
-#    viral_library: <name of a viral library>
-#    neut_standard_set: <name of a neut standard set>
-#    samples_csv: <samples in plate as CSV> 
-#    qc_thresholds:
-#      avg_barcode_counts_per_well: <drop well if < this many avg counts per barcode>
-#      min_neut_standard_frac_per_well: <drop well if < this frac counts from neut standard>
-#      no_serum_barcode_consistency: <drop viral barcode if not consistent in frac in no-serum wells>
-#        max_fold_change: 3
-#        max_wells: 2
-#      neut_standard_barcode_consistency: <drop neut standard barcodes not consistent in frac in all wells>
-#        max_fold_change: 3
-#        max_wells: 2
-#
-#      min_neut_standard_counts: <require this many counts from neut standard per well>
-#      min_viral_barcode_frac: <require this frac viral barcode counts for each barcode in no-serum sample>
-#      min_neut_standard_counts: <require this many total neut-standard counts per sample>
-#      min_viral_barcode_counts: <require this many counts for each viral barcode in each no-serum sample>
-
-#      max_barcode_frac_infectivity: 
-#
-#      min_no_serum_viral_barcode_count: <require this many counts for each viral barcode in each no-serum sample>
-#      min_dilutions_per_serum_replicate: <require this many different dilutions per serum replicate>
-#      max_frac_infectivity: <require frac infectivity estimates to be no greater than this>
-#    barcodes_to_drop: <list of barcodes to drop for this plate>
-#    wells_to_drop: <list of wells to drop for this plate>
-#    curvefit_params:
-#      frac_infectivity_ceiling: <ceiling to apply to frac infectivity before curve fitting, typically 1 if used>
-#      fixtop: <do we fix top of neutralization curves in fitting, typically either 1 or false>
-#      fixbottom: <do we fix bottom of neutralization curves in fitting, typically either 0 or false>
-#
-# The samples_csv must have columns "well", "serum", "dilution_factor", "replicate", and "fastq".
-# Other columns (eg,  "notes") are allowed but are not used by the pipeline.
-#
-# The "replicate" column indicates readings that go together as a replicate for that
-# serum, and only has to be unique for that serum within that plate (so you can put any
-# any value if the serum is only run once on that plate).
-#
-# Each plate must have at least one no-serum column that should have a serum entry of
-# "none" and no concentration specified (nan). Note that each "none" entry in a plate
-# must have a different "replicate" specified.
-
-# default `process_counts_qc_thresholds` that can be used with merge key
-# (https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html)
 default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
   avg_barcode_counts_per_well: 250  # 250 for this test, typically >= 500 for real experiments
   min_neut_standard_frac_per_well: 0.005
@@ -113,11 +53,15 @@ default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
   max_frac_infectivity_per_viral_barcode_well: 5
   min_dilutions_per_barcode_serum_replicate: 6
 
-# default `curvefit_params` that can be used with merge key
-default_curvefit_params: &default_curvefit_params
+default_process_plate_curvefit_params: &default_process_plate_curvefit_params
   frac_infectivity_ceiling: 1
   fixtop: false
   fixbottom: 0
+
+default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
+  max_frac_infectivity_at_least: 0.5
+  min_R2: 0.8
+  serum_replicates_ignore_curvefit_qc: []
 
 plates:
 
@@ -126,30 +70,26 @@ plates:
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/plates/plate2_samples.csv
+    manual_drops: {}
     qc_thresholds:
       <<: *default_process_plate_qc_thresholds
-    barcodes_to_drop:
-      - GGTCCATCTCAGATCG
-    wells_to_drop:
-      - C1  # low neut standard frac
-      - D12  # low neut standard frac
     curvefit_params:
-      <<: *default_curvefit_params
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
 
   plate11:
     date: 2023-09-26
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/plates/plate11_samples.csv
+    manual_drops: {}
     qc_thresholds:
       <<: *default_process_plate_qc_thresholds
-    barcodes_to_drop:
-      - GGTCCATCTCAGATCG
-    wells_to_drop:
-      - D6  # low overall barcode counts
-      - C12  # low neut standard frac
     curvefit_params:
-      <<: *default_curvefit_params
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
 
 # QC thresholds on per-serum virus titers. Each serum-virus titer must meet these QC
 # thresholds or be specified in `serum_titers_qc_exclusions`. Otherwise titer is flagged
