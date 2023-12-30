@@ -99,6 +99,6 @@ default_serum_titer_as: midpoint  # can be "midpoint" or "nt50"
 default_serum_qc_thresholds:
   min_replicates: 2
   max_fold_change_from_median: 3
-  ignore_qc: false
+  viruses_ignore_qc: []
 
 sera_override_defaults: {}
