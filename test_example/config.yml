@@ -60,7 +60,7 @@ default_process_plate_curvefit_params: &default_process_plate_curvefit_params
 
 default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
   max_frac_infectivity_at_least: 0.5
-  min_R2: 0.8
+  min_R2: 0.8  # you may be able to relax this to more like 0.7 or 0.75
   serum_replicates_ignore_curvefit_qc: []
   barcode_serum_replicates_ignore_curvefit_qc: []
 
@@ -94,57 +94,11 @@ plates:
       barcode_serum_replicates_ignore_curvefit_qc:
         - [AGGTCAAGACCACAGG, M099d0]
 
-# QC thresholds on per-serum virus titers. Each serum-virus titer must meet these QC
-# thresholds or be specified in `serum_titers_qc_exclusions`. Otherwise titer is flagged
-# as failing.
-serum_titers_qc_thresholds:
-  min_frac_infectivity: 0.7  # require one concentration with frac_infectivity >= this, if not >0.5 will be no IC50
-  min_replicates: 2  # require at least this many replicates for a serum-virus pair
-  max_fold_change_from_median: 3  # no replicate can have a titer more than this fold different from repicate median
+default_serum_titer_as: midpoint  # can be "midpoint" or "nt50"
 
-# Specify exclusions from `serum_titers_qc_thresholds. For any serum that is failing the QC, put
-# a key under `serum_titer_qc_thresholds` with the name of that serum. Under that serum, in
-# turn put a key with the name of the virus strain. You then have two options. You can either
-# put the subkey `ignore_qc: true` to totally ignore the `serum_tiers_qc_thresholds` for that
-# serum-virus pair. Alternatively, you can put `replicates_to_drop` as key followed by a
-# list of the replicate names to drop (if you put all of the replicates, that virus will be
-# dropped altogether for the tiers). The replicate names here are those rendered in the plots
-# by the `serum_titers` notebook, which are usually of the form "{plate}-{barcode}" possibly
-# with an additional plate-replicate specifier.
-serum_titers_qc_exclusions:
+default_serum_qc_thresholds:
+  min_replicates: 2
+  max_fold_change_from_median: 3
+  ignore_qc: false
 
-  M099d0:
-    A/Bangladesh/8002/2021:
-      ignore_qc: true  # many replicates, so ignore the extra variation around median
-    A/Brisbane/02/2018:
-      ignore_qc: true  # many replicates, so ignore the extra variation around median
-    A/Norway/25089/2022:
-      replicates_to_drop:
-        - plate11-CGGATAAAAATGATAT  # NT50 is an outlier
-    A/Wisconsin/588/2019:
-      replicates_to_drop:
-        - plate11-AGTCCTATCCTCAAAT  # NT50 is an outlier
-    A/SouthAfrica/R16462/2021:
-      replicates_to_drop:
-        - plate2-CTAGCAGATTGTATAA  # NT50 is an outlier
-
-  M099d30:
-    A/Chester/5355/2022:
-      replicates_to_drop:
-        - plate11-CCTCAAAATAACAAGC  # NT50 is an outlier
-    A/Michigan/45/2015:
-      ignore_qc: true  # replicates are close enough to probably be OK
-    A/Paris/31196/2021:
-      ignore_qc: true  # replicates are close enough to probably be OK
-
-  Y044d30:
-    A/Bangladesh/8036/2021:
-      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
-    A/Brisbane/48/2022:
-      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
-    A/India-PUN-NIV328484/2021:
-      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
-    A/Perth/1/2022:
-      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
-    A/Washington/23/2020:
-      ignore_qc: true  # replicates about evenly spaced so unclear if any are outliers
+sera_override_defaults: {}
