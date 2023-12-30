@@ -74,7 +74,7 @@ rule count_barcodes:
         "scripts/count_barcodes.py"
 
 
-rule process_counts:
+rule process_plate:
     """Process a plate to QC and convert counts to fraction infectivity."""
     input:
         count_csvs=lambda wc: expand(
@@ -92,67 +92,29 @@ rule process_counts:
             neut_standard_sets[plates[wc.plate]["neut_standard_set"]]
         ),
     output:
-        qc_failures="results/plates/{plate}/process_counts_qc_failures.txt",
+        qc_drops="results/plates/{plate}/qc_drops.yml",
         frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
+        fits_csv="results/plates/{plate}/curvefits.csv",
+        fits_pickle="results/plates/{plate}/curvefits.pickle",
     log:
-        notebook="results/plates/{plate}/process_counts_{plate}.ipynb",
+        notebook="results/plates/{plate}/process_{plate}.ipynb",
     params:
         # pass DataFrames/Series as dict/list for snakemake params rerun triggers
         samples=lambda wc: plates[wc.plate]["samples"]["sample"].tolist(),
         plate_params=lambda wc: {
             param: (val if param != "samples" else val.to_dict())
             for (param, val) in plates[wc.plate].items()
-            if param not in {"curvefit_params"}
         },
     conda:
         "environment.yml"
     notebook:
-        "notebooks/process_counts.py.ipynb"
-
-
-rule qc_process_counts:
-    """Check QC results on `process_counts` rule."""
-    input:
-        qc_failures=expand(rules.process_counts.output.qc_failures, plate=plates),
-        process_counts_htmls=expand(
-            "results/plates/{plate}/process_counts_{plate}.html",
-            plate=plates,
-        ),
-    output:
-        qc_summary="results/plates/qc_process_counts_summary.txt",
-    conda:
-        "environment.yml"
-    params:
-        plates=list(plates),
-    log:
-        "results/logs/qc_process_counts.txt",
-    script:
-        "scripts/qc_process_counts.py"
-
-
-rule curvefits:
-    """Fit neutralization curves for a plate."""
-    input:
-        qc_failures=rules.process_counts.output.qc_failures,
-        frac_infectivity_csv=rules.process_counts.output.frac_infectivity_csv,
-    output:
-        csv="results/plates/{plate}/curvefits.csv",
-        pdf="results/plates/{plate}/curvefits.pdf",
-        pickle="results/plates/{plate}/curvefits.pickle",
-    log:
-        notebook="results/plates/{plate}/curvefits_{plate}.ipynb",
-    params:
-        curvefit_params=lambda wc: plates[wc.plate]["curvefit_params"],
-    conda:
-        "environment.yml"
-    notebook:
-        "notebooks/curvefits.py.ipynb"
+        "notebooks/process_plate.py.ipynb"
 
 
 checkpoint sera_by_plate:
     """Get list of all sera and plates they are on."""
     input:
-        csvs=expand(rules.curvefits.output.csv, plate=plates),
+        csvs=expand(rules.process_plate.output.fits_csv, plate=plates),
     output:
         csv="results/sera/sera_by_plate.csv",
     params:
@@ -169,11 +131,11 @@ rule serum_titers:
     """Aggregate and analyze titers for a serum."""
     input:
         plate_fits=lambda wc: [
-            rules.curvefits.output.csv.format(plate=plate)
+            rules.process_plate.output.fits_csv.format(plate=plate)
             for plate in sera_plates()[wc.serum]
         ],
         pickles=lambda wc: [
-            rules.curvefits.output.pickle.format(plate=plate)
+            rules.process_plate.output.fits_pickle.format(plate=plate)
             for plate in sera_plates()[wc.serum]
         ],
     output:
@@ -266,8 +228,8 @@ rule build_docs:
             "results/sera/{serum}/serum_titers_{serum}.html",
             serum=sera_plates(),
         ),
-        process_counts_htmls=expand(
-            "results/plates/{plate}/process_counts_{plate}.html",
+        process_plates_htmls=expand(
+            "results/plates/{plate}/process_{plate}.html",
             plate=plates,
         ),
     output:
@@ -285,7 +247,6 @@ rule build_docs:
 
 
 seqneut_pipeline_outputs = [
-    rules.qc_process_counts.output.qc_summary,
     rules.qc_serum_titers.output.qc_summary,
     rules.aggregate_titers.output.titers,
     rules.aggregate_titers.output.pickle,

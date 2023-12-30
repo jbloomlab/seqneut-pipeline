@@ -19,10 +19,10 @@ def process_plate(plate, plate_params):
         "viral_library",
         "neut_standard_set",
         "samples_csv",
-        "process_counts_qc_thresholds",
-        "barcodes_to_drop",
-        "wells_to_drop",
+        "manual_drops",
+        "qc_thresholds",
         "curvefit_params",
+        "curvefit_qc",
     }
     if not req_plate_params.issubset(plate_params):
         raise ValueError(f"{plate=} {plate_params=} lacks {req_plate_params=}")

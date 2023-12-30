@@ -1,2 +1,0 @@
-plate2 process_counts passed all QC
-plate11 process_counts passed all QC
