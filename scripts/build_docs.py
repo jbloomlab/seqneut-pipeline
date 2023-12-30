@@ -26,19 +26,19 @@ md_text = [
     # table of contents: https://python-markdown.github.io/extensions/toc/
     "[TOC]",
     "",
-    "## Plot of titers for all sera",
+    "## Titers for all sera",
     f"[Interactive chart of titers]({os.path.basename(copied_files[snakemake.input.titers_chart])})",
     "",
-    "## Analyses of per-serum neutralization titers",
+    "## Per-serum neutralization titers",
 ]
 
 assert len(snakemake.params.sera) == len(snakemake.input.serum_titers_htmls)
 for serum, f in zip(snakemake.params.sera, snakemake.input.serum_titers_htmls):
     md_text.append(f"  - [{serum}]({os.path.basename(copied_files[f])})")
 
-md_text += ["", "## Analyses of per-plate counts and curve fits"]
-assert len(snakemake.params.plates) == len(snakemake.input.process_counts_htmls)
-for plate, f in zip(snakemake.params.plates, snakemake.input.process_counts_htmls):
+md_text += ["", "## Per-plate counts and curve fits"]
+assert len(snakemake.params.plates) == len(snakemake.input.process_plates_htmls)
+for plate, f in zip(snakemake.params.plates, snakemake.input.process_plates_htmls):
     md_text.append(f"  - [{plate}]({os.path.basename(copied_files[f])})")
 
 md_text = "\n".join(md_text)
