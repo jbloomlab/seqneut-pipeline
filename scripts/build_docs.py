@@ -41,6 +41,12 @@ assert len(snakemake.params.plates) == len(snakemake.input.process_plates_htmls)
 for plate, f in zip(snakemake.params.plates, snakemake.input.process_plates_htmls):
     md_text.append(f"  - [{plate}]({os.path.basename(copied_files[f])})")
 
+md_text += [
+    "",
+    "## Summary of data dropped during quality control",
+    f"[Notebook summarizing QC drops]({os.path.basename(copied_files[snakemake.input.qc_drops_html])})",
+]
+
 md_text = "\n".join(md_text)
 
 print(f"Rendering the following markdown text:\n\n{md_text}\n\n")

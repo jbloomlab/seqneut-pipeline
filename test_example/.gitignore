@@ -28,3 +28,8 @@ results/sera/*/*
 !results/aggregated_titers
 results/aggregated_titers/*
 !results/aggregated_titers/titers.csv
+
+!results/qc_drops
+results/qc_drops/*
+!results/qc_drops/plate_qc_drops.yml
+!results/qc_drops/sera_qc_drops.yml
