@@ -185,6 +185,28 @@ rule aggregate_titers:
         "notebooks/aggregate_titers.py.ipynb"
 
 
+rule aggregate_qc_drops:
+    """Aggregate all QC drops."""
+    input:
+        plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
+        sera_qc_drops=lambda wc: expand(
+            rules.serum_titers.output.qc_drops,
+            serum=sera_plates(),
+        ),
+    output:
+        plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
+        sera_qc_drops="results/qc_drops/sera_qc_drops.yml",
+    params:
+        plates=list(plates),
+        sera=lambda wc: list(sera_plates()),
+    conda:
+        "environment.yml"
+    log:
+        notebook="results/qc_drops/aggregate_qc_drops.ipynb",
+    notebook:
+        "notebooks/aggregate_qc_drops.py.ipynb"
+
+
 rule notebook_to_html:
     """Convert Jupyter notebook to HTML"""
     input:
@@ -211,6 +233,7 @@ rule build_docs:
             "results/plates/{plate}/process_{plate}.html",
             plate=plates,
         ),
+        qc_drops_html="results/qc_drops/aggregate_qc_drops.html",
     output:
         docs=directory(config["docs"]),
     params:
@@ -228,5 +251,7 @@ rule build_docs:
 seqneut_pipeline_outputs = [
     rules.aggregate_titers.output.titers,
     rules.aggregate_titers.output.pickle,
+    rules.aggregate_qc_drops.output.plate_qc_drops,
+    rules.aggregate_qc_drops.output.sera_qc_drops,
     rules.build_docs.output.docs,
 ]
