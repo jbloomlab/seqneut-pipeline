@@ -1,6 +1,0 @@
-M099d0 serum passed all QC
-M099d30 serum_titers QC failures, see results/sera/M099d30/serum_titers_M099d30.html for details
-	max_fold_change_from_median
-Y044d30 serum_titers QC failures, see results/sera/Y044d30/serum_titers_Y044d30.html for details
-	max_fold_change_from_median
-Y154d182 serum passed all QC

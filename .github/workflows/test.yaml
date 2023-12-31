@@ -55,9 +55,9 @@ jobs:
           && snakemake --software-deployment-method conda -j 2
           && cd ..
 
-#      - name: test titers as expected
-#        shell: bash -el {0}
-#        run: cd test_example && python test_titers_as_expected.py && cd ..
+      - name: test titers as expected
+        shell: bash -el {0}
+        run: cd test_example && python test_titers_as_expected.py && cd ..
 
       - name: upload results in case of error
         uses: actions/upload-artifact@v3

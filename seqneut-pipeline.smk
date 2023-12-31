@@ -130,68 +130,47 @@ checkpoint sera_by_plate:
 rule serum_titers:
     """Aggregate and analyze titers for a serum."""
     input:
-        plate_fits=lambda wc: [
-            rules.process_plate.output.fits_csv.format(plate=plate)
-            for plate in sera_plates()[wc.serum]
-        ],
         pickles=lambda wc: [
             rules.process_plate.output.fits_pickle.format(plate=plate)
             for plate in sera_plates()[wc.serum]
         ],
     output:
         per_rep_titers="results/sera/{serum}/titers_per_replicate.csv",
-        median_titers="results/sera/{serum}/titers_median.csv",
+        titers="results/sera/{serum}/titers.csv",
         curves_pdf="results/sera/{serum}/curves.pdf",
-        qc_failures="results/sera/{serum}/qc_failures.txt",
         pickle="results/sera/{serum}/curvefits.pickle",
+        qc_drops="results/sera/{serum}/qc_drops.yml",
     params:
         viral_strain_plot_order=viral_strain_plot_order,
-        qc_thresholds=config["serum_titers_qc_thresholds"],
-        qc_exclusions=lambda wc: (
-            config["serum_titers_qc_exclusions"][wc.serum]
-            if wc.serum in config["serum_titers_qc_exclusions"]
-            else {}
+        serum_titer_as=lambda wc: (
+            config["sera_override_defaults"][wc.serum]["titer_as"]
+            if (
+                (wc.serum in config["sera_override_defaults"])
+                and ("titer_as" in config["sera_override_defaults"][wc.serum])
+            )
+            else config["default_serum_titer_as"]
+        ),
+        qc_thresholds=lambda wc: (
+            config["sera_override_defaults"][wc.serum]["qc_thresholds"]
+            if (
+                (wc.serum in config["sera_override_defaults"])
+                and ("qc_thresholds" in config["sera_override_defaults"][wc.serum])
+            )
+            else config["default_serum_qc_thresholds"]
         ),
     log:
-        notebook="results/sera/{serum}/serum_titers_{serum}.ipynb",
+        notebook="results/sera/{serum}/{serum}_titers.ipynb",
     conda:
         "environment.yml"
     notebook:
         "notebooks/serum_titers.py.ipynb"
 
 
-rule qc_serum_titers:
-    """Check QC serum titeres from `serum_titers` rule."""
-    input:
-        qc_failures=lambda wc: expand(
-            rules.serum_titers.output.qc_failures,
-            serum=sera_plates(),
-        ),
-        serum_titers_htmls=lambda wc: expand(
-            "results/sera/{serum}/serum_titers_{serum}.html",
-            serum=sera_plates(),
-        ),
-    output:
-        qc_summary="results/sera/qc_serum_titers_summary.txt",
-    conda:
-        "environment.yml"
-    params:
-        sera=lambda wc: list(sera_plates()),
-    log:
-        "results/logs/qc_serum_titers.txt",
-    script:
-        "scripts/qc_serum_titers.py"
-
-
 rule aggregate_titers:
     """Aggregate all serum titers."""
     input:
-        qc_serum_titer_failures=rules.qc_serum_titers.output.qc_summary,
         pickles=lambda wc: expand(rules.serum_titers.output.pickle, serum=sera_plates()),
-        titers=lambda wc: expand(
-            rules.serum_titers.output.median_titers,
-            serum=sera_plates(),
-        ),
+        titers=lambda wc: expand(rules.serum_titers.output.titers, serum=sera_plates()),
     output:
         pickle="results/aggregated_titers/curvefits.pickle",
         titers="results/aggregated_titers/titers.csv",
@@ -225,7 +204,7 @@ rule build_docs:
     input:
         titers_chart=rules.aggregate_titers.output.titers_chart,
         serum_titers_htmls=lambda wc: expand(
-            "results/sera/{serum}/serum_titers_{serum}.html",
+            "results/sera/{serum}/{serum}_titers.html",
             serum=sera_plates(),
         ),
         process_plates_htmls=expand(
@@ -247,7 +226,6 @@ rule build_docs:
 
 
 seqneut_pipeline_outputs = [
-    rules.qc_serum_titers.output.qc_summary,
     rules.aggregate_titers.output.titers,
     rules.aggregate_titers.output.pickle,
     rules.build_docs.output.docs,
