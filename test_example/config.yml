@@ -109,3 +109,7 @@ sera_override_defaults:
       <<: *default_serum_qc_thresholds
       viruses_ignore_qc:
         - A/Belgium/H0017/2022
+  Y044d30:
+    qc_thresholds:
+      <<: *default_serum_qc_thresholds
+      max_fold_change_from_median: 4
