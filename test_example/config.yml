@@ -113,3 +113,4 @@ sera_override_defaults:
     qc_thresholds:
       <<: *default_serum_qc_thresholds
       max_fold_change_from_median: 4
+    titer_as: nt50
