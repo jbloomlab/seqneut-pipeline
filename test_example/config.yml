@@ -84,7 +84,9 @@ plates:
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/plates/plate11_samples.csv
-    manual_drops: {}
+    manual_drops:
+      barcode_serum_replicates:
+        - [AGTCCTATCCTCAAAT, M099d0]
     qc_thresholds:
       <<: *default_process_plate_qc_thresholds
     curvefit_params:

@@ -9,6 +9,7 @@ barcode_wells:
   ACGGAATCCCCTGAGA B12: min_no_serum_count_per_viral_barcode_well
   CAGTTCTGCGACCAGC D10: max_frac_infectivity_per_viral_barcode_well
 barcode_serum_replicates:
+  AGTCCTATCCTCAAAT M099d0: manual_drop
   ACGACATGATCAAACG M099d0: min_R2
   CTATTAATCATGCAAA M099d0: min_R2
   AATAAGTATACGGGAT M099d30: min_R2
