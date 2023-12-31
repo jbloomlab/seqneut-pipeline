@@ -12,7 +12,7 @@ The input data for the test example are in [./data/](data).
 
 To run the example, build the `seqneut-pipeline` `conda` environment in [../environment.yml](../environment.yml), activate it, and then run:
 
-    snakemake -j <n_jobs> --use-conda --keep-going
+    snakemake -j <n_jobs> --software-deployment-method conda
 
 This will create the results in [./results/](results).
 

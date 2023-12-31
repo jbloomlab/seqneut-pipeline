@@ -13,14 +13,19 @@ See **[add link to Loes et al when available]** for a description of these assay
 That paper is also the scientific citation for this analysis pipeline.
 See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a list of the contributors to this pipeline.
 
-Essentially, this pipeline goes from the FASTQ files that represent the counts of each barcoded viral variant to the computed neutralization titers for each sera.
-The titers are computed by fitting Hill-curve style neutralization curves using the [neutcurve](https://jbloomlab.github.io/neutcurve/) package; see the documentation for the details of these curves.
-The titers are summarized by the neutralization titer 50% (NT50), which is the serum dilution factor at which the serum neutralizations half of the viral infectivity.
-So a NT50 of 200 means that at a 1:200 dilution of the serum, half the viral infectivity is neutralized.
-Note that the NT50 is the reciprocal of the IC50 (concentration of serum at which 50% of viral infectivity is neutralized).
-Typically there will be multiple replicates, and the reported titer is the median among replicates.
+## Overview
 
-Note also there are several quality control steps with thresholds and exclusions specified in the configuration YAML (see below), and the pipeline will only run to completion once all quality-control is passed.
+This pipeline goes from the FASTQ files that represent the counts of each barcoded viral variant to the computed neutralization titers for each sera.
+The titers are computed by fitting Hill-curve style neutralization curves using the [neutcurve](https://jbloomlab.github.io/neutcurve/) package; see the documentation for the details of these curves.
+The titers represent the reciprocal serum dilutions at which half the viral infectivity is neutralized.
+The pipeline provides options to compute these titers as either:
+ - the reciprocal of the inhibitory concentration 50% (IC50), namely as the neutralization titer 50% (NT50)
+ - the reciprocal of the midpoint of the neutralization curve
+
+When the curves are fit with a top plateau of 1 and a bottom plateau of zero, these two different ways of calculating the titers are identical, and represent the serum dilution factor at which the serum neutralizes half of the viral infectivity.
+Typically there will be multiple replicates, and the final reported titer is the median among replicates.
+
+The pipeline also performs extensive quality control at different steps using configurable options described below.
 
 ## Using this pipeline
 This pipeline is designed to be included as a modular portion of a larger [snakemake](https://snakemake.readthedocs.io/) analysis.
@@ -50,7 +55,7 @@ So after you have created your project repo, add this pipeline as a git submodul
       git submodule add https://github.com/jbloomlab/seqneut-pipeline
 
 This creates a file called `gitmodules` and the `seqneut-pipeline` submodule, which can then be committed to the repo.
-If at some point you want to updated the version of the pipeline, simply `cd` into the `seqneut-pipeline` subdirectory and pull or checkout the version you want.
+If at some point you want to update the version of the pipeline, simply `cd` into the `seqneut-pipeline` subdirectory and pull or checkout the version you want.
 
 To use the pipeline, you then need to add a few things to your main-level repo.
 The first is a top-level `Snakefile` that includes your configuration, `seqneut-pipeline`, and outputs of `seqneut-pipeline` as targets of the `all` rule.
@@ -68,28 +73,27 @@ rule all:
 ```
 
 In this `Snakefile`, the `seqneut_pipeline_outputs` specify files created by the pipeline.
-Two of these may be of interest for you to use in additional rules you define in `Snakefile`:
+Several of of these may be of special interest for you to use in additional rules you define in `Snakefile`:
   - `./results/aggregated_titers/titers.csv`: CSV with the final (median across replicates) titers for each serum-virus pair after applying quality control filters.
   - `./results/aggregated_titers/curvefits.pickle`: a pickled [neutcurve.CurveFits](https://jbloomlab.github.io/neutcurve/neutcurve.curvefits.html#neutcurve.curvefits.CurveFits) object with all of the curve fits for all serum-virus-replicates after applying the QC filters. You can use the methods of this object to make plots of neutralization curves for specific sera / viruses / replicates.
 
 In addition, you need to create the configuration file `config.yml` and ensure it includes the appropriate configuration for `seqneut-pipeline` as described below.
 
 To track the correct files in the created results, we suggest you copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
+This will track key results files, but not an excessive number of non-essential files.
 
 Finally, you need to create a `conda` environment that minimally includes the packages needed to run the pipeline, which are a recent version of [snakemake](https://snakemake.readthedocs.io/) and [pandas](https://pandas.pydata.org/).
 You can either create your own environment containing these, or simply build and use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. So if you are using that environment, you can simply run the pipeline with:
 ```
 conda activate seqneut-pipeline
-snakemake -j <n_jobs> --software-deployment-method conda --keep-going
+snakemake -j <n_jobs> --software-deployment-method conda
 ```
-
-The use of `--keep-going` is recommended for the QC steps below as it will create the notebooks helpful for manually doing the QC.
 
 Note also that a few rules have rule-specific `conda` environments in [./envs/](envs).
 
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
-An example configuration file is in [./test_example/config.yml](test_example/config.yml) (although note some of the QC thresholds are set more leniently to make the test example work for small data as described in the comments in that YAML).
+An example configuration file is in [./test_example/config.yml](test_example/config.yml) (although some of the QC thresholds are set more leniently to make the test example work for small data as described in the comments in that YAML).
 
 Here we describe the required keys in this YAML file (you can also add additional information specific to your repo, but we advise adding comments to put that in a separate part of the YAML from the `seqneut-pipeline` configuration).
 For background on YAML format, including on the anchor (`&`) and merge (`<<: *`) operators that can be helpful to simplify the YAML file, see [here](https://spacelift.io/blog/yaml) and [here](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html).
@@ -130,7 +134,7 @@ viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
   <potentially more viral libraries specified as name: CSV pairs>
 ```
-Note how the recommended way to organize the viral libraries (as indicated above) is to put them in a `./data/viral_libraries/` subdirectory.
+The recommended way to organize the viral libraries (as indicated above) is to put them in a `./data/viral_libraries/` subdirectory.
 
 The CSV files themselves will have columns specifying the viral barcode and the strain it corresponds to, such as:
 ```
@@ -165,7 +169,7 @@ neut_standard_sets:
   loes2023: data/neut_standard_sets/loes2023_neut_standards.csv
   <potentially more neut standard sets specified as name: CSV pairs>
 ```
-Note how the recommended way to organize the viral libraries (as indicated above) is to put them in a `./data/viral_libraries/` subdirectory.
+The recommended way to organize the neutralization-standard sets (as indicated above) is to put them in a `./data/neut_standard_sets/` subdirectory.
 
 The CSV files need just a single column specifying the neutralization standard barcode, such as:
 ```
@@ -189,12 +193,12 @@ illumina_barcode_parser_params:
   bc_orientation: R2
 ```
 
-#### plates
+### plates
 This dictionary (mapping) contains the heart of the configuration, and may be quite large.
-Essentially, it specifies what samples are contained in each plate, how those samples should be processed, QC thresholds, and any specific barcodes or samples that should be excluded for failing QC.
+Essentially, it specifies what samples are contained in each plate, how those samples should be processed, QC thresholds, and any specific barcodes or samples that should be dropped.
 
-The basic structure is that `plates` specifies additional mappings of plate names to configuration for that plate.
-Specifically, this key should look like this:
+The basic structure is that `plates` maps plate names to configurations for the plates.
+Specifically, it should look like this:
 ```
 plates:
 
@@ -203,16 +207,13 @@ plates:
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/plates/plate1_samples.csv
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds
-    barcodes_to_drop:
-      - AAAACAGTATAGAAGA  # viral barcode w no counts in no-serum samples
-      - AATCTCCTCACGCAGC  # viral barcode w no counts in no-serum samples
-      - ATGCAATATTAAGGAA  # viral barcode w no counts in no-serum samples
-      - GGTCCATCTCAGATCG  # neut standard barcode w inconsistently low counts in Y106d0_4860
-    wells_to_drop: []
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
     curvefit_params:
-      <<: *default_curvefit_params
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
 
   <additional_plates>
 ```
@@ -247,98 +248,93 @@ A2,Y106d182,20.0,1,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AAC
 <additional lines>
 ```
 
-#### process_counts_qc_thresholds
+#### manual_drops
+As you analyze plates, you may find specific barcodes, wells, etc that you want to drop even if they don't fail the QC if they appear problematic to you for some reason.
+If so, specify them using this key (if you don't want to manually drop any data for the plate, then just set this key to an empy dictionary `{}`).
+
+The manual drops can have the following keys:
+
+ - `wells`: list of wells to drop
+
+ - `barcodes`: list of barcodes to drop from all wells
+
+ - `barcode_wells`: list of `[barcode, well]` lists to drop specific barcodes in specific wells
+
+ - `barcode_serum_replicates`: list of `[barcode, serum_replicate]` to drop specific barcodes for specific serum-replicates
+
+ - `serum_replicates`: list of serum-replicates to drop
+
+So for instance, you could have this specification if you wanted to drop barcode `AGTCCTATCCTCAAAT` for all wells of serum-replicate `M099d0`
+```
+manual_drops:
+  barcode_serum_replicates:
+    - [AGTCCTATCCTCAAAT, M099d0]
+```
+
+#### qc_thresholds
 This key defines a mapping of the quality-control thresholds for processing the sequencing counts to get fraction infectivities.
 These thresholds are used for the QC in the `process_count` rule (see section below on quality-control for more details).
 
-Since it is a bit complex, you may want to use the [YAML anchor / merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
+Since it is a bit complex, you typically will want to use the [YAML anchor / merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
 The default can be defined like this:
 ```
-default_process_counts_qc_thresholds: &default_process_counts_qc_thresholds
-  avg_barcode_counts: 500
-  min_neut_standard_frac: 0.01
-  max_neut_standard_frac_no_serum: 0.1
-  barcode_frac_consistency: 3
-  min_viral_barcode_frac: 0.001
-  min_neut_standard_barcode_frac: 0.01
-  min_neut_standard_count: 1000
-  min_no_serum_viral_barcode_count: 10
-  min_dilutions_per_serum_replicate: 4
-  max_frac_infectivity: 5
+default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
+  avg_barcode_counts_per_well: 500
+  min_neut_standard_frac_per_well: 0.005
+  no_serum_per_viral_barcode_filters:
+    min_frac: 0.0005
+    max_fold_change: 3
+    max_wells: 2
+  per_neut_standard_barcode_filters:
+    min_frac: 0.005
+    max_fold_change: 3
+    max_wells: 2
+  min_neut_standard_count_per_well: 1000
+  min_no_serum_count_per_viral_barcode_well: 30
+  max_frac_infectivity_per_viral_barcode_well: 5
+  min_dilutions_per_barcode_serum_replicate: 6
 ```
-and then for specific plates you can merge it in and overwrite.
+and then for specific plates you can merge this default it in and overwrite any specific keys if needed.
 For instance, below would merge the above defaults but then overwrite the `min_viral_barcode_frac` to a different value:
 ```
 plates:
 
   plate1:
     <other keys>
-    process_counts_qc_thresholds:
-      <<: *default_process_counts_qc_thresholds  # merge in defaults
-      min_viral_barcode_frac: 0.0002  # overwrite default for this key for this plate
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds  # merge in defaults
+      avg_barcode_counts_per_well: 1000  # overwrite default for this key for this plate
 
   <other plates>
 ```
 
-The keys for `counts_qc_thresholds` define the following thresholds:
+The QC-thresholds defined here are applied in order to drop data (wells, barcodes, etc) when processing the plates.
+Specifically:
 
-##### avg_barcode_counts
-Require at least this many average counts per barcode (averaged across barcodes) for each sample.
-Designed to ensure enough sequencing for barcodes for each sample.
+ - `avg_barcode_counts_per_well`: drop any well that does not have at least this many average counts per barcode.
 
-##### min_neut_standard_frac
-Require at least this fraction of counts to come from the neutralization standard for each sample.
-Designed to ensure all samples have adequate use of neutralization standard.
+ - `min_neut_standard_frac_per_well`: drop any well where the neutralization standard is not at least this fraction of the counts in the well.
 
-##### max_neut_standard_frac_no_serum
-Require that no more than this fraction of counts comes from the neutralization standard in each no-serum sample.
-Designed to check against excessive neutralization standard use.
+ - `no_serum_per_viral_barcode_filters`: has subkeys `min_frac`, `max_fold_change`, and `max_wells`. The QC analyzes the fraction of all viral-barcode counts in the no-serum samples (wells) that are attributable to each viral barcode, and checks that this fraction is at least `min_frac` and is not more than `max_fold_change` different from the median fraction for this viral barcode across no-serum samples. If a given viral barcode fails either of these filters in at least `max_wells` wells, it is dropped entirely from that plate.
 
-##### barcode_consistency_frac
-Require that the frequency (fraction of counts) for each barcode has a fold-change from the median across samples that does not exceed this amount in the samples where it should be consistent.
-Specifically, in the no-serum samples all viral barcodes should be at consistent relative levels across samples, and this is checked using this threshold.
-Likewise, in all samples the neutralization standard barcodes should be at consistent levels, and this is checked using this threshold.
+ - `per_neut_standard_barcode_filters`: has subkeys `min_frac`, `max_fold_change`, and `max_wells`. The QC analyzes the fraction of all neutralization-standard barcode counts in all samples (wells) that are attributable to each neutralization-standard barcode, and checks that this fraction is at least `min_frac` and is not more than `max_fold_change` different from the median fraction for this  barcode across all wells samples. If a given neutralization-standard barcode fails either of these filters in at least `max_wells` wells, it is dropped entirely from that plate.
 
-##### min_viral_barcode_frac
-Require that each viral barcode comprises at least this fraction of total counts in the no-serum sample.
-Designed to make sure no viral barcodes are too rare.
+ - `min_neut_standard_count_per_well`: drop any well where the total counts for neutralization standard barcodesis not at least this large.
 
-##### min_neut_standard_barcode_frac
-Require that each neut-standard barcode is at least this fraction of all counts in all samples.
-Designed to make sure no neut-standard barcode is too rare.
+ - `min_no_serum_count_per_viral_barcode_well`: drop any viral-barcode / no-serum well combination where the viral barcode does not have at least this many counts.
 
-##### min_neut_standard_counts
-Require that each sample has at least this number of neut-standard barcode counts (summed across all neut-standard barcodes).
-Designed to make sure all samples have enough of these barcodes to accurately estimate the fraction infectivity.
+ - `max_frac_infectivity_per_viral_barcode_well`: drop any viral-barcode / well combinations where the viral barcode in that well has a computed fraction infectivity exceeding this.
 
-##### min_no_serum_viral_barcode_count
-Require each viral barcode has at least this number of counts in each no-serum sample.
-Designed to make sure each viral barcode adequately represented to get good estimates.
+ - `min_dilutions_per_barcode_serum_replicate`: drop any viral-barcode / serum-replicate combinations where the serum-replicate does not have at least this many dilutions for the viral barcode.
 
-##### min_dilutions_per_serum_replicate
-Require at least this many different dilutions for each serum-replicate on a plate.
-Designed to make sure we have enough dilutions to actually fit a curve.
-
-##### max_frac_infectivity
-Require all fraction infectivity values to be <= this number.
-They should really all be <= one, but sometimes they will be larger due to noise but it's a bad sign if they get too large.
-
-#### barcodes_to_drop
-If there are barcodes that are failing some of the QC above, you can specify them here and they will be excluded.
-As you add barcodes to drop for a plate, you should add a comment in the YAML on why the barcode is being dropped.
-Note that if a barcode is entirely missing from the viral library for many plates, you may want to update the `viral_barcodes` entry instead to just remove it.
-
-#### wells_to_drop
-If there are samples that are failing some of the QC above, you can specify their well identifiers in a list here and they will be dropped.
-As you add wells (samples) to drop for a plate, you should add a comment in the YAML on why the sample is being dropped.
 
 #### curvefit_params
 This key defines some parameters specifying how the neutralization curves are fit, which is done using the Hill curves defined in the [neutcurve](https://jbloomlab.github.io/neutcurve/) package.
 
-You may want to use the [YAML anchor/merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
+You typically want to use the [YAML anchor/merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
 The default can be defined like this:
 ```
-default_curvefit_params: &default_curvefit_params
+default_process_plate_curvefit_params: &default_process_plate_curvefit_params
   frac_infectivity_ceiling: 1
   fixtop: false
   fixbottom: 0
@@ -346,68 +342,85 @@ default_curvefit_params: &default_curvefit_params
 
 The specific meaning of these curve-fitting parameters are as follows:
 
-##### frac_infectivity_ceiling
-If any fraction infectivity values are greater than this value, reduce them to this value before fitting.
-Typically you might set this to one to put a ceiling on all values >1.
-In principle, no values should be >1 in the absence of experimental noise.
-Set to "null" to have no ceiling.
+ - `frac_infectivity_ceiling`: ceiling to apply to all fraction infectivities before fitting curves. You may want to this to one to put a ceiling on all values >1. In principle, no values should be >1 in the absence of experimental noise.
 
-##### fixtop
-Fix the top plateau of the neutralization curve to this value.
-Typically you might either set to 1, or "false" if you want to let the top be a free parameter.
+ - `fixtop`: fix the top plateau of the neutralization curve. Typically you might either set to 1, or "false" if you want to let the top be a free parameter. In general, "false" is recommended.
 
-##### fixbottom
-Fix the bottom plateau of the neutralization curve to this value.
-Typicallyou might either set to 0, or "false" if you want to let the bottom be a free parameter.
+ - `fixbottom`: fix the bottom plateau of the neutralization curve to this value. Typically it should be 0 unless you have a good reason otherwise; set to "false" to make it a free parameter.
 
-### serum_titers_qc_thresholds
-This key defines quality-control thresholds to apply in `serum_titers` when aggregating replicate titers for each virus for each serum.
-These thresholds are designed to ensure that the serum titers reported by the pipeline are robust (sufficient replicates and sufficiently similar to the median).
-It defines two variables, `min_replicates` and `max_fold_change_from_median` as follows:
+#### curvefit_qc
+This key defines some parameters on quality-control performed after the curve-fitting; viral-barcode / serum-replicate combinations that fail this QC are dropped.
+
+You typically want to use the [YAML anchor/merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
+The default can be defined like this:
 ```
-serum_titers_qc_thresholds:
-  min_frac_infecitivity: 0.7
+default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
+  max_frac_infectivity_at_least: 0.5
+  min_R2: 0.75
+  serum_replicates_ignore_curvefit_qc: []
+  barcode_serum_replicates_ignore_curvefit_qc: []
+```
+
+The specific meanings of these QC parameters are:
+
+ - `max_frac_infectivity_at_least`: drop any viral-barcode / serum-replicate combination that does not have a maximum frac infectivity across all concentrations of at least this value. Typically you might want to set a value >0.5, the exception being if you have a serum so potent it is neutralizing at all dilutions tested.
+
+ - `min_R2`: drop any viral-barcode / serum-replicate combinations where the fit curve does not have a [coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) at least this large (a coefficient of determination of 1 is a perfect fit). Used to drop very poor fitting curves. Reasonable values might be in the 0.6 to 0.9 range, although you should also just look at the curves being dropped.
+
+ - `serum_replicates_ignore_curvefit_qc`: list of any serum replicates for which we ignore the curve-fitting QC for all viral barcodes.
+
+ - `barcode_serum_replicates_ignore_curvefit_qc`: list (as `[barcode, serum_replicate]`) of viral-barcodes / serum-replicates where we ignore the curve-fitting QC.
+
+### default_serum_titer_as
+Specifies how we compute the final titers in `serum_titers`.
+Can be either `midpoint` or `nt50` depending on whether you want to report the value where the fraction infectivity gets to 50%, or the midpoint of the curve, so should be either
+```
+default_serum_titer_as: midpoint
+```
+or
+```
+default_serum_titer_as: nt50
+```
+The difference only becomes relevant if some your curves have plateaus substantially different than zero and one.
+
+If you want to handle specific sera different, see `sera_override_defaults`.
+
+### default_serum_qc_thresholds
+Default QC we apply to each serum-virus pair when reporting out the final titers (medians across replicaes) in `serum_titers`.
+Any serum-virus pair that fails this QC does not have a titer reported unless it is specified in `sera_override_defaults`.
+
+Should look like this:
+```
+default_serum_qc_thresholds: &default_serum_qc_thresholds
   min_replicates: 2
   max_fold_change_from_median: 3
+  viruses_ignore_qc: []
+```
+where:
+
+ - `min_replicates`: drop any virus-serum titer that is not supported by at least this many replicates.
+ - `max_fold_change_from_median`: drop any virus-serum titer where any replicate differs by more than this from the median across replicates.
+ - `viruses_ignore_qc`: list of viruses for which you want to ignore the above QC. Specifying a virus here will ignore the QC for **all** sera, if you want to make a virus-serum specific exclusion then instead specify this in `sera_override_defaults`.
+
+### sera_override_defaults
+Override `default_serum_titer_as` or `default_serum_qc_thresholds` for specific sera.
+For instance, this could look like:
+```
+sera_override_defaults:
+  M099d30:
+    qc_thresholds:
+      <<: *default_serum_qc_thresholds
+      viruses_ignore_qc:
+        - A/Belgium/H0017/2022
+  Y044d30:
+    qc_thresholds:
+      <<: *default_serum_qc_thresholds
+      max_fold_change_from_median: 4
+    titer_as: nt50
 ```
 
-Specifically:
-
-#### min_frac_infectivity
-At least one dilution for a serum-virus pair must be > this to fit a curve. If `min_frac_infectivity` is not >0.5, there is no guarantee there will even be an IC50 after fitting.
-
-#### min_replicates
-Minimum number of replicates that must be measured for each serum-virus to report a titer.
-
-#### max_fold_change
-Maximum fold change any individual neutralization titer can have from median for that serum-virus.
-Designed to identify outliers.
-
-### serum_titers_qc_exclusions
-This key defines exclusions of replicates and QC thresholds in `serum_titers` to pass `serum_titers_qc_thresholds`.
-Typically, you would set this if you have serum titers failing `serum_titer_qc_thresholds`.
-It is keyed by each serum, then any viruses for that serum where we need to exclude replicates or thresholds.
-Specifically, it should look like this:
-```
-serum_titers_qc_exclusions:
-
-  M099d0:
-    A/Bangladesh/8002/2021:
-      ignore_qc: true  # many replicates, so ignore the extra variation around median
-    A/Brisbane/02/2018:
-      ignore_qc: true  # many replicates, so ignore the extra variation around median
-    A/Norway/25089/2022:
-      replicates_to_drop:
-        - plate11-CGGATAAAAATGATAT  # NT50 is an outlier
-    A/Wisconsin/588/2019:
-      replicates_to_drop:
-        - plate11-AGTCCTATCCTCAAAT  # NT50 is an outlier
-
-  <keys for additional sera>
-```
-Under each virus, you can set `ignore_qc: true` if you simply want to ignore any QC failures for that virus for that serum.
-
-If you want to exclude specific replicates, instead under the virus key set `replicates_to_drop` to be a name of the replicate for that serum-virus as named in `serum_titers`.
+The above means that for serum `M099d30` we override the `default_serum_qc_thresholds` to exclude virus ` A/Belgium/H0017/2022`, and for serum `Y044d30` we override the defaults to allow a greater fold-change from median for individual replicates, and compute the titer as `nt50`.
+Anything not listed here gets handled by the defaults in `default_serum_titer_as` and `default_serum_qc_thresholds`.
 
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
@@ -420,28 +433,23 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/barcode_fates/`: files giving the statistics (fates) of reads in the barcode counting for each sample. You do not need to track this in the repo as the results are plotted.
     - `./results/barcode_invalid/`: files giving counts of invalid barcodes for each sample. You do not need to track this in the repo, but it could be helpful to look at these identities in counts if QC shows you are getting many invalid barcodes.
 
-  - Outputs related to computing the fraction infectivity from the barcode counts for each plate:
+  - Outputs related to processing each plate:
     - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
-    - `./results/plates/{plate}/process_counts_{plate}.ipynb`: Jupyter notebook processing counts for a plate. You do not need to track this, look at the HTMl version of notebook instead.
-    - `./results/plates/{plate}/process_counts_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
-    - `./results/plates/{plate}/process_counts_qc_failures.txt`: List of QC failures when processing counts for plate. You do not need to track this as the summary for all plates is tracked instead.
-    - `./results/plates/qc_process_counts_summary.txt`: summary of QC for processing counts for all plates. You should track this in the repo.
-
-  - Outputs related to fitting the neutralization curves for each plate:
-    - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate, including the NT50s. You should track this in repo.
-    - `./results/plates/{plate}/curvefits.pdf`: PDF rendering the neutralization curves for the plate. You do not need to track this in the repo as a HTML version of a notebook containing the plot is tracked in `./docs/`.
+    - `./results/plates/{plate}/process_{plate}.ipynb`: Jupyter notebook processing counts for a plate. You do not need to track this as an HTML version will be rendered in `./docs/` when pipeline runs successfully.
+    - `./results/plates/{plate}/process_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
+    - `./results/plates/{plate}/qc_drops.yml`: details on data (barcodes, wells, etc) dropped for failing QC when processing this plate.
+    - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/plates/{plate}/curvefits_{plate}.ipynb`: Jupyter notebook that does the curve fitting. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
-    - `./results/plates/{plate}/curvefits_{plate}.html`: HTML rendering of Jupyter notebook that does the curve fitting. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
 
-  - Output related to analyzing neutralization titers on a per-serum basis, aggregating across plates:
+  - Output related to per-serum titers (aggregated across replicates potentially run on different plates):
     - `./results/sera/sera_by_plate.csv` summarizes which plate(s) each serum was run on.
-    - `./results/sera/{serum}/titers_median.csv`: titer for each virus against the serum, reported as the median across replicates. You should track this file in the repo.
+    - `./results/sera/{serum}/titers.csv`: titer for each virus against the serum, reported as the median across replicates, and only keeping those that pass QC. You should track this file in the repo.
     - `./results/sera/{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the serum. You should track this file in the repo.
     - `./results/sera/{serum}/curves.pdf`: PDF rendering of the neutralization curves for the serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
     - `./results/sera/{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/sera/{serum}/serum_titers_{serum}.ipynb`: Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
-    - `./results/sera/{serum}/serum_titers_{serum}.html`: HTML rendering of the Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/sera/{serum}/{serum}_titers.ipynb`: Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
+    - `./results/sera/{serum}/{serum}_titers.html`: HTML rendering of the Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/sera/{serum}/qc_drops.yml`: virus-serum titers dropped due to QC when processing this serum's titers.
 
   - Results related to aggregated titers across all sera after applying all quality control:
     - `./results/aggregated_titers/titers.csv`: titers for all sera / virus (median of replicates). You should track this file as it has the final processed results.
@@ -449,31 +457,23 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this in the repo as it is rendered in `./docs/` when the pipeline runs successfully.
     - `./results/aggregated_titers/aggregate_titers.ipynb`: Jupyter notebook that aggregates all the titers. You do not need to track this in the repo.
 
-  - `./logs/`: logs from `snakemake` rules, you may want to look at these if there are rule failures. They do not need to be tracked in the repo.
+  - Results summarizing data dropped due to QC:
+    - `./results/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC. You should track this in repo.
+    - `./results/sera_qc_drops.yml`: YAML file summarizing all serum-virus titers dropped during the serum titers QC. You should track this in repo.
+    - `./results/aggregate_qc_drops.ipynb`: Jupypter notebook summarizing the QC drops. You do not need to track as an HTML version is rendered in `./docs/`
+    - `./results/aggregate_qc_drops.html`: HTML verson Jupypter notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
 
-## Running pipeline to identify QC failures and fixing them
-If you run the pipeline via `snakemake` with the `--keep-going` flag as recommended above, the pipeline will run as far as possible.
-However, if there are any QC failures that will keep it from running to completion.
-You will then need to manually look at the results, identify the problem (typically problematic barcodes or samples / wells), and decide how to fix the problem by using the YAML configuration file to exclude problematic barcodes / samples.
+## Examining the output and setting appropriate QC values in the configuration
+When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML notebooks summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.
+YAML summaries of the QC are also created.
 
-For the processing of counts to fraction infectivity (`process_counts`), the file `./results/plates/qc_process_counts_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
-You then need to address these QC failures by doing one of the following:
-
- - Removing the offending barcodes by adding them to `barcodes_to_drop` for that plate. (If the barcode is missing in all plates, you might remove from `viral_barcodes` or `neut_standard_sets`.)
-
- - Remove the offending samples by adding them to `wells_to_drop` for that plate.
-
- - Adjusting the `process_counts_qc_thresholds` for that plate to be more lenient.
-
-For the computation of serum titers against specific viruses, the file `./results/sera/qc_serum_titers_summary.txt` will summarize the QC failures and tell you which HTML notebooks to look at for details.
-You will need to address these QC failures by adjusting `serum_titers_qc_exclusions` to either not worry if a serum-virus pair fails the QC filters or dropping specific serum-virus-replicate measurements.
-
-It is expected that you may have to perform several iterations of running and fixing QC failures.
-The pipeline will only run to completion when all QC filters are passed.
+While the QC is designed to hopefully make reasonable default choices, you should **always** carefully look through these notebooks after adding new data, and potentially adjust the QC in the configuration and re-run.
 
 ## Rendering HTML plots and notebooks in docs
-If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, and per-plate analyses in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).
+If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, per-plate analyses and overall QC summary in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).
 This HTML documentation can be rendered via [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) from the `./docs/` directory.
+
+Looking at this documentation is a good way to QC the data and understand the results.
 
 The documentation for the test example for this pipeline is at [https://jbloomlab.github.io/seqneut-pipeline/](https://jbloomlab.github.io/seqneut-pipeline/).
 
