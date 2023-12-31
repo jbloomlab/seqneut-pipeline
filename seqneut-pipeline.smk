@@ -143,7 +143,7 @@ rule serum_titers:
     params:
         viral_strain_plot_order=viral_strain_plot_order,
         serum_titer_as=lambda wc: (
-            config["sera_override_defaults"]["titer_as"]
+            config["sera_override_defaults"][wc.serum]["titer_as"]
             if (
                 (wc.serum in config["sera_override_defaults"])
                 and ("titer_as" in config["sera_override_defaults"][wc.serum])
@@ -151,7 +151,7 @@ rule serum_titers:
             else config["default_serum_titer_as"]
         ),
         qc_thresholds=lambda wc: (
-            config["sera_override_defaults"]["qc_thresholds"]
+            config["sera_override_defaults"][wc.serum]["qc_thresholds"]
             if (
                 (wc.serum in config["sera_override_defaults"])
                 and ("qc_thresholds" in config["sera_override_defaults"][wc.serum])
@@ -164,7 +164,6 @@ rule serum_titers:
         "environment.yml"
     notebook:
         "notebooks/serum_titers.py.ipynb"
-
 
 rule aggregate_titers:
     """Aggregate all serum titers."""
