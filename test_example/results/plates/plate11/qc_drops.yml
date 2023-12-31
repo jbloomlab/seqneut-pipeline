@@ -1,0 +1,17 @@
+wells:
+  D6: avg_barcode_counts_per_well
+  C9: min_neut_standard_count_per_well
+  D9: min_neut_standard_count_per_well
+barcodes:
+  CATACAGAGTTTGTTG: min_neut_standard_frac_per_well
+barcode_wells:
+  CGGATAAAAATGATAT B12: min_no_serum_count_per_viral_barcode_well
+  ACGGAATCCCCTGAGA B12: min_no_serum_count_per_viral_barcode_well
+  CAGTTCTGCGACCAGC D10: max_frac_infectivity_per_viral_barcode_well
+barcode_serum_replicates:
+  ACGACATGATCAAACG M099d0: min_R2
+  CTATTAATCATGCAAA M099d0: min_R2
+  AATAAGTATACGGGAT M099d30: min_R2
+  CCCTATGCTGCGTATT M099d30: min_R2
+  CGGATAAAAATGATAT M099d30: min_R2
+serum_replicates: {}

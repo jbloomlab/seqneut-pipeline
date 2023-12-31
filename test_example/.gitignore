@@ -14,16 +14,16 @@ results/barcode_counts/*
 
 !results/plates
 results/plates/*/*
-!results/plates/qc_process_counts_summary.txt
 !results/plates/*/frac_infectivity.csv
 !results/plates/*/curvefits.csv
+!results/plates/*/qc_drops.yml
 
 !results/sera
 results/sera/*/*
-!results/sera/qc_serum_titers_summary.txt
 !results/sera/sera_by_plate.csv
-!results/sera/*/titers_median.csv
+!results/sera/*/titers.csv
 !results/sera/*/titers_per_replicate.csv
+!results/sera/*/qc_drops.yml
 
 !results/aggregated_titers
 results/aggregated_titers/*
