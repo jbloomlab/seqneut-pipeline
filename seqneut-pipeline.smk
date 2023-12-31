@@ -165,6 +165,7 @@ rule serum_titers:
     notebook:
         "notebooks/serum_titers.py.ipynb"
 
+
 rule aggregate_titers:
     """Aggregate all serum titers."""
     input:
