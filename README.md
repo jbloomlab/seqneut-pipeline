@@ -1,10 +1,11 @@
 # `seqneut-pipeline` for analyzing sequencing-based neutralization assays
 
+[![Release](https://img.shields.io/github/v/release/jbloomlab/seqneut-pipeline?logo=github)](https://github.com/jbloomlab/seqneut-pipeline/releases)
 [![Build Status](https://github.com/jbloomlab/seqneut-pipeline/actions/workflows/test.yaml/badge.svg)](https://github.com/jbloomlab/seqneut-pipeline/actions/workflows/test.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Snakemake](https://img.shields.io/badge/snakemake-≥7.32-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥8.0-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
 
 ---
 
@@ -365,7 +366,7 @@ The specific meanings of these QC parameters are:
 
  - `max_frac_infectivity_at_least`: drop any viral-barcode / serum-replicate combination that does not have a maximum frac infectivity across all concentrations of at least this value. Typically you might want to set a value >0.5, the exception being if you have a serum so potent it is neutralizing at all dilutions tested.
 
- - `min_R2`: drop any viral-barcode / serum-replicate combinations where the fit curve does not have a [coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) at least this large (a coefficient of determination of 1 is a perfect fit). Used to drop very poor fitting curves. Reasonable values might be in the 0.6 to 0.9 range, although you should also just look at the curves being dropped.
+ - `min_R2`: drop any viral-barcode / serum-replicate combinations where the fit curve does not have a [coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) at least this large (a coefficient of determination of 1 is a perfect fit). Used to drop very poor fitting curves. Reasonable values might be in the 0.6 to 0.8 range, although you should also just look at the curves being dropped to see if they look good.
 
  - `serum_replicates_ignore_curvefit_qc`: list of any serum replicates for which we ignore the curve-fitting QC for all viral barcodes.
 
