@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## version 2.0.0
+Full re-write that changes how configuration is specified to automatically do the QC, and uses a newer version of `neutcurve` that fits better. Completely backward-incompatible with version 1.*.
+
 ### version 1.1.0
 - Update software environment to include `neutcurve` 1.0 and `snakemake` 8.0.
 - Fix linting of notebooks with `ruff`
