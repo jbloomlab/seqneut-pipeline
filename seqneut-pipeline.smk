@@ -4,7 +4,6 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 
 """
 
-
 import pandas as pd
 
 

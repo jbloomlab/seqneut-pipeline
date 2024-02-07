@@ -1,6 +1,5 @@
 """Implements ``snakemake`` rule to translate gene sequence."""
 
-
 import os
 import shutil
 import sys
