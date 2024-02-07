@@ -1,6 +1,5 @@
 """Get list of sera and plates for each."""
 
-
 import sys
 
 import pandas as pd

@@ -1,6 +1,5 @@
 """Process QC for serum titers."""
 
-
 import sys
 
 

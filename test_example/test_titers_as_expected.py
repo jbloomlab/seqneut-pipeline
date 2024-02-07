@@ -1,6 +1,5 @@
 """Test script to test titers as expected."""
 
-
 import numpy
 
 import pandas as pd
