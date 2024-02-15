@@ -43,6 +43,12 @@ samples = pd.concat(
 assert samples["sample"].nunique() == samples["fastq"].nunique() == len(samples)
 samples = samples.set_index("sample").to_dict(orient="index")
 
+if "miscellaneous_plates" in config:
+    miscellaneous_plates = process_miscellaneous_plates(config["miscellaneous_plates"])
+else:
+    miscellaneous_plates = {}
+print(miscellaneous_plates)
+
 
 # --- Snakemake rules -------------------------------------------------------------------
 
@@ -247,10 +253,36 @@ rule build_docs:
         "scripts/build_docs.py"
 
 
+rule miscellaneous_plate_count_barcodes:
+    """Count barcodes for a well in a miscellaneous plate."""
+    input:
+        fastq=lambda wc: miscellaneous_plates[wc.misc_plate]["wells"][wc.well],
+        viral_library=lambda wc: viral_libraries[miscellaneous_plates[wc.misc_plate]["viral_library"]],
+        neut_standard_set=lambda wc: neut_standard_sets[miscellaneous_plates[wc.misc_plate]["neut_standard_set"]],
+    output:
+        counts="results/miscellaneous_plates/{misc_plate}/{well}_counts.csv",
+        invalid="results/miscellaneous_plates/{misc_plate}/{well}_invalid.csv",
+        fates="results/miscellaneous_plates/{misc_plate}/{well}_fates.csv",
+    params:
+        illumina_barcode_parser_params=config["illumina_barcode_parser_params"],
+    conda:
+        "envs/count_barcodes.yml"
+    log:
+        "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
+    script:
+        "scripts/count_barcodes.py"
+
+
 seqneut_pipeline_outputs = [
     rules.aggregate_titers.output.titers,
     rules.aggregate_titers.output.pickle,
     rules.aggregate_qc_drops.output.plate_qc_drops,
     rules.aggregate_qc_drops.output.sera_qc_drops,
     rules.build_docs.output.docs,
+    *[
+        f"results/miscellaneous_plates/{plate}/{well}_{suffix}" 
+        for plate in miscellaneous_plates
+        for well in miscellaneous_plates[plate]["wells"]
+        for suffix in ["counts.csv", "invalid.csv", "fates.csv"]
+    ]
 ]
