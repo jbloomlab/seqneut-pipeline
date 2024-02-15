@@ -9,6 +9,29 @@ import functools
 import os
 
 
+def process_miscellaneous_plates(misc_plates_d):
+    """Process the dictionary of miscellaneous_plates."""
+    misc_plates = {}
+    req_keys = {"viral_library", "neut_standard_set", "samples_csv"}
+    for plate, plate_dict in misc_plates_d.items():
+        misc_plates[plate] = {}
+        if not req_keys.issubset(plate_dict):
+            raise ValueError(f"miscellaneous_plate {plate} lacks {req_keys=}")
+        misc_plates[plate]["viral_library"] = plate_dict["viral_library"]
+        misc_plates[plate]["neut_standard_set"] = plate_dict["neut_standard_set"]
+        samples = pd.read_csv(plate_dict["samples_csv"])
+        if not {"well", "fastq"}.issubset(samples.columns):
+            raise ValueError(
+                f"{plate_dict['samples_csv']} lacks columns 'well', 'fastq'"
+            )
+        if len(samples) != samples["well"].nunique():
+            raise ValueError(
+                f"{plate_dict['samples_csv']} has non-unique entries in 'well' column"
+            )
+        misc_plates[plate]["wells"] = samples.set_index("well")["fastq"].to_dict()
+    return misc_plates
+
+
 def process_plate(plate, plate_params):
     """Process a plot from the configuration."""
 

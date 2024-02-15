@@ -423,6 +423,39 @@ sera_override_defaults:
 The above means that for serum `M099d30` we override the `default_serum_qc_thresholds` to exclude virus ` A/Belgium/H0017/2022`, and for serum `Y044d30` we override the defaults to allow a greater fold-change from median for individual replicates, and compute the titer as `nt50`.
 Anything not listed here gets handled by the defaults in `default_serum_titer_as` and `default_serum_qc_thresholds`.
 
+### miscellaneous_plates
+This is an optional key that can be used specify plates that you just want to count barcodes for, and then analyze those counts outside the main pipeline.
+This might be useful for library pooling or QC, for instance---or if you want to look at some failed plates that you don't actually want to fit curves for.
+
+If you do not want to specify any miscellaneous plates either leave this key out or set it to an empty dictionary (`{}`).
+
+The key should look like this:
+
+```
+miscellaneous_plates:
+
+  <plate_name_1>:
+    date: <date>
+    viral_library: <viral library>
+    neut_standard_set: <standard set>
+    samples_csv: <filename>
+
+  <plate_name_2>:
+    ...
+```
+
+The plate name is just the name assigned to the plate.
+The `date`, `viral_library`, and `neut_standard_set` keys have the same meaning as for the plates specified under `plates`.
+
+The `samples_csv` should specify the samples to analyze in a CSV that has columns named "well" and "fastq", and optionally other columns as well.
+
+The output is that for each plate, the following files are created:
+
+ - `results/miscellaneous_plates/<plate_name>/<well>_counts.csv`: counts of each viral barcode in that well of that plate.
+ - `results/miscellaneous_plates/<plate_name>/<well>_invalid.csv`: counts of each invalid barcode in that well of that plate.
+ - `results/miscellaneous_plates/<plate_name>/<well>_fates.csv`: summarizing number of reads that are valid and various types of invalid for each well of that plate.
+
+
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
 We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.

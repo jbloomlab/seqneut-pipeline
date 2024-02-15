@@ -114,3 +114,10 @@ sera_override_defaults:
       <<: *default_serum_qc_thresholds
       max_fold_change_from_median: 4
     titer_as: nt50
+
+miscellaneous_plates:
+  random_plate_1:
+    date: 2023-08-01
+    viral_library: pdmH1N1_lib2023_loes
+    neut_standard_set: loes2023
+    samples_csv: data/miscellaneous_plates/random_plate_1.csv
