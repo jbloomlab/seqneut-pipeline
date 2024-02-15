@@ -4,7 +4,7 @@ Y154d182,A/India-Pune-Nivcov2221170/2022,plate2-AAATCTACCGCATTAT,177.7,interpola
 Y154d182,A/Niger/10217/2021,plate2-AAATAAGTACGCAAAT,2855,interpolated,midpoint,2910,2855,0.9718,0
 Y154d182,A/Niger/10217/2021,plate2-CATCAACCGCCATTTC,1835,interpolated,midpoint,1850,1835,0.9192,0
 Y154d182,A/Niger/10217/2021,plate2-GAACGATTGTAATTTT,3479,interpolated,midpoint,3871,3479,0.89,0
-Y154d182,A/Perth/1/2022,plate2-CTGCACGAGAGACTTC,315.1,interpolated,midpoint,315.1,315.1,1,0
+Y154d182,A/Perth/1/2022,plate2-CTGCACGAGAGACTTC,272.6,interpolated,midpoint,272.6,272.6,1.001,0
 Y154d182,A/Perth/1/2022,plate2-TTGGGGAAATATATAA,277.1,interpolated,midpoint,277.1,277.1,1,0
 Y154d182,A/Perth/1/2022,plate2-AGCCCCGTGAGAAGCA,203,interpolated,midpoint,203.4,203,0.9803,0
 Y154d182,A/SouthAfrica/R16462/2021,plate2-CACCATTAAAGAGGTA,3323,interpolated,midpoint,5119,3323,0.5941,0
@@ -70,16 +70,16 @@ Y154d182,A/Brisbane/02/2018,plate2-ATCCGATTTAAAGGCA,3749,interpolated,midpoint,3
 Y154d182,A/Ghana/2080/2020,plate2-CAGCAAAAGCATCACC,1737,interpolated,midpoint,1745,1737,0.9631,0
 Y154d182,A/Ghana/2080/2020,plate2-GTAGTGCATCATTGAT,2655,interpolated,midpoint,2728,2655,0.9624,0
 Y154d182,A/Ghana/2080/2020,plate2-GCAATCCCGCAATTTG,2660,interpolated,midpoint,5948,2660,0.6624,0
-Y154d182,A/Michigan/19/2021,plate2-AACGTTAACAAATGAA,105.7,interpolated,midpoint,105.7,105.7,1,0
+Y154d182,A/Michigan/19/2021,plate2-AACGTTAACAAATGAA,104.3,interpolated,midpoint,104.3,104.3,1,0
 Y154d182,A/Michigan/19/2021,plate2-AGAGAAAAAACAGTGA,340.8,interpolated,midpoint,344.7,340.8,0.9801,0
 Y154d182,A/Michigan/19/2021,plate2-TAATGAGCTTTATGGT,209.6,interpolated,midpoint,209.6,209.6,1,0
 Y154d182,A/Chester/5355/2022,plate2-CCTCAAAATAACAAGC,189.7,interpolated,midpoint,189.7,189.7,1,0
 Y154d182,A/Chester/5355/2022,plate2-TCATATAAAGAAAAGG,202.8,interpolated,midpoint,202.8,202.8,1,0
 Y154d182,A/Chester/5355/2022,plate2-AAAAAACGCATGTAGA,214.6,interpolated,midpoint,214.6,214.6,1,0
-Y154d182,A/Sydney/43/2022,plate2-TACGGACATTCTTAAC,228.7,interpolated,midpoint,228.6,228.7,1.001,0
+Y154d182,A/Sydney/43/2022,plate2-TACGGACATTCTTAAC,228.7,interpolated,midpoint,228.6,228.7,1,0
 Y154d182,A/Sydney/43/2022,plate2-TAGTATAATAGAGCAG,332.5,interpolated,midpoint,342.9,332.5,0.9543,0
 Y154d182,A/Sydney/43/2022,plate2-CTATTAATCATGCAAA,197.4,interpolated,midpoint,198,197.4,0.9749,0
-Y154d182,A/Utah/27/2022,plate2-ACAATGTGACTCACCC,227.5,interpolated,midpoint,227.5,227.5,1,0
+Y154d182,A/Utah/27/2022,plate2-ACAATGTGACTCACCC,257.4,interpolated,midpoint,257.3,257.4,1.001,0
 Y154d182,A/Utah/27/2022,plate2-TCCTTGTAATTCAACT,207.4,interpolated,midpoint,209.7,207.4,0.8775,0
 Y154d182,A/Utah/27/2022,plate2-TAAATAACTCGTATTT,260.3,interpolated,midpoint,260.8,260.3,0.9957,0
 Y154d182,A/SouthAfrica/R14850/2021,plate2-TACTCAACAAGATAAA,202.5,interpolated,midpoint,202.5,202.5,1,0
@@ -87,7 +87,7 @@ Y154d182,A/SouthAfrica/R14850/2021,plate2-AACTCCGCAGACACTG,199.1,interpolated,mi
 Y154d182,A/SouthAfrica/R14850/2021,plate2-GAGACGTACGAAATTA,186.6,interpolated,midpoint,187.7,186.6,0.9434,0
 Y154d182,A/India/Pun-NIV312851/2021,plate2-ACAGCAAATACTCACA,206.8,interpolated,midpoint,207.4,206.8,0.9726,0
 Y154d182,A/India/Pun-NIV312851/2021,plate2-GTAGCTATAACTAATA,436.9,interpolated,midpoint,440.7,436.9,0.9863,0
-Y154d182,A/India/Pun-NIV312851/2021,plate2-CAAGAACCCAAATATA,227.1,interpolated,midpoint,227.1,227.1,1,0
+Y154d182,A/India/Pun-NIV312851/2021,plate2-CAAGAACCCAAATATA,235.1,interpolated,midpoint,235,235.1,1.001,0
 Y154d182,A/Newcastle/2/2022,plate2-CAAATATATCTTCATG,314.4,interpolated,midpoint,314.2,314.4,1.001,0
 Y154d182,A/Newcastle/2/2022,plate2-TTCACTAAGATTTCAT,190.7,interpolated,midpoint,190.7,190.7,1,0
 Y154d182,A/Newcastle/2/2022,plate2-GCCCAAGTAGGTGCAA,215.5,interpolated,midpoint,215.5,215.5,1,0
@@ -104,7 +104,7 @@ Y154d182,A/Washington/23/2020,plate2-GGATAAGAAAACTACT,653.7,interpolated,midpoin
 Y154d182,A/Washington/23/2020,plate2-GAACTGGCGTCAATCA,623.5,interpolated,midpoint,623.5,623.5,1,0
 Y154d182,A/Washington/23/2020,plate2-ACGGAATCCCCTGAGA,592.8,interpolated,midpoint,592.8,592.8,1,0
 Y154d182,A/Norway/25089/2022,plate2-TGGAAAAGATGTAATA,381.5,interpolated,midpoint,384.7,381.5,0.9933,0
-Y154d182,A/Norway/25089/2022,plate2-GACTCAATAATCACAC,206.1,interpolated,midpoint,205.9,206.1,1.002,0
+Y154d182,A/Norway/25089/2022,plate2-GACTCAATAATCACAC,197.6,interpolated,midpoint,197.6,197.6,1,0
 Y154d182,A/Norway/25089/2022,plate2-CGGATAAAAATGATAT,189.1,interpolated,midpoint,190.8,189.1,0.9257,0
 Y154d182,A/England/220200318/2022,plate2-CGTAATACATTTAAGA,2505,interpolated,midpoint,2494,2505,1.004,0
 Y154d182,A/England/220200318/2022,plate2-GACCAACTGTGGTACA,1721,interpolated,midpoint,1721,1721,1,0

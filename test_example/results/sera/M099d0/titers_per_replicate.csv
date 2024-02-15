@@ -33,7 +33,7 @@ M099d0,A/Belgium/H0038/2022,plate2-TACCGTATAATTAAAA,644.2,interpolated,midpoint,
 M099d0,A/Belgium/H0038/2022,plate2-GCCGGAGGGCATTTTC,1083,interpolated,midpoint,1181,1083,0.9022,0
 M099d0,A/Paris/30353/2021,plate11-GTTTGACAATCACTAC,924.4,interpolated,midpoint,949.9,924.4,0.9364,0
 M099d0,A/Paris/30353/2021,plate11-ACATAAGAACCCTATA,574.1,interpolated,midpoint,576.9,574.1,0.9582,0
-M099d0,A/Paris/30353/2021,plate11-ACATTTCCCTCGATAT,636.4,interpolated,midpoint,636.4,636.4,0.9999,0
+M099d0,A/Paris/30353/2021,plate11-ACATTTCCCTCGATAT,781.8,interpolated,midpoint,781.6,781.8,1.001,0
 M099d0,A/Paris/30353/2021,plate2-ACATAAGAACCCTATA,564.7,interpolated,midpoint,566.9,564.7,0.9575,0
 M099d0,A/Paris/30353/2021,plate2-GTTTGACAATCACTAC,765.5,interpolated,midpoint,760.8,765.5,1.005,0
 M099d0,A/Paris/30353/2021,plate2-ACATTTCCCTCGATAT,599.8,interpolated,midpoint,601,599.8,0.9817,0
@@ -59,9 +59,9 @@ M099d0,A/Cote_DIvoire/1448/2021,plate2-GTTAAACGATCTATAG,464.8,interpolated,midpo
 M099d0,A/Bangladesh/8036/2021,plate11-ATACCTCAACCTTGAA,337.1,interpolated,midpoint,334.5,337.1,1.008,0
 M099d0,A/Bangladesh/8036/2021,plate11-ACGGGGCCCAGGTAAT,544.4,interpolated,midpoint,543.6,544.4,1.003,0
 M099d0,A/Bangladesh/8036/2021,plate11-CAGTTCTGCGACCAGC,502.2,interpolated,midpoint,507.6,502.2,0.9291,0
-M099d0,A/Bangladesh/8036/2021,plate2-ATACCTCAACCTTGAA,256.2,interpolated,midpoint,256,256.2,1.002,0
+M099d0,A/Bangladesh/8036/2021,plate2-ATACCTCAACCTTGAA,239,interpolated,midpoint,239,239,1,0
 M099d0,A/Bangladesh/8036/2021,plate2-ACGGGGCCCAGGTAAT,205.1,interpolated,midpoint,205.1,205.1,1,0
-M099d0,A/Bangladesh/8036/2021,plate2-CAGTTCTGCGACCAGC,232.6,interpolated,midpoint,232.6,232.6,1,0
+M099d0,A/Bangladesh/8036/2021,plate2-CAGTTCTGCGACCAGC,248.2,interpolated,midpoint,248.2,248.2,1,0
 M099d0,A/Bangladesh/8002/2021,plate11-AGTGTCCCTAAGAGGC,507.7,interpolated,midpoint,513,507.7,0.9843,0
 M099d0,A/Bangladesh/8002/2021,plate11-GCAACGCCAAATAATT,342.4,interpolated,midpoint,356.4,342.4,0.9142,0
 M099d0,A/Bangladesh/8002/2021,plate11-TCTGCTAAACTAAGTA,764.8,interpolated,midpoint,857.6,764.8,0.887,0
@@ -99,7 +99,7 @@ M099d0,A/India/Pun-NIV312851/2021,plate2-CAAGAACCCAAATATA,213.1,interpolated,mid
 M099d0,A/Togo/0274/2021,plate11-TAGCAGATGTATCAAT,996.8,interpolated,midpoint,1102,996.8,0.8779,0
 M099d0,A/Togo/0274/2021,plate11-GTAACATTATACGATT,999.6,interpolated,midpoint,998.7,999.6,1.002,0
 M099d0,A/Togo/0274/2021,plate11-AACGAATGAATTTCTT,816.5,interpolated,midpoint,898.1,816.5,0.8414,0
-M099d0,A/Togo/0274/2021,plate2-TAGCAGATGTATCAAT,364,interpolated,midpoint,364,364,1,0
+M099d0,A/Togo/0274/2021,plate2-TAGCAGATGTATCAAT,351.1,interpolated,midpoint,351.1,351.1,1,0
 M099d0,A/Togo/0274/2021,plate2-GTAACATTATACGATT,725.3,interpolated,midpoint,782.4,725.3,0.9167,0
 M099d0,A/Togo/0274/2021,plate2-AACGAATGAATTTCTT,551.6,interpolated,midpoint,556.4,551.6,0.9286,0
 M099d0,A/Ghana/2080/2020,plate11-GTAGTGCATCATTGAT,599.2,interpolated,midpoint,605,599.2,0.9066,0
@@ -173,7 +173,7 @@ M099d0,A/Togo/845/2020,plate11-TTACCGTCTACGCATA,1298,interpolated,midpoint,1343,
 M099d0,A/Togo/845/2020,plate11-AGGTCAAGACCACAGG,757,interpolated,midpoint,871.3,757,0.8261,0
 M099d0,A/Togo/845/2020,plate2-AGGTCAAGACCACAGG,649.7,interpolated,midpoint,667,649.7,0.9624,0
 M099d0,A/Togo/845/2020,plate2-GCATGGATCCTTTACT,947.9,interpolated,midpoint,996.1,947.9,0.9208,0
-M099d0,A/Togo/845/2020,plate2-TTACCGTCTACGCATA,713.2,interpolated,midpoint,712.2,713.2,1.003,0
+M099d0,A/Togo/845/2020,plate2-TTACCGTCTACGCATA,676.7,interpolated,midpoint,676.4,676.7,1.001,0
 M099d0,A/Togo/0304/2021,plate11-GAAGAATGGTTTTCTG,1256,interpolated,midpoint,1253,1256,1.003,0
 M099d0,A/Togo/0304/2021,plate11-AACTCTAAAGATATAA,606.9,interpolated,midpoint,607.3,606.9,0.9938,0
 M099d0,A/Togo/0304/2021,plate11-AGAGATAATAACAAAA,606.1,interpolated,midpoint,610.5,606.1,0.9161,0
@@ -195,7 +195,7 @@ M099d0,A/Belgium/H0017/2022,plate2-ATGTCCATAAAAAATA,664.3,interpolated,midpoint,
 M099d0,A/SouthAfrica/R14850/2021,plate11-TACTCAACAAGATAAA,560.2,interpolated,midpoint,561.4,560.2,0.9814,0
 M099d0,A/SouthAfrica/R14850/2021,plate11-AACTCCGCAGACACTG,574.4,interpolated,midpoint,581.1,574.4,0.9075,0
 M099d0,A/SouthAfrica/R14850/2021,plate11-GAGACGTACGAAATTA,540.6,interpolated,midpoint,544.3,540.6,0.9115,0
-M099d0,A/SouthAfrica/R14850/2021,plate2-TACTCAACAAGATAAA,235.5,interpolated,midpoint,235.3,235.5,1.002,0
+M099d0,A/SouthAfrica/R14850/2021,plate2-TACTCAACAAGATAAA,235.4,interpolated,midpoint,235.3,235.4,1.002,0
 M099d0,A/SouthAfrica/R14850/2021,plate2-AACTCCGCAGACACTG,288.6,interpolated,midpoint,288.5,288.6,1,0
 M099d0,A/SouthAfrica/R14850/2021,plate2-GAGACGTACGAAATTA,323.1,interpolated,midpoint,323.1,323.1,1,0
 M099d0,A/Newcastle/2/2022,plate11-TTCACTAAGATTTCAT,564.1,interpolated,midpoint,575.7,564.1,0.9608,0
@@ -203,7 +203,7 @@ M099d0,A/Newcastle/2/2022,plate11-CAAATATATCTTCATG,378.9,interpolated,midpoint,4
 M099d0,A/Newcastle/2/2022,plate11-GCCCAAGTAGGTGCAA,349.9,interpolated,midpoint,362.4,349.9,0.9399,0
 M099d0,A/Newcastle/2/2022,plate2-CAAATATATCTTCATG,197.9,interpolated,midpoint,198.9,197.9,0.9574,0
 M099d0,A/Newcastle/2/2022,plate2-TTCACTAAGATTTCAT,192.8,interpolated,midpoint,192.8,192.8,1,0
-M099d0,A/Newcastle/2/2022,plate2-GCCCAAGTAGGTGCAA,240.6,interpolated,midpoint,240.5,240.6,1.001,0
+M099d0,A/Newcastle/2/2022,plate2-GCCCAAGTAGGTGCAA,231.5,interpolated,midpoint,231.5,231.5,1,0
 M099d0,A/SouthAfrica/R16462/2021,plate11-CACCATTAAAGAGGTA,657.8,interpolated,midpoint,657.8,657.8,1,0
 M099d0,A/SouthAfrica/R16462/2021,plate11-CGGCGTATCGTTCACA,654.7,interpolated,midpoint,658.5,654.7,0.9372,0
 M099d0,A/SouthAfrica/R16462/2021,plate11-CTAGCAGATTGTATAA,1410,interpolated,midpoint,1448,1410,0.9535,0

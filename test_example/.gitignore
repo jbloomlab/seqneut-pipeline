@@ -36,4 +36,4 @@ results/qc_drops/*
 
 !results/miscellaneous_plates
 results/miscellaneous_plates/*/*
-!results/plates/*/*_counts.csv
+!results/miscellaneous_plates/*/*counts.csv
