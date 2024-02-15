@@ -47,7 +47,6 @@ if "miscellaneous_plates" in config:
     miscellaneous_plates = process_miscellaneous_plates(config["miscellaneous_plates"])
 else:
     miscellaneous_plates = {}
-print(miscellaneous_plates)
 
 
 # --- Snakemake rules -------------------------------------------------------------------
@@ -257,8 +256,12 @@ rule miscellaneous_plate_count_barcodes:
     """Count barcodes for a well in a miscellaneous plate."""
     input:
         fastq=lambda wc: miscellaneous_plates[wc.misc_plate]["wells"][wc.well],
-        viral_library=lambda wc: viral_libraries[miscellaneous_plates[wc.misc_plate]["viral_library"]],
-        neut_standard_set=lambda wc: neut_standard_sets[miscellaneous_plates[wc.misc_plate]["neut_standard_set"]],
+        viral_library=lambda wc: viral_libraries[
+            miscellaneous_plates[wc.misc_plate]["viral_library"]
+        ],
+        neut_standard_set=lambda wc: neut_standard_sets[
+            miscellaneous_plates[wc.misc_plate]["neut_standard_set"]
+        ],
     output:
         counts="results/miscellaneous_plates/{misc_plate}/{well}_counts.csv",
         invalid="results/miscellaneous_plates/{misc_plate}/{well}_invalid.csv",
@@ -280,9 +283,9 @@ seqneut_pipeline_outputs = [
     rules.aggregate_qc_drops.output.sera_qc_drops,
     rules.build_docs.output.docs,
     *[
-        f"results/miscellaneous_plates/{plate}/{well}_{suffix}" 
+        f"results/miscellaneous_plates/{plate}/{well}_{suffix}"
         for plate in miscellaneous_plates
         for well in miscellaneous_plates[plate]["wells"]
         for suffix in ["counts.csv", "invalid.csv", "fates.csv"]
-    ]
+    ],
 ]
