@@ -48,6 +48,12 @@ if "miscellaneous_plates" in config:
 else:
     miscellaneous_plates = {}
 
+# define `add_htmls_to_docs` if not already defined.
+try:
+    add_htmls_to_docs
+except NameError:  # if not defined
+    add_htmls_to_docs = {}
+
 
 # --- Snakemake rules -------------------------------------------------------------------
 
@@ -228,6 +234,7 @@ rule notebook_to_html:
 rule build_docs:
     """Build the HTML documentation."""
     input:
+        lambda wc: [f for d in add_htmls_to_docs.values() for f in d.values()],
         titers_chart=rules.aggregate_titers.output.titers_chart,
         serum_titers_htmls=lambda wc: expand(
             "results/sera/{serum}/{serum}_titers.html",
@@ -244,6 +251,10 @@ rule build_docs:
         description=config["description"],
         sera=lambda wc: list(sera_plates()),
         plates=list(plates),
+        add_htmls_to_docs=lambda wc: {
+            key: {key2: str(val2) for (key2, val2) in val.items()}
+            for (key, val) in add_htmls_to_docs.items()
+        },
     conda:
         "environment.yml"
     log:
