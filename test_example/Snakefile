@@ -1,6 +1,7 @@
 """Top-level ``snakemake`` file that runs analysis."""
 
 import os
+import textwrap
 
 
 configfile: "config.yml"
@@ -12,3 +13,33 @@ include: os.path.join(config["seqneut-pipeline"], "seqneut-pipeline.smk")
 rule all:
     input:
         seqneut_pipeline_outputs,
+
+
+rule make_extra_html_for_docs:
+    """Write example HTML for docs."""
+    output:
+        html="results/extra_htmls/example_html.html",
+    log:
+        "results/logs/make_extra_html_for_docs.txt",
+    run:
+        with open(output.html, "w") as f:
+            f.write(
+                textwrap.dedent(
+                    """\
+                    <!DOCTYPE html>
+                    <html lang="en">
+                      <body>
+                        Example HTML file
+                      </body>
+                    </html>
+                    """
+                )
+            )
+
+
+# add extra HTML to docs
+add_htmls_to_docs = {
+    "Additional files": {
+        "Example HTML file": "results/extra_htmls/example_html.html",
+    },
+}

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### version 2.2.0
+- Add the `add_htmls_to_docs` option, which can be specified in `Snakefile` to add additional HTML documentation to pipeline.
+- Update to `snakemake` 8.5.4.
+
 ### version 2.1.0
 - Add an option to specify `miscellaneous_plates` which are plates that just have their barcodes counted (addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/26)).
 

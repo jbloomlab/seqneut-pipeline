@@ -511,6 +511,17 @@ Looking at this documentation is a good way to QC the data and understand the re
 
 The documentation for the test example for this pipeline is at [https://jbloomlab.github.io/seqneut-pipeline/](https://jbloomlab.github.io/seqneut-pipeline/).
 
+If you want to add additional HTML files to the docs, specify a dict in the top-level `Snakefile` with the name `add_htmls_to_docs` like this:
+```
+add_htmls_to_docs = {
+    "Additional files": {
+        "Example HTML file":  "results/extra_htmls/example_html.html",
+        <other keys specifying file names and their paths>
+    },
+    <other nested dicts with a heading and then name: file key-value pairs>
+}
+```
+
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
 
