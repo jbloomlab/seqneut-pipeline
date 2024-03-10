@@ -10,8 +10,11 @@
 ---
 
 This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://research.fredhutch.org/bloom/en.html).
-See **[add link to Loes et al when available]** for a description of these assays.
-That paper is also the scientific citation for this analysis pipeline.
+See [Loes et al (2024)](https://doi.org/10.1101/2024.03.08.584176) for a description of these assays.
+
+
+Please also cite [Loes et al (2024)](https://doi.org/10.1101/2024.03.08.584176) if you use this pipeline for your scientific study.
+
 See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a list of the contributors to this pipeline.
 
 ## Overview
