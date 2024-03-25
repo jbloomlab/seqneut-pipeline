@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## version 3.0.0
+- Update `seqneut-pipeline` conda environment in `environment.yml`. Use new `neutcurve`, also update other packages (`pandas`, `snakemake`, `markdown`, `papermill`) to latest versions.
+
 ### version 2.2.0
 - Add the `add_htmls_to_docs` option, which can be specified in `Snakefile` to add additional HTML documentation to pipeline.
 - Update to `snakemake` 8.5.4.

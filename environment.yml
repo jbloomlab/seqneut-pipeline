@@ -10,15 +10,16 @@ dependencies:
   - black-jupyter
   - jupyterlab
   - mamba
-  - markdown=3.5
-  - pandas=2.1
-  - papermill=2.4
+  - markdown=3.6
+  - pandas=2.2
+  - papermill=2.5
   - pip
+  - pyarrow
   - python=3.11
-  - ruamel.yaml=0.18.5
+  - ruamel.yaml=0.18.6
   - snakefmt
-  - snakemake=8.5.4
+  - snakemake=8.10.0
   - ruff
   - pip:
     - dms_variants==1.5.0
-    - neutcurve==1.1.2
+    - neutcurve==2.0.0
