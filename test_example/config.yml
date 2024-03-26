@@ -57,7 +57,7 @@ default_process_plate_curvefit_params: &default_process_plate_curvefit_params
   frac_infectivity_ceiling: 1
   fixtop: [0.75, 1]
   fixbottom: 0
-  fixslope: [1, 5]
+  fixslope: [0.8, 5]
 
 default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
   max_frac_infectivity_at_least: 0

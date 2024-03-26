@@ -342,7 +342,7 @@ default_process_plate_curvefit_params: &default_process_plate_curvefit_params
   frac_infectivity_ceiling: 1
   fixtop: [0.75, 1.0]
   fixbottom: 0
-  fixslope: [1, 3]
+  fixslope: [0.8, 5]
 ```
 
 The specific meaning of these curve-fitting parameters are as follows:
@@ -356,7 +356,7 @@ The specific meaning of these curve-fitting parameters are as follows:
 
  - `fixbottom`: how to set the bottom plateau of the neutralization curve to this value. Like `fixtop`, it can be a length-two list, a fixed value, or `false`. Typically you should set it to 0 unless you have a good reason otherwise.
 
- - `fixslope`: how to set the slope of the neutralization curve. Like `fixtop`, it can be a length-two list, a fixed value, or `false`. If you don't know the "slope" of the neutralization curve, setting to `false` is a reasonable choice. However, in many cases it is preferable to set to a range that encompasses "reasonable" slopes. Note that what is "reasonable" will depend on the units of the concentration, but when they are serum dilutions a "reasonable" range is often `[1, 3]`.
+ - `fixslope`: how to set the slope of the neutralization curve. Like `fixtop`, it can be a length-two list, a fixed value, or `false`. If you don't know the "slope" of the neutralization curve, setting to `false` is a reasonable choice. However, in many cases it is preferable to set to a range that encompasses "reasonable" slopes. Note that what is "reasonable" will depend on the units of the concentration, but when they are serum dilutions a "reasonable" range is often `[0.8, 5]`.
 
 #### curvefit_qc
 This key defines some parameters on quality-control performed after the curve-fitting; viral-barcode / serum-replicate combinations that fail this QC are dropped.
