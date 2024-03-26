@@ -340,17 +340,23 @@ The default can be defined like this:
 ```
 default_process_plate_curvefit_params: &default_process_plate_curvefit_params
   frac_infectivity_ceiling: 1
-  fixtop: false
+  fixtop: [0.75, 1.0]
   fixbottom: 0
+  fixslope: [1, 3]
 ```
 
 The specific meaning of these curve-fitting parameters are as follows:
 
  - `frac_infectivity_ceiling`: ceiling to apply to all fraction infectivities before fitting curves. You may want to this to one to put a ceiling on all values >1. In principle, no values should be >1 in the absence of experimental noise.
 
- - `fixtop`: fix the top plateau of the neutralization curve. Typically you might either set to 1, or "false" if you want to let the top be a free parameter. In general, "false" is recommended.
+ - `fixtop`: how to set the top plateau of the neutralization curve. You can set it to:
+   - A list of length two specifying a reasonable range, such as `[0.75, 1.0]`, in which case the top is optimized within that range. **This is typically the recommended setting.**
+   - A fixed value to fix to a specific number, typically 1. This is recommended if you want to force all curves to have a top plateau of one.
+   - The value `false` if you want it to be a totally free parameter. This is not recommended as you can sometimes get spurious fits of a very large value when the data don't capture fully neutralization.
 
- - `fixbottom`: fix the bottom plateau of the neutralization curve to this value. Typically it should be 0 unless you have a good reason otherwise; set to "false" to make it a free parameter.
+ - `fixbottom`: how to set the bottom plateau of the neutralization curve to this value. Like `fixtop`, it can be a length-two list, a fixed value, or `false`. Typically you should set it to 0 unless you have a good reason otherwise.
+
+ - `fixslope`: how to set the slope of the neutralization curve. Like `fixtop`, it can be a length-two list, a fixed value, or `false`. If you don't know the "slope" of the neutralization curve, setting to `false` is a reasonable choice. However, in many cases it is preferable to set to a range that encompasses "reasonable" slopes. Note that what is "reasonable" will depend on the units of the concentration, but when they are serum dilutions a "reasonable" range is often `[1, 3]`.
 
 #### curvefit_qc
 This key defines some parameters on quality-control performed after the curve-fitting; viral-barcode / serum-replicate combinations that fail this QC are dropped.
@@ -359,7 +365,7 @@ You typically want to use the [YAML anchor/merge](https://ktomk.github.io/writin
 The default can be defined like this:
 ```
 default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
-  max_frac_infectivity_at_least: 0.5
+  max_frac_infectivity_at_least: 0
   min_R2: 0.75
   serum_replicates_ignore_curvefit_qc: []
   barcode_serum_replicates_ignore_curvefit_qc: []
@@ -367,7 +373,7 @@ default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
 
 The specific meanings of these QC parameters are:
 
- - `max_frac_infectivity_at_least`: drop any viral-barcode / serum-replicate combination that does not have a maximum frac infectivity across all concentrations of at least this value. Typically you might want to set a value >0.5, the exception being if you have a serum so potent it is neutralizing at all dilutions tested.
+ - `max_frac_infectivity_at_least`: drop any viral-barcode / serum-replicate combination that does not have a maximum frac infectivity across all concentrations of at least this value. Typically if you want to allow curves where the sera neutralize at all tested concentrations then you should set a value of 0. But you should set a value >0.5 if you want to require all sera to have a midpoint within the dilution range.
 
  - `min_R2`: drop any viral-barcode / serum-replicate combinations where the fit curve does not have a [coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) at least this large (a coefficient of determination of 1 is a perfect fit). Used to drop very poor fitting curves. Reasonable values might be in the 0.6 to 0.8 range, although you should also just look at the curves being dropped to see if they look good.
 

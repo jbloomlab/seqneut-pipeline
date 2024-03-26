@@ -1,7 +1,10 @@
 # CHANGELOG
 
 ## version 3.0.0
-- Update `seqneut-pipeline` conda environment in `environment.yml`. Use new `neutcurve`, also update other packages (`pandas`, `snakemake`, `markdown`, `papermill`) to latest versions.
+- In the `curvefit_params`, now `fixslope` should be specified in addition `fixtop` and `fixbottom`. In addition, all three of these can be set to constraint ranges rather than just totally free or to fixed values. Alongside this change, the slope of curve fits are now reported in key output files. Addresses [this issue](https://github.com/jbloomlab/neutcurve/issues/53) and [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/32).
+  - This is a **backward-incompatible change** in the configuration YAML, now you must specify `fixslope` under `curvefit_params`.
+
+- Update `seqneut-pipeline` conda environment in `environment.yml`. Update `neutcurve` 2.0.0, also update other packages (`pandas`, `snakemake`, `markdown`, `papermill`) to latest versions.
 
 ### version 2.2.0
 - Add the `add_htmls_to_docs` option, which can be specified in `Snakefile` to add additional HTML documentation to pipeline.
