@@ -3,7 +3,8 @@ plate2:
   barcodes:
     CATACAGAGTTTGTTG: min_neut_standard_frac_per_well
   barcode_wells: {}
-  barcode_serum_replicates: {}
+  barcode_serum_replicates:
+    CACCATTAAAGAGGTA Y154d182: min_R2
   serum_replicates: {}
 plate11:
   wells:
@@ -23,4 +24,6 @@ plate11:
     AATAAGTATACGGGAT M099d30: min_R2
     CCCTATGCTGCGTATT M099d30: min_R2
     CGGATAAAAATGATAT M099d30: min_R2
+    GAACTGGCGTCAATCA M099d30: min_R2
+    TACCGTATAATTAAAA M099d30: min_R2
   serum_replicates: {}
