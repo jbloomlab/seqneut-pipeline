@@ -37,6 +37,7 @@ M099d0,A/Washington/23/2020,plate2-GGATAAGAAAACTACT,290.9,interpolated,midpoint,
 M099d0,A/Washington/23/2020,plate2-ACGGAATCCCCTGAGA,347.6,interpolated,midpoint,347.6,347.6,1,0,3.237
 M099d0,A/Washington/23/2020,plate2-GAACTGGCGTCAATCA,296.4,interpolated,midpoint,296.4,296.4,1,0,4.643
 M099d0,A/Sydney/43/2022,plate11-TAGTATAATAGAGCAG,284.6,interpolated,midpoint,291.8,284.6,0.9412,0,5
+M099d0,A/Sydney/43/2022,plate11-CTATTAATCATGCAAA,381,interpolated,midpoint,433.6,381,0.7621,0,5
 M099d0,A/Sydney/43/2022,plate11-TACGGACATTCTTAAC,275.2,interpolated,midpoint,280.3,275.2,0.9558,0,5
 M099d0,A/Sydney/43/2022,plate2-CTATTAATCATGCAAA,267.4,interpolated,midpoint,269.1,267.4,0.984,0,5
 M099d0,A/Sydney/43/2022,plate2-TACGGACATTCTTAAC,235.5,interpolated,midpoint,236,235.5,0.995,0,5
@@ -82,6 +83,7 @@ M099d0,A/Chester/5355/2022,plate2-TCATATAAAGAAAAGG,216.1,interpolated,midpoint,2
 M099d0,A/Brisbane/02/2018,plate11-TTGGGCACTAAATTAA,713.5,interpolated,midpoint,720.7,713.5,0.9754,0,5
 M099d0,A/Brisbane/02/2018,plate11-TAATAAGCCAGCAAGA,791.8,interpolated,midpoint,801.1,791.8,0.9752,0,4.348
 M099d0,A/Brisbane/02/2018,plate11-ATCCGATTTAAAGGCA,590.6,interpolated,midpoint,608.9,590.6,0.952,0,3.317
+M099d0,A/Brisbane/02/2018,plate11-ACGACATGATCAAACG,1648,interpolated,midpoint,3112,1648,0.75,0,1.09
 M099d0,A/Brisbane/02/2018,plate2-ATCCGATTTAAAGGCA,814,interpolated,midpoint,814,814,1,0,5
 M099d0,A/Brisbane/02/2018,plate2-TTGGGCACTAAATTAA,713.5,interpolated,midpoint,713.5,713.5,1,0,5
 M099d0,A/Brisbane/02/2018,plate2-ACGACATGATCAAACG,1432,interpolated,midpoint,1432,1432,1,0,1.668

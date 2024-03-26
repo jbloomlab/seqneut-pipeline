@@ -24,6 +24,7 @@ description: |
 
 viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
+  H3N2_lib2023_Kikawa: data/viral_libraries/2023_H3N2_Kikawa.csv
 
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 
@@ -62,8 +63,8 @@ default_process_plate_curvefit_params: &default_process_plate_curvefit_params
 default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
   max_frac_infectivity_at_least: 0
   goodness_of_fit:  # EITHER R2 must be >= min_R2 or RMSD must be <= max_RMSD
-    min_R2: 0.8  # you may be able to relax this to more like 0.7 or 0.75
-    max_RMSD: 0.0
+    min_R2: 0.7
+    max_RMSD: 0.1  # you may be able to increase this to more like 0.1
   serum_replicates_ignore_curvefit_qc: []
   barcode_serum_replicates_ignore_curvefit_qc: []
 
@@ -98,6 +99,19 @@ plates:
       <<: *default_process_plate_curvefit_qc
       barcode_serum_replicates_ignore_curvefit_qc:
         - [AGGTCAAGACCACAGG, M099d0]
+
+  H3N2_plate:
+    date: 2024-03-04
+    viral_library: H3N2_lib2023_Kikawa
+    neut_standard_set: loes2023
+    samples_csv: data/plates/H3N2_samples.csv
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
 
 default_serum_titer_as: midpoint  # can be "midpoint" or "nt50"
 
