@@ -366,7 +366,9 @@ The default can be defined like this:
 ```
 default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
   max_frac_infectivity_at_least: 0
-  min_R2: 0.75
+  goodness_of_fit:
+    min_R2: 0.75
+    max_RMSD: 0.05
   serum_replicates_ignore_curvefit_qc: []
   barcode_serum_replicates_ignore_curvefit_qc: []
 ```
@@ -375,7 +377,9 @@ The specific meanings of these QC parameters are:
 
  - `max_frac_infectivity_at_least`: drop any viral-barcode / serum-replicate combination that does not have a maximum frac infectivity across all concentrations of at least this value. Typically if you want to allow curves where the sera neutralize at all tested concentrations then you should set a value of 0. But you should set a value >0.5 if you want to require all sera to have a midpoint within the dilution range.
 
- - `min_R2`: drop any viral-barcode / serum-replicate combinations where the fit curve does not have a [coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) at least this large (a coefficient of determination of 1 is a perfect fit). Used to drop very poor fitting curves. Reasonable values might be in the 0.6 to 0.8 range, although you should also just look at the curves being dropped to see if they look good.
+ - `goodness_of_fit`: drop any viral-barcode / serum-replicate combination where the curve fit does not have reasonable goodness of fit. A curve is dropped if it fails **both** of `min_R2` and `max_RMSD` (passing one is enough). The reason for using both is that when the data has more variation, we can tolerate a higher RMSD if the R2 is still good. There are two keys specified under `goodness_of_fit`:
+  - `min_R2`: does curve fit have a [coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) at least this large (a coefficient of determination of 1 is a perfect fit). Used to drop very poor fitting curves. Reasonable values might be in the 0.6 to 0.8 range, although you should also just look at the curves being dropped to see if they look good.
+  - `max_RMSD`: does curve fit have a root-mean square deviation (square root of mean residuals) no larger than this? Reasonable values might be in the 0.05 to 0.1 range.
 
  - `serum_replicates_ignore_curvefit_qc`: list of any serum replicates for which we ignore the curve-fitting QC for all viral barcodes.
 
