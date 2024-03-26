@@ -165,12 +165,12 @@ def process_plate(plate, plate_params):
 
 
 @functools.lru_cache
-def sera_plates():
-    """Get dict keyed by serum with values lists of plates with titers for serum."""
+def groups_sera_plates():
+    """Get dict keyed by /groupserum with values lists of plates with titers."""
     csv_file = checkpoints.groups_sera_by_plate.get().output.csv
     return (
         pd.read_csv(csv_file)
         .assign(plates=lambda x: x["plates"].str.split(";"))
-        .set_index("serum")["plates"]
+        .set_index(["group", "serum"])["plates"]
         .to_dict()
     )
