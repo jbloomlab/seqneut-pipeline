@@ -71,6 +71,7 @@ default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
 plates:
 
   plate2:
+    group: serum
     date: 2023-08-01
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
@@ -84,6 +85,7 @@ plates:
       <<: *default_process_plate_curvefit_qc
 
   plate11:
+    group: serum
     date: 2023-09-26
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
@@ -101,6 +103,7 @@ plates:
         - [AGGTCAAGACCACAGG, M099d0]
 
   H3N2_plate:
+    group: pilot
     date: 2024-03-04
     viral_library: H3N2_lib2023_Kikawa
     neut_standard_set: loes2023

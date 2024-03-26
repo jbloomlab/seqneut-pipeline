@@ -37,6 +37,7 @@ def process_plate(plate, plate_params):
 
     # Process plate parameters
     req_plate_params = {
+        "group",
         "date",
         "viral_library",
         "neut_standard_set",
@@ -57,6 +58,7 @@ def process_plate(plate, plate_params):
             f"{plate=} {plate_params['neut_standard_set']=} not in {neut_standard_sets=}"
         )
     plate_d = copy.deepcopy(plate_params)
+    plate_d["group"] = str(plate_d["group"])
     plate_d["date"] = str(plate_d["date"])
     if not re.fullmatch("\d{4}\-\d{2}\-\d{2}", str(plate_d["date"])):
         raise ValueError(f"{plate=} {plate_d['date']=} not in YYYY-MM-DD format")
@@ -165,7 +167,7 @@ def process_plate(plate, plate_params):
 @functools.lru_cache
 def sera_plates():
     """Get dict keyed by serum with values lists of plates with titers for serum."""
-    csv_file = checkpoints.sera_by_plate.get().output.csv
+    csv_file = checkpoints.groups_sera_by_plate.get().output.csv
     return (
         pd.read_csv(csv_file)
         .assign(plates=lambda x: x["plates"].str.split(";"))

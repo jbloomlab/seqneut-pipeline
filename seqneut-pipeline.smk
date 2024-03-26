@@ -121,20 +121,20 @@ rule process_plate:
         "notebooks/process_plate.py.ipynb"
 
 
-checkpoint sera_by_plate:
-    """Get list of all sera and plates they are on."""
+checkpoint groups_sera_by_plate:
+    """Get list of all groups/sera and plates they are on."""
     input:
         csvs=expand(rules.process_plate.output.fits_csv, plate=plates),
     output:
-        csv="results/sera/sera_by_plate.csv",
+        csv="results/sera/groups_sera_by_plate.csv",
     params:
         plates=list(plates),
     log:
-        "results/logs/sera_by_plate.txt",
+        "results/logs/groups_sera_by_plate.txt",
     conda:
         "environment.yml"
     script:
-        "scripts/sera_by_plate.py"
+        "scripts/groups_sera_by_plate.py"
 
 
 rule serum_titers:
