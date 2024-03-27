@@ -40,8 +40,11 @@ groups = sorted(set(plate_params["group"] for plate_params in plates.values()))
 groups_cannot_contain = ["|", "_"]  # wildcard problems if group contains these
 if any(s in group for s in groups_cannot_contain for group in groups):
     raise ValueError(f"found {groups_cannot_contain=} character in {groups=}")
+
+
 wildcard_constraints:
-    group="|".join(groups)
+    group="|".join(groups),
+
 
 samples = pd.concat(
     [plate_d["samples"] for plate_d in plates.values()],
@@ -164,7 +167,9 @@ rule group_serum_titers:
             if (
                 (wc.group in config["sera_override_defaults"])
                 and (wc.serum in config["sera_override_defaults"][wc.group])
-                and ("titer_as" in config["sera_override_defaults"][wc.group][wc.serum])
+                and (
+                    "titer_as" in config["sera_override_defaults"][wc.group][wc.serum]
+                )
             )
             else config["default_serum_titer_as"]
         ),
@@ -173,7 +178,10 @@ rule group_serum_titers:
             if (
                 (wc.serum in config["sera_override_defaults"])
                 and (wc.serum in config["sera_override_defaults"][wc.group])
-                and ("qc_thresholds" in config["sera_override_defaults"][wc.group][wc.serum])
+                and (
+                    "qc_thresholds"
+                    in config["sera_override_defaults"][wc.group][wc.serum]
+                )
             )
             else config["default_serum_qc_thresholds"]
         ),
@@ -220,7 +228,7 @@ rule aggregate_qc_drops:
         ],
     output:
         plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
-        sera_qc_drops="results/qc_drops/sera_qc_drops.yml",
+        groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
     params:
         plates=list(plates),
         groups_sera=lambda wc: list(groups_sera_plates()),
@@ -306,7 +314,7 @@ seqneut_pipeline_outputs = [
     rules.aggregate_titers.output.titers,
     rules.aggregate_titers.output.pickle,
     rules.aggregate_qc_drops.output.plate_qc_drops,
-    rules.aggregate_qc_drops.output.sera_qc_drops,
+    rules.aggregate_qc_drops.output.groups_sera_qc_drops,
     rules.build_docs.output.docs,
     *[
         f"results/miscellaneous_plates/{plate}/{well}_{suffix}"

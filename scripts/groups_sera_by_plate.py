@@ -15,7 +15,9 @@ assert len(plates) == len(curvefit_csvs) == len(set(plates))
 dfs = []
 for plate, curvefit_csv in zip(plates, curvefit_csvs):
     dfs.append(
-        pd.read_csv(curvefit_csv)[["group", "serum"]].drop_duplicates().assign(plate=plate)
+        pd.read_csv(curvefit_csv)[["group", "serum"]]
+        .drop_duplicates()
+        .assign(plate=plate)
     )
 
 (
