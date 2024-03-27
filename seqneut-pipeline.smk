@@ -205,11 +205,15 @@ rule aggregate_titers:
             for (group, serum) in groups_sera_plates()
         ],
     output:
-        pickle="results/aggregated_titers/curvefits.pickle",
-        titers="results/aggregated_titers/titers.csv",
+        pickles=[
+            f"results/aggregated_titers/curvefits_{group}.pickle" for group in groups
+        ],
+        titers=[f"results/aggregated_titers/titers_{group}.csv" for group in groups],
         titers_chart="results/aggregated_titers/titers.html",
     params:
         viral_strain_plot_order=viral_strain_plot_order,
+        groups_sera=lambda wc: list(groups_sera_plates()),
+        groups=groups,
     conda:
         "environment.yml"
     log:
@@ -312,7 +316,7 @@ rule miscellaneous_plate_count_barcodes:
 
 seqneut_pipeline_outputs = [
     rules.aggregate_titers.output.titers,
-    rules.aggregate_titers.output.pickle,
+    rules.aggregate_titers.output.pickles,
     rules.aggregate_qc_drops.output.plate_qc_drops,
     rules.aggregate_qc_drops.output.groups_sera_qc_drops,
     rules.build_docs.output.docs,
