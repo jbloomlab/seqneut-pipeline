@@ -2,6 +2,7 @@ group,serum,virus,titer,titer_bound,titer_sem,n_replicates,titer_as
 serum,Y044d30,A/Bangladesh/2221/2021,2083,interpolated,696.2,3,nt50
 serum,Y044d30,A/Bangladesh/3210810034/2021,516.4,interpolated,89.3,2,nt50
 serum,Y044d30,A/Bangladesh/8002/2021,1606,interpolated,5.481,3,nt50
+serum,Y044d30,A/Bangladesh/8036/2021,1620,interpolated,1414,3,nt50
 serum,Y044d30,A/Belgium/H0017/2022,1.396e+04,interpolated,1911,3,nt50
 serum,Y044d30,A/Belgium/H0038/2022,1.441e+04,interpolated,1006,3,nt50
 serum,Y044d30,A/Brisbane/02/2018,1.326e+04,interpolated,3503,4,nt50
@@ -13,6 +14,7 @@ serum,Y044d30,A/England/220200318/2022,1.96e+04,interpolated,2462,3,nt50
 serum,Y044d30,A/Ghana/138/2020,2.031e+04,interpolated,2135,3,nt50
 serum,Y044d30,A/Ghana/2080/2020,1.858e+04,interpolated,1626,3,nt50
 serum,Y044d30,A/Hawaii/70/2019,1.534e+04,interpolated,3562,4,nt50
+serum,Y044d30,A/India-PUN-NIV328484/2021,1588,interpolated,1309,3,nt50
 serum,Y044d30,A/India-Pune-Nivcov2221170/2022,1617,interpolated,2.827,2,nt50
 serum,Y044d30,A/India/Pun-NIV312851/2021,1391,interpolated,80.03,3,nt50
 serum,Y044d30,A/Michigan/19/2021,1472,interpolated,129.2,3,nt50
