@@ -176,7 +176,7 @@ rule group_serum_titers:
         qc_thresholds=lambda wc: (
             config["sera_override_defaults"][wc.group][wc.serum]["qc_thresholds"]
             if (
-                (wc.serum in config["sera_override_defaults"])
+                (wc.group in config["sera_override_defaults"])
                 and (wc.serum in config["sera_override_defaults"][wc.group])
                 and (
                     "qc_thresholds"
