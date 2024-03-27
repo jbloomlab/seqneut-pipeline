@@ -9,6 +9,14 @@
 
 - Handle titers that are outside the range of the dilutions series by reporting them as upper or lower bounds rather than as interpolated, and marking them appropriately on plots. This change helps with low potency or high potency sera, where there may be no neutralization or high neutralization at all tested concentrations. Addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/30).
 
+- Each plate is now assigned to a *group*, which makes it possible to have separate groups (for instance, "serum" and "pilot" if you have serum samples of interest and pilot experiments, although it can be everything). **This is a backward-incompatible change** that requires you to update the configuration YAML and changes the names of some output files (so you will need to update your `.gitignore` to be similar to the new one in the `test_example`). Specifically:
+  - For each plate under `plates` in the configuration YAML, you now specify a `group` as one of the keys (eg, serum, pilot, etc)
+  - For `sera_override_defaults` in the configuration YAML, the keys for individual sera are now nested under keys for their groups.
+  - The sera are processed by group, so "group" is now a column in the output CSVs and the serum results files are now in subdirectories named `./results/sera/{group}_{serum}` rather than `./results/sera/{serum}` as before.
+  - The aggregated titers are now in per-group CSVs with names like `./results/aggregated_titers/titers_{group}.csv` rather than in the single `./results/aggregated_titers/titers.csv` from before.
+  - The final aggregated output plot allows you to select by group.
+  - The docs are organized by group in the per-plate and per-sera plots.
+
 - Added another plate (of H3N2 rather than H1N1) to the `test_example` to test some of the changes introduced in this version.
 
 - Update `seqneut-pipeline` conda environment in `environment.yml`. Update `neutcurve` 2.0.1, also update other packages (`pandas`, `snakemake`, `markdown`, `papermill`) to latest versions.

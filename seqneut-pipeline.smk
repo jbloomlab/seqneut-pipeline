@@ -36,6 +36,20 @@ plates = {
     for (plate, plate_params) in config["plates"].items()
 }
 
+groups = sorted(set(plate_params["group"] for plate_params in plates.values()))
+groups_cannot_contain = ["|", "_"]  # wildcard problems if group contains these
+if any(s in group for s in groups_cannot_contain for group in groups):
+    raise ValueError(f"found {groups_cannot_contain=} character in {groups=}")
+
+
+wildcard_constraints:
+    group="|".join(groups),
+
+
+if not set(config["sera_override_defaults"]).issubset(groups):
+    raise ValueError(f"{config['sera_override_defaults']=} keyed by invalid groups")
+
+
 samples = pd.concat(
     [plate_d["samples"] for plate_d in plates.values()],
     ignore_index=True,
@@ -121,72 +135,89 @@ rule process_plate:
         "notebooks/process_plate.py.ipynb"
 
 
-checkpoint sera_by_plate:
-    """Get list of all sera and plates they are on."""
+checkpoint groups_sera_by_plate:
+    """Get list of all groups/sera and plates they are on."""
     input:
         csvs=expand(rules.process_plate.output.fits_csv, plate=plates),
     output:
-        csv="results/sera/sera_by_plate.csv",
+        csv="results/sera/groups_sera_by_plate.csv",
     params:
         plates=list(plates),
     log:
-        "results/logs/sera_by_plate.txt",
+        "results/logs/groups_sera_by_plate.txt",
     conda:
         "environment.yml"
     script:
-        "scripts/sera_by_plate.py"
+        "scripts/groups_sera_by_plate.py"
 
 
-rule serum_titers:
-    """Aggregate and analyze titers for a serum."""
+rule group_serum_titers:
+    """Aggregate and analyze titers for a group / serum."""
     input:
         pickles=lambda wc: [
             rules.process_plate.output.fits_pickle.format(plate=plate)
-            for plate in sera_plates()[wc.serum]
+            for plate in groups_sera_plates()[(wc.group, wc.serum)]
         ],
     output:
-        per_rep_titers="results/sera/{serum}/titers_per_replicate.csv",
-        titers="results/sera/{serum}/titers.csv",
-        curves_pdf="results/sera/{serum}/curves.pdf",
-        pickle="results/sera/{serum}/curvefits.pickle",
-        qc_drops="results/sera/{serum}/qc_drops.yml",
+        per_rep_titers="results/sera/{group}_{serum}/titers_per_replicate.csv",
+        titers="results/sera/{group}_{serum}/titers.csv",
+        curves_pdf="results/sera/{group}_{serum}/curves.pdf",
+        pickle="results/sera/{group}_{serum}/curvefits.pickle",
+        qc_drops="results/sera/{group}_{serum}/qc_drops.yml",
     params:
         viral_strain_plot_order=viral_strain_plot_order,
         serum_titer_as=lambda wc: (
-            config["sera_override_defaults"][wc.serum]["titer_as"]
+            config["sera_override_defaults"][wc.group][wc.serum]["titer_as"]
             if (
-                (wc.serum in config["sera_override_defaults"])
-                and ("titer_as" in config["sera_override_defaults"][wc.serum])
+                (wc.group in config["sera_override_defaults"])
+                and (wc.serum in config["sera_override_defaults"][wc.group])
+                and (
+                    "titer_as" in config["sera_override_defaults"][wc.group][wc.serum]
+                )
             )
             else config["default_serum_titer_as"]
         ),
         qc_thresholds=lambda wc: (
-            config["sera_override_defaults"][wc.serum]["qc_thresholds"]
+            config["sera_override_defaults"][wc.group][wc.serum]["qc_thresholds"]
             if (
-                (wc.serum in config["sera_override_defaults"])
-                and ("qc_thresholds" in config["sera_override_defaults"][wc.serum])
+                (wc.group in config["sera_override_defaults"])
+                and (wc.serum in config["sera_override_defaults"][wc.group])
+                and (
+                    "qc_thresholds"
+                    in config["sera_override_defaults"][wc.group][wc.serum]
+                )
             )
             else config["default_serum_qc_thresholds"]
         ),
     log:
-        notebook="results/sera/{serum}/{serum}_titers.ipynb",
+        notebook="results/sera/{group}_{serum}/{group}_{serum}_titers.ipynb",
     conda:
         "environment.yml"
     notebook:
-        "notebooks/serum_titers.py.ipynb"
+        "notebooks/group_serum_titers.py.ipynb"
 
 
 rule aggregate_titers:
     """Aggregate all serum titers."""
     input:
-        pickles=lambda wc: expand(rules.serum_titers.output.pickle, serum=sera_plates()),
-        titers=lambda wc: expand(rules.serum_titers.output.titers, serum=sera_plates()),
+        pickles=lambda wc: [
+            rules.group_serum_titers.output.pickle.format(group=group, serum=serum)
+            for (group, serum) in groups_sera_plates()
+        ],
+        titers=lambda wc: [
+            rules.group_serum_titers.output.titers.format(group=group, serum=serum)
+            for (group, serum) in groups_sera_plates()
+        ],
     output:
-        pickle="results/aggregated_titers/curvefits.pickle",
-        titers="results/aggregated_titers/titers.csv",
+        pickles=[
+            f"results/aggregated_titers/curvefits_{group}.pickle" for group in groups
+        ],
+        titers=[f"results/aggregated_titers/titers_{group}.csv" for group in groups],
         titers_chart="results/aggregated_titers/titers.html",
     params:
         viral_strain_plot_order=viral_strain_plot_order,
+        groups_sera=lambda wc: list(groups_sera_plates()),
+        groups=groups,
     conda:
         "environment.yml"
     log:
@@ -199,16 +230,16 @@ rule aggregate_qc_drops:
     """Aggregate all QC drops."""
     input:
         plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
-        sera_qc_drops=lambda wc: expand(
-            rules.serum_titers.output.qc_drops,
-            serum=sera_plates(),
-        ),
+        groups_sera_qc_drops=lambda wc: [
+            rules.group_serum_titers.output.qc_drops.format(group=group, serum=serum)
+            for (group, serum) in groups_sera_plates()
+        ],
     output:
         plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
-        sera_qc_drops="results/qc_drops/sera_qc_drops.yml",
+        groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
     params:
         plates=list(plates),
-        sera=lambda wc: list(sera_plates()),
+        groups_sera=lambda wc: list(groups_sera_plates()),
     conda:
         "environment.yml"
     log:
@@ -236,10 +267,10 @@ rule build_docs:
     input:
         lambda wc: [f for d in add_htmls_to_docs.values() for f in d.values()],
         titers_chart=rules.aggregate_titers.output.titers_chart,
-        serum_titers_htmls=lambda wc: expand(
-            "results/sera/{serum}/{serum}_titers.html",
-            serum=sera_plates(),
-        ),
+        serum_titers_htmls=lambda wc: [
+            f"results/sera/{group}_{serum}/{group}_{serum}_titers.html"
+            for (group, serum) in groups_sera_plates()
+        ],
         process_plates_htmls=expand(
             "results/plates/{plate}/process_{plate}.html",
             plate=plates,
@@ -249,8 +280,8 @@ rule build_docs:
         docs=directory(config["docs"]),
     params:
         description=config["description"],
-        sera=lambda wc: list(sera_plates()),
-        plates=list(plates),
+        groups_sera=lambda wc: list(groups_sera_plates()),
+        plates={plate: plates[plate]["group"] for plate in plates},
         add_htmls_to_docs=lambda wc: {
             key: {key2: str(val2) for (key2, val2) in val.items()}
             for (key, val) in add_htmls_to_docs.items()
@@ -289,9 +320,9 @@ rule miscellaneous_plate_count_barcodes:
 
 seqneut_pipeline_outputs = [
     rules.aggregate_titers.output.titers,
-    rules.aggregate_titers.output.pickle,
+    rules.aggregate_titers.output.pickles,
     rules.aggregate_qc_drops.output.plate_qc_drops,
-    rules.aggregate_qc_drops.output.sera_qc_drops,
+    rules.aggregate_qc_drops.output.groups_sera_qc_drops,
     rules.build_docs.output.docs,
     *[
         f"results/miscellaneous_plates/{plate}/{well}_{suffix}"

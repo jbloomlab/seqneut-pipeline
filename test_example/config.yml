@@ -71,6 +71,7 @@ default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
 plates:
 
   plate2:
+    group: serum
     date: 2023-08-01
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
@@ -84,6 +85,7 @@ plates:
       <<: *default_process_plate_curvefit_qc
 
   plate11:
+    group: serum
     date: 2023-09-26
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
@@ -101,6 +103,7 @@ plates:
         - [AGGTCAAGACCACAGG, M099d0]
 
   H3N2_plate:
+    group: pilot
     date: 2024-03-04
     viral_library: H3N2_lib2023_Kikawa
     neut_standard_set: loes2023
@@ -121,16 +124,17 @@ default_serum_qc_thresholds: &default_serum_qc_thresholds
   viruses_ignore_qc: []
 
 sera_override_defaults:
-  M099d30:
-    qc_thresholds:
-      <<: *default_serum_qc_thresholds
-      viruses_ignore_qc:
-        - A/Belgium/H0017/2022
-  Y044d30:
-    qc_thresholds:
-      <<: *default_serum_qc_thresholds
-      max_fold_change_from_median: 4
-    titer_as: nt50
+  serum:
+    M099d30:
+      qc_thresholds:
+        <<: *default_serum_qc_thresholds
+        viruses_ignore_qc:
+          - A/Belgium/H0017/2022
+    Y044d30:
+      qc_thresholds:
+        <<: *default_serum_qc_thresholds
+        max_fold_change_from_median: 4
+      titer_as: nt50
 
 miscellaneous_plates:
   random_plate_1:
