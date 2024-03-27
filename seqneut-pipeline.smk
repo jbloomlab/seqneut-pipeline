@@ -46,6 +46,10 @@ wildcard_constraints:
     group="|".join(groups),
 
 
+if not set(config["sera_override_defaults"]).issubset(groups):
+    raise ValueError(f"{config['sera_override_defaults']=} keyed by invalid groups")
+
+
 samples = pd.concat(
     [plate_d["samples"] for plate_d in plates.values()],
     ignore_index=True,
