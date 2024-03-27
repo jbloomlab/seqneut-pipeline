@@ -273,7 +273,7 @@ rule build_docs:
     params:
         description=config["description"],
         groups_sera=lambda wc: list(groups_sera_plates()),
-        plates=list(plates),
+        plates={plate: plates[plate]["group"] for plate in plates},
         add_htmls_to_docs=lambda wc: {
             key: {key2: str(val2) for (key2, val2) in val.items()}
             for (key, val) in add_htmls_to_docs.items()
