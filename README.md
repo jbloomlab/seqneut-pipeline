@@ -78,8 +78,8 @@ rule all:
 
 In this `Snakefile`, the `seqneut_pipeline_outputs` specify files created by the pipeline.
 Several of of these may be of special interest for you to use in additional rules you define in `Snakefile`:
-  - `./results/aggregated_titers/titers.csv`: CSV with the final (median across replicates) titers for each serum-virus pair after applying quality control filters.
-  - `./results/aggregated_titers/curvefits.pickle`: a pickled [neutcurve.CurveFits](https://jbloomlab.github.io/neutcurve/neutcurve.curvefits.html#neutcurve.curvefits.CurveFits) object with all of the curve fits for all serum-virus-replicates after applying the QC filters. You can use the methods of this object to make plots of neutralization curves for specific sera / viruses / replicates.
+  - `./results/aggregated_titers/titers_{group}.csv`: CSV with the final (median across replicates) titers for each serum-virus pair in a group after applying quality control filters.
+  - `./results/aggregated_titers/curvefits_{group}.pickle`: a pickled [neutcurve.CurveFits](https://jbloomlab.github.io/neutcurve/neutcurve.curvefits.html#neutcurve.curvefits.CurveFits) object with all of the curve fits for all serum-virus-replicates in a group after applying the QC filters. You can use the methods of this object to make plots of neutralization curves for specific sera / viruses / replicates.
 
 In addition, you need to create the configuration file `config.yml` and ensure it includes the appropriate configuration for `seqneut-pipeline` as described below.
 
@@ -200,6 +200,7 @@ illumina_barcode_parser_params:
 ### plates
 This dictionary (mapping) contains the heart of the configuration, and may be quite large.
 Essentially, it specifies what samples are contained in each plate, how those samples should be processed, QC thresholds, and any specific barcodes or samples that should be dropped.
+In addition, each plate is assigned to a *group*, which might be "serum" or "pilot" (if you are mixing analyses of your sera with pilot experiments), or could be additional groups if you have two distinct sets of sera.
 
 The basic structure is that `plates` maps plate names to configurations for the plates.
 Specifically, it should look like this:
@@ -207,6 +208,7 @@ Specifically, it should look like this:
 plates:
 
   plate1:
+    group: serum
     date: 2023-08-01
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
@@ -223,6 +225,9 @@ plates:
 ```
 The above example shows the configuration of a plate called `plate1`, and there may be many additional plates.
 The elements under each plate-mapping are in turn as follows:
+
+#### group
+The group that this plate is assigned to (cannot contain any underscores). Typically this might be "serum" or "pilot" or however you are categorizing the runs.
 
 #### date
 The `date` key specifies the date on which the plate was processed in `YYYY-MM-DD` format.
@@ -417,23 +422,24 @@ where:
  - `viruses_ignore_qc`: list of viruses for which you want to ignore the above QC. Specifying a virus here will ignore the QC for **all** sera, if you want to make a virus-serum specific exclusion then instead specify this in `sera_override_defaults`.
 
 ### sera_override_defaults
-Override `default_serum_titer_as` or `default_serum_qc_thresholds` for specific sera.
+Override `default_serum_titer_as` or `default_serum_qc_thresholds` for specific sera in each group (recall groups are assigned per-plate).
 For instance, this could look like:
 ```
 sera_override_defaults:
-  M099d30:
-    qc_thresholds:
-      <<: *default_serum_qc_thresholds
-      viruses_ignore_qc:
-        - A/Belgium/H0017/2022
-  Y044d30:
-    qc_thresholds:
-      <<: *default_serum_qc_thresholds
-      max_fold_change_from_median: 4
-    titer_as: nt50
+  serum:
+    M099d30:
+      qc_thresholds:
+        <<: *default_serum_qc_thresholds
+        viruses_ignore_qc:
+          - A/Belgium/H0017/2022
+    Y044d30:
+      qc_thresholds:
+        <<: *default_serum_qc_thresholds
+        max_fold_change_from_median: 4
+      titer_as: nt50
 ```
 
-The above means that for serum `M099d30` we override the `default_serum_qc_thresholds` to exclude virus ` A/Belgium/H0017/2022`, and for serum `Y044d30` we override the defaults to allow a greater fold-change from median for individual replicates, and compute the titer as `nt50`.
+The above means that in the group called *serum*, for serum `M099d30` we override the `default_serum_qc_thresholds` to exclude virus ` A/Belgium/H0017/2022`, and for serum `Y044d30` we override the defaults to allow a greater fold-change from median for individual replicates, and compute the titer as `nt50`.
 Anything not listed here gets handled by the defaults in `default_serum_titer_as` and `default_serum_qc_thresholds`.
 
 ### miscellaneous_plates
@@ -472,7 +478,7 @@ The output is that for each plate, the following files are created:
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
 We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
-The key results file if the pipeline runs to completion in `./results/aggregated_titers/titers.csv`.
+The key results if the pipeline runs to completion are in `./results/aggregated_titers/titers_{group}.csv` for each group of sera.
 The set of full created outputs are as follows (note only some will be tracked depending on your `.gitignore`):
 
   - Outputs related to barcode counting:
@@ -488,27 +494,27 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
 
-  - Output related to per-serum titers (aggregated across replicates potentially run on different plates):
-    - `./results/sera/sera_by_plate.csv` summarizes which plate(s) each serum was run on.
-    - `./results/sera/{serum}/titers.csv`: titer for each virus against the serum, reported as the median across replicates, and only keeping those that pass QC. You should track this file in the repo.
-    - `./results/sera/{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the serum. You should track this file in the repo.
-    - `./results/sera/{serum}/curves.pdf`: PDF rendering of the neutralization curves for the serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
-    - `./results/sera/{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/sera/{serum}/{serum}_titers.ipynb`: Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
-    - `./results/sera/{serum}/{serum}_titers.html`: HTML rendering of the Jupyter notebook that aggregates titers for a serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
-    - `./results/sera/{serum}/qc_drops.yml`: virus-serum titers dropped due to QC when processing this serum's titers.
+  - Output related to per-serum titers (aggregated across replicates potentially run on different plates); note that serum are organized per-group as specified in the plates:
+    - `./results/sera/groups_sera_by_plate.csv` summarizes which plate(s) each group/serum was run on.
+    - `./results/sera/{group}_{serum}/titers.csv`: titer for each virus against the group/serum, reported as the median across replicates, and only keeping those that pass QC. You should track this file in the repo.
+    - `./results/sera/{group}_{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the group/serum. You should track this file in the repo.
+    - `./results/sera/{group}_{serum}/curves.pdf`: PDF rendering of the neutralization curves for the group/serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
+    - `./results/sera/{group}_{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this group/serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
+    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.ipynb`: Jupyter notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
+    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of the Jupyter notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/sera/{group}_{serum}/qc_drops.yml`: virus-group/serum titers dropped due to QC when processing this serum's titers.
 
-  - Results related to aggregated titers across all sera after applying all quality control:
-    - `./results/aggregated_titers/titers.csv`: titers for all sera / virus (median of replicates). You should track this file as it has the final processed results.
-    - `./results/aggregated_titers/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object holding all final curves. You do not need to track this in the repo, but if you have further code that makes specific plots you may want to use this.
+  - Results related to aggregated titers across all sera in a group after applying all quality control:
+    - `./results/aggregated_titers/titers_{group}.csv`: titers for all sera / virus in a group (median of replicates). You should track this file as it has the final processed results.
+    - `./results/aggregated_titers/curvefits_{group}.pickle`: pickle file with the `neutcurve.CurveFits` object holding all final curves for a group. You do not need to track this in the repo, but if you have further code that makes specific plots you may want to use this.
     - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this in the repo as it is rendered in `./docs/` when the pipeline runs successfully.
     - `./results/aggregated_titers/aggregate_titers.ipynb`: Jupyter notebook that aggregates all the titers. You do not need to track this in the repo.
 
   - Results summarizing data dropped due to QC:
     - `./results/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC. You should track this in repo.
-    - `./results/sera_qc_drops.yml`: YAML file summarizing all serum-virus titers dropped during the serum titers QC. You should track this in repo.
+    - `./results/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
     - `./results/aggregate_qc_drops.ipynb`: Jupypter notebook summarizing the QC drops. You do not need to track as an HTML version is rendered in `./docs/`
-    - `./results/aggregate_qc_drops.html`: HTML verson Jupypter notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
+    - `./results/aggregate_qc_drops.html`: HTML version Jupypter notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
 
 ## Examining the output and setting appropriate QC values in the configuration
 When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML notebooks summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.
