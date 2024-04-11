@@ -54,7 +54,7 @@ samples = pd.concat(
     [plate_d["samples"] for plate_d in plates.values()],
     ignore_index=True,
 )
-assert samples["sample"].nunique() == samples["fastq"].nunique() == len(samples)
+assert samples["sample"].nunique() == len(samples)
 samples = samples.set_index("sample").to_dict(orient="index")
 
 if "miscellaneous_plates" in config:
@@ -89,7 +89,9 @@ rule count_barcodes:
         invalid="results/barcode_invalid/{sample}.csv",
         fates="results/barcode_fates/{sample}.csv",
     params:
-        illumina_barcode_parser_params=config["illumina_barcode_parser_params"],
+        illumina_barcode_parser_params=lambda wc: plates[samples[wc.sample]["plate"]][
+            "illumina_barcode_parser_params"
+        ],
     conda:
         "envs/count_barcodes.yml"
     log:
@@ -309,7 +311,9 @@ rule miscellaneous_plate_count_barcodes:
         invalid="results/miscellaneous_plates/{misc_plate}/{well}_invalid.csv",
         fates="results/miscellaneous_plates/{misc_plate}/{well}_fates.csv",
     params:
-        illumina_barcode_parser_params=config["illumina_barcode_parser_params"],
+        illumina_barcode_parser_params=lambda wc: miscellaneous_plates[wc.misc_plate][
+            "illumina_barcode_parser_params"
+        ],
     conda:
         "envs/count_barcodes.yml"
     log:
