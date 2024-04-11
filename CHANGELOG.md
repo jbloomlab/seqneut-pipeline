@@ -7,6 +7,8 @@
   - `altair` to 5.3
   - `python` to 3.12
 
+- Draw neutralization curves using `draw_in_bounds=True` with `neutcurve` to avoid lines extrapolating beyond data. Addresses [this issue](https://github.com/jbloomlab/neutcurve/issues/59).
+
 ## version 3.0.0
 - In `curvefit_params` in the YAML configuration, now `fixslope` should be specified in addition `fixtop` and `fixbottom`. In addition, all three of these can be set to constraint ranges rather than just totally free or to fixed values. Alongside this change, the slope of curve fits are now reported in key output files. Addresses [this issue](https://github.com/jbloomlab/neutcurve/issues/53) and [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/32).
   - This is a **backward-incompatible change** in the configuration YAML, now you must specify `fixslope` under `curvefit_params`.
