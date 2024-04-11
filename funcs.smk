@@ -60,7 +60,7 @@ def process_plate(plate, plate_params):
     plate_d = copy.deepcopy(plate_params)
     plate_d["group"] = str(plate_d["group"])
     plate_d["date"] = str(plate_d["date"])
-    if not re.fullmatch("\d{4}\-\d{2}\-\d{2}", str(plate_d["date"])):
+    if not re.fullmatch(r"\d{4}\-\d{2}\-\d{2}", str(plate_d["date"])):
         raise ValueError(f"{plate =} {plate_d['date'] =} not in YYYY-MM-DD format")
 
     # Process samples_csv to create the sample data frame
