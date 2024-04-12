@@ -148,3 +148,6 @@ miscellaneous_plates:
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/miscellaneous_plates/random_plate_1.csv
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
