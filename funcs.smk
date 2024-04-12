@@ -29,6 +29,16 @@ def process_miscellaneous_plates(misc_plates_d):
                 f"{plate_dict['samples_csv']} has non-unique entries in 'well' column"
             )
         misc_plates[plate]["wells"] = samples.set_index("well")["fastq"].to_dict()
+
+        # get default barcode parser params, update if specified per plate
+        misc_plates[plate]["illumina_barcode_parser_params"] = copy.deepcopy(
+            config["illumina_barcode_parser_params"]
+        )
+        if "illumina_barcode_parser_params" in plate_dict:
+            misc_plates[plate]["illumina_barcode_parser_params"].update(
+                plate_dict["illumina_barcode_parser_params"]
+            )
+
     return misc_plates
 
 
@@ -62,6 +72,15 @@ def process_plate(plate, plate_params):
     plate_d["date"] = str(plate_d["date"])
     if not re.fullmatch(r"\d{4}\-\d{2}\-\d{2}", str(plate_d["date"])):
         raise ValueError(f"{plate =} {plate_d['date'] =} not in YYYY-MM-DD format")
+
+    # get default barcode parser params, update if specified per plate
+    plate_d["illumina_barcode_parser_params"] = copy.deepcopy(
+        config["illumina_barcode_parser_params"]
+    )
+    if "illumina_barcode_parser_params" in plate_params:
+        plate_d["illumina_barcode_parser_params"].update(
+            plate_params["illumina_barcode_parser_params"]
+        )
 
     # Process samples_csv to create the sample data frame
     req_sample_cols = ["well", "serum", "dilution_factor", "replicate", "fastq"]

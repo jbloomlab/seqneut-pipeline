@@ -8,6 +8,6 @@ channels:
 dependencies:
   - pandas=2.2
   - pip
-  - python=3.11
+  - python=3.12
   - pip:
-    - dms_variants==1.5.0
+    - dms_variants==1.6.0

@@ -83,6 +83,9 @@ plates:
       <<: *default_process_plate_curvefit_params
     curvefit_qc:
       <<: *default_process_plate_curvefit_qc
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
 
   plate11:
     group: serum
@@ -101,6 +104,9 @@ plates:
       <<: *default_process_plate_curvefit_qc
       barcode_serum_replicates_ignore_curvefit_qc:
         - [AGGTCAAGACCACAGG, M099d0]
+    illumina_barcode_parser_params:
+      upstream2: ATCGAT
+      upstream2_mismatch: 1
 
   H3N2_plate:
     group: pilot
@@ -142,3 +148,6 @@ miscellaneous_plates:
     viral_library: pdmH1N1_lib2023_loes
     neut_standard_set: loes2023
     samples_csv: data/miscellaneous_plates/random_plate_1.csv
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
