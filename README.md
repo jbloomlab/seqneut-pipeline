@@ -185,6 +185,7 @@ CATACAGAGTTTGTTG
 
 ### illumina_barcode_parser_params
 A dictionary (mapping) specifying how to parse the Illumina FASTQ files to barcode counts.
+This is a global dictionary that is applied to all plates, but can be augmented or overriden on a per-plate basis by specifying plate specific `illumina_barcode_parser_params` as described in the plate configuration below.
 This mapping should just specify key-word arguments that can be passed to [dms_variants.illuminabarcodeparser.IlluminaBarcodeParser](https://jbloomlab.github.io/dms_variants/dms_variants.illuminabarcodeparser.html#dms_variants.illuminabarcodeparser.IlluminaBarcodeParser); note that the barcode-length (`bclen`) parameter should not be specified as it is inferred from the length of the barcodes.
 
 So in general, this key will look like this:
@@ -220,6 +221,8 @@ plates:
       <<: *default_process_plate_curvefit_params
     curvefit_qc:
       <<: *default_process_plate_curvefit_qc
+    illumina_barcode_parser_params:  # optional argument
+        upstream2: upstream2: GCTACA
 
   <additional_plates>
 ```
@@ -390,6 +393,12 @@ The specific meanings of these QC parameters are:
 
  - `barcode_serum_replicates_ignore_curvefit_qc`: list (as `[barcode, serum_replicate]`) of viral-barcodes / serum-replicates where we ignore the curve-fitting QC.
 
+#### illumina_barcode_parser_params
+This key defines parameters for the [illuminabarcodeparser](https://jbloomlab.github.io/dms_variants/dms_variants.illuminabarcodeparser.html) that override anything set in the global `illumina_barcode_parser_params` above.
+It is optional, and if not defined just the global params are used.
+If this is defined, it is used to update the global params (adding new params and overriding any shared ones).
+The main anticipated use case is if you add plate-specific indices in the round 1 PCR and want to specify those indices here using `upstream2` and `upstream2_mismatch`.
+
 ### default_serum_titer_as
 Specifies how we compute the final titers in `serum_titers`.
 Can be either `midpoint` or `nt50` depending on whether you want to report the value where the fraction infectivity gets to 50%, or the midpoint of the curve, so should be either
@@ -458,13 +467,15 @@ miscellaneous_plates:
     viral_library: <viral library>
     neut_standard_set: <standard set>
     samples_csv: <filename>
+    illumina_barcode_parser_params:  # optional key
+        <parser params to override global>
 
   <plate_name_2>:
     ...
 ```
 
 The plate name is just the name assigned to the plate.
-The `date`, `viral_library`, and `neut_standard_set` keys have the same meaning as for the plates specified under `plates`.
+The `date`, `viral_library`, `neut_standard_set`, and `illumina_barcode_parser_params` keys have the same meaning as for the plates specified under `plates`.
 
 The `samples_csv` should specify the samples to analyze in a CSV that has columns named "well" and "fastq", and optionally other columns as well.
 
