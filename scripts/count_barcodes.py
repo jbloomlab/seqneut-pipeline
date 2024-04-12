@@ -28,7 +28,7 @@ parser = dms_variants.illuminabarcodeparser.IlluminaBarcodeParser(
     **snakemake.params.illumina_barcode_parser_params,
 )
 
-counts, fates = parser.parse(snakemake.input.fastq)
+counts, fates = parser.parse(snakemake.input.fastq, outer_flank_fates=True)
 
 # write valide barcode counts including a 0 count for missing ones
 (
