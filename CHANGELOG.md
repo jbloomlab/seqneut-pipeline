@@ -1,5 +1,8 @@
 # CHANGELOG
 
+#### version 3.1.1
+- Minor bug fix to make it possible to add `wells` or `barcodes` to the `manual_drops` specified for each plate. Addresses [this issue](https://github.com/jbloomlab/neutcurve/issues/45).
+
 ### version 3.1.0
 - Configured to enable plate-level indices to be embedded in the round-1 PCR primers (see [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/40)). Essentially, this amounts to allowing a per-plate flanking sequence to be specified for each plate, and only FASTQ reads with that flanking sequence are read for that plate. Typically this index would be specified as `upstream2` in the [illuminabarcodeparser](https://jbloomlab.github.io/dms_variants/dms_variants.illuminabarcodeparser.html). To enable this change, altered the configuration from the previous setup of just having a single global `illumina_barcode_parser_params` applied to all plates. Now such a global parser is still specified that has default values that you want to apply to all plates. But in addition, in the per-plate configuration you can specify `illumina_barcode_parser_params` that are added to (and override) anything in the global parser params, and can contain plate specific `upstream2` and other relevant setting (eg, `upstream2_mismatch`). The test example was modified to use this option for plate2 and plate11.
 
