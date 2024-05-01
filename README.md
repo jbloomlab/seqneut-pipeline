@@ -222,7 +222,7 @@ plates:
     curvefit_qc:
       <<: *default_process_plate_curvefit_qc
     illumina_barcode_parser_params:  # optional argument
-        upstream2: upstream2: GCTACA
+        upstream2: GCTACA
 
   <additional_plates>
 ```
