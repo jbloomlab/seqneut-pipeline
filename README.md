@@ -9,7 +9,7 @@
 
 ---
 
-This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://research.fredhutch.org/bloom/en.html).
+This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://jbloomlab.org).
 See [Loes et al (2024)](https://doi.org/10.1101/2024.03.08.584176) for a description of these assays.
 
 
