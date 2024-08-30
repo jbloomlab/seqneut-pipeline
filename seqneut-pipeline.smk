@@ -39,7 +39,7 @@ plates = {
 groups = sorted(set(plate_params["group"] for plate_params in plates.values()))
 groups_cannot_contain = ["|", "_"]  # wildcard problems if group contains these
 if any(s in group for s in groups_cannot_contain for group in groups):
-    raise ValueError(f"found {groups_cannot_contain =} character in {groups =}")
+    raise ValueError(f"found {groups_cannot_contain=} character in {groups=}")
 
 
 wildcard_constraints:
@@ -47,7 +47,7 @@ wildcard_constraints:
 
 
 if not set(config["sera_override_defaults"]).issubset(groups):
-    raise ValueError(f"{config['sera_override_defaults'] =} keyed by invalid groups")
+    raise ValueError(f"{config['sera_override_defaults']=} keyed by invalid groups")
 
 
 samples = pd.concat(
