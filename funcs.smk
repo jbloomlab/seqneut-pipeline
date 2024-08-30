@@ -16,7 +16,7 @@ def process_miscellaneous_plates(misc_plates_d):
     for plate, plate_dict in misc_plates_d.items():
         misc_plates[plate] = {}
         if not req_keys.issubset(plate_dict):
-            raise ValueError(f"miscellaneous_plate {plate} lacks {req_keys =}")
+            raise ValueError(f"miscellaneous_plate {plate} lacks {req_keys=}")
         misc_plates[plate]["viral_library"] = plate_dict["viral_library"]
         misc_plates[plate]["neut_standard_set"] = plate_dict["neut_standard_set"]
         samples = pd.read_csv(plate_dict["samples_csv"])
@@ -58,20 +58,20 @@ def process_plate(plate, plate_params):
         "curvefit_qc",
     }
     if not req_plate_params.issubset(plate_params):
-        raise ValueError(f"{plate =} {plate_params =} lacks {req_plate_params =}")
+        raise ValueError(f"{plate=} {plate_params=} lacks {req_plate_params=}")
     if plate_params["viral_library"] not in viral_libraries:
         raise ValueError(
-            f"{plate =} {plate_params['viral_library'] =} not in {viral_libraries =}"
+            f"{plate=} {plate_params['viral_library']=} not in {viral_libraries=}"
         )
     if plate_params["neut_standard_set"] not in neut_standard_sets:
         raise ValueError(
-            f"{plate =} {plate_params['neut_standard_set'] =} not in {neut_standard_sets =}"
+            f"{plate=} {plate_params['neut_standard_set']=} not in {neut_standard_sets=}"
         )
     plate_d = copy.deepcopy(plate_params)
     plate_d["group"] = str(plate_d["group"])
     plate_d["date"] = str(plate_d["date"])
     if not re.fullmatch(r"\d{4}\-\d{2}\-\d{2}", str(plate_d["date"])):
-        raise ValueError(f"{plate =} {plate_d['date'] =} not in YYYY-MM-DD format")
+        raise ValueError(f"{plate=} {plate_d['date']=} not in YYYY-MM-DD format")
 
     # get default barcode parser params, update if specified per plate
     plate_d["illumina_barcode_parser_params"] = copy.deepcopy(
@@ -86,10 +86,10 @@ def process_plate(plate, plate_params):
     req_sample_cols = ["well", "serum", "dilution_factor", "replicate", "fastq"]
     samples_df = pd.read_csv(plate_params["samples_csv"], comment="#")
     if not set(req_sample_cols).issubset(samples_df.columns):
-        raise ValueError(f"{plate =} {samples_df.columns =} lacks {req_sample_cols =}")
+        raise ValueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
 
     if samples_df["serum"].isnull().any():
-        raise ValueError(f"{plate =} 'samples_csv' has null values in 'serum' column")
+        raise ValueError(f"{plate=} 'samples_csv' has null values in 'serum' column")
 
     # try to turn columns of ints and NAs into Int64 to avoid ints appearing as flaots
     for col in ["replicate", "dilution_factor"]:
@@ -155,17 +155,17 @@ def process_plate(plate, plate_params):
         .drop(columns="duplicates")
     )
     if len(dup_rows):
-        raise ValueError(f"{plate =} has duplicated serum / replicates:\n{dup_rows}")
+        raise ValueError(f"{plate=} has duplicated serum / replicates:\n{dup_rows}")
 
     # make sure dilution_factor is valid
     if not (
         (samples_df["dilution_factor"] >= 1) | (samples_df["serum"] == "none")
     ).all():
-        raise ValueError(f"{plate =} has dilution factors not >= 1 for non-none serum")
+        raise ValueError(f"{plate=} has dilution factors not >= 1 for non-none serum")
 
     # make sure there is at least one "none" sample
     if "none" not in set(samples_df["serum"]):
-        raise ValueError(f"{plate =} has no samples with serum set to 'none'")
+        raise ValueError(f"{plate=} has no samples with serum set to 'none'")
 
     # make sure fastqs are unique
     dup_fastqs = (
@@ -176,7 +176,7 @@ def process_plate(plate, plate_params):
         .drop(columns="duplicates")
     )
     if len(dup_fastqs):
-        raise ValueError(f"{plate =} has duplicate FASTQs:\n{dup_fastqs}")
+        raise ValueError(f"{plate=} has duplicate FASTQs:\n{dup_fastqs}")
 
     plate_d["samples"] = samples_df
 
