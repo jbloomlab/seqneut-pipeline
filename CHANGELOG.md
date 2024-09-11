@@ -1,7 +1,7 @@
 # CHANGELOG
 
 #### version 3.1.2
-- Minor bug fix to resolve issue with specifying serum_replicates to manual drops, similar issue to above. Addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/49).
+- Minor bug fix to resolve issue with specifying serum_replicates and barcode_serum_replicates to manual drops, similar issue resolved in 3.1.1. Addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/49).
 
 #### version 3.1.1
 - Minor bug fix to make it possible to add `wells` or `barcodes` to the `manual_drops` specified for each plate. Addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/45).
