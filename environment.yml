@@ -3,7 +3,6 @@ name: seqneut-pipeline
 channels:
   - conda-forge
   - bioconda
-  - defaults
 
 dependencies:
   - altair=5.2
