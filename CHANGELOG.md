@@ -2,6 +2,7 @@
 
 #### version 3.1.3
 - Remove `defaults` channel from `conda` envs to avoid issue with Anaconda licensing.
+- Update `snakemake` version.
 
 #### version 3.1.2
 - Minor bug fix to resolve issue with specifying serum_replicates and barcode_serum_replicates to manual drops, similar issue resolved in 3.1.1. Addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/49).

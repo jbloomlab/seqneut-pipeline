@@ -17,7 +17,7 @@ dependencies:
   - python=3.12
   - ruamel.yaml=0.18.6
   - snakefmt
-  - snakemake=8.10
+  - snakemake=8.20.6
   - ruff
   - pip:
     - dms_variants==1.6.0
