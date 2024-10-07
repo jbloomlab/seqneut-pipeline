@@ -3,7 +3,6 @@ name: seqneut-pipeline
 channels:
   - conda-forge
   - bioconda
-  - defaults
 
 dependencies:
   - pandas=2.2
