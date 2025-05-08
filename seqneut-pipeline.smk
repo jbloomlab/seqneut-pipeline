@@ -77,6 +77,7 @@ except NameError:  # if not defined
 # --- Snakemake rules -------------------------------------------------------------------
 
 if plates:
+
     rule count_barcodes:
         """Count barcodes for a sample."""
         input:
@@ -94,17 +95,16 @@ if plates:
             invalid="results/barcode_invalid/{sample}.csv",
             fates="results/barcode_fates/{sample}.csv",
         params:
-            illumina_barcode_parser_params=lambda wc: plates[samples[wc.sample]["plate"]][
-                "illumina_barcode_parser_params"
-            ],
+            illumina_barcode_parser_params=lambda wc: plates[
+                samples[wc.sample]["plate"]
+            ]["illumina_barcode_parser_params"],
         conda:
             "envs/count_barcodes.yml"
         log:
             "results/logs/count_barcodes_{sample}.txt",
         script:
             "scripts/count_barcodes.py"
-    
-    
+
     rule process_plate:
         """Process a plate to QC and convert counts to fraction infectivity."""
         input:
@@ -140,8 +140,7 @@ if plates:
             "environment.yml"
         notebook:
             "notebooks/process_plate.py.ipynb"
-    
-    
+
     checkpoint groups_sera_by_plate:
         """Get list of all groups/sera and plates they are on."""
         input:
@@ -156,9 +155,7 @@ if plates:
             "environment.yml"
         script:
             "scripts/groups_sera_by_plate.py"
-    
-    
-    
+
     rule group_serum_titers:
         """Aggregate and analyze titers for a group / serum."""
         input:
@@ -180,7 +177,8 @@ if plates:
                     (wc.group in config["sera_override_defaults"])
                     and (wc.serum in config["sera_override_defaults"][wc.group])
                     and (
-                        "titer_as" in config["sera_override_defaults"][wc.group][wc.serum]
+                        "titer_as"
+                        in config["sera_override_defaults"][wc.group][wc.serum]
                     )
                 )
                 else config["default_serum_titer_as"]
@@ -203,8 +201,7 @@ if plates:
             "environment.yml"
         notebook:
             "notebooks/group_serum_titers.py.ipynb"
-    
-    
+
     rule aggregate_titers:
         """Aggregate all serum titers."""
         input:
@@ -218,7 +215,8 @@ if plates:
             ],
         output:
             pickles=[
-                f"results/aggregated_titers/curvefits_{group}.pickle" for group in groups
+                f"results/aggregated_titers/curvefits_{group}.pickle"
+                for group in groups
             ],
             titers=[f"results/aggregated_titers/titers_{group}.csv" for group in groups],
             titers_chart="results/aggregated_titers/titers.html",
@@ -232,14 +230,15 @@ if plates:
             notebook="results/aggregated_titers/aggregate_titers.ipynb",
         notebook:
             "notebooks/aggregate_titers.py.ipynb"
-    
-    
+
     rule aggregate_qc_drops:
         """Aggregate all QC drops."""
         input:
             plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
             groups_sera_qc_drops=lambda wc: [
-                rules.group_serum_titers.output.qc_drops.format(group=group, serum=serum)
+                rules.group_serum_titers.output.qc_drops.format(
+                    group=group, serum=serum
+                )
                 for (group, serum) in groups_sera_plates()
             ],
         output:
@@ -254,8 +253,7 @@ if plates:
             notebook="results/qc_drops/aggregate_qc_drops.ipynb",
         notebook:
             "notebooks/aggregate_qc_drops.py.ipynb"
-    
-    
+
     rule notebook_to_html:
         """Convert Jupyter notebook to HTML"""
         input:
@@ -268,8 +266,7 @@ if plates:
             "environment.yml"
         shell:
             "jupyter nbconvert --to html {input.notebook} &> {log}"
-    
-    
+
     rule build_docs:
         """Build the HTML documentation."""
         input:
@@ -326,6 +323,7 @@ rule miscellaneous_plate_count_barcodes:
         "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
     script:
         "scripts/count_barcodes.py"
+
 
 if plates:
     seqneut_pipeline_outputs = [
