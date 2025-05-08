@@ -50,17 +50,22 @@ if not set(config["sera_override_defaults"]).issubset(groups):
     raise ValueError(f"{config['sera_override_defaults']=} keyed by invalid groups")
 
 
-samples = pd.concat(
-    [plate_d["samples"] for plate_d in plates.values()],
-    ignore_index=True,
-)
-assert samples["sample"].nunique() == len(samples)
-samples = samples.set_index("sample").to_dict(orient="index")
+if plates == {}:
+    samples = {}
+else:
+    samples = pd.concat(
+        [plate_d["samples"] for plate_d in plates.values()],
+        ignore_index=True,
+    )
+    assert samples["sample"].nunique() == len(samples)
+    samples = samples.set_index("sample").to_dict(orient="index")
+
 
 if "miscellaneous_plates" in config:
     miscellaneous_plates = process_miscellaneous_plates(config["miscellaneous_plates"])
 else:
     miscellaneous_plates = {}
+
 
 # define `add_htmls_to_docs` if not already defined.
 try:
