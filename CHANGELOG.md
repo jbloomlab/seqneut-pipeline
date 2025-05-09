@@ -1,5 +1,8 @@
 # CHANGELOG
 
+#### version 3.1.4
+- Minor bug fix to make it possible to run `miscellaneous_plates` without running any `plates`
+
 #### version 3.1.3
 - Remove `defaults` channel from `conda` envs to avoid issue with Anaconda licensing.
 - Update `snakemake` version.
