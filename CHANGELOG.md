@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### version 3.2.0
+- Update software versions in `conda` environments (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/57)).
+
 #### version 3.1.4
 - Minor bug fix to make it possible to run `miscellaneous_plates` without running any `plates`
 

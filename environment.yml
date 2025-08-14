@@ -5,19 +5,19 @@ channels:
   - bioconda
 
 dependencies:
-  - altair=5.2
+  - altair=5.5
   - black-jupyter
   - jupyterlab
   - mamba
-  - markdown=3.6
-  - pandas=2.2
-  - papermill=2.5
+  - markdown=3.8
+  - pandas=2.3
+  - papermill=2.6
   - pip
   - pyarrow
-  - python=3.12
-  - ruamel.yaml=0.18.6
+  - python=3.13
+  - ruamel.yaml=0.18.14
   - snakefmt
-  - snakemake=8.20.6
+  - snakemake=9.9
   - ruff
   - pip:
     - dms_variants==1.6.0

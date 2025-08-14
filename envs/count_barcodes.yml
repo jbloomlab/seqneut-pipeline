@@ -1,12 +1,13 @@
-name: seqneut-pipeline
+name: seqneut-pipeline_count_barcodes
 
 channels:
   - conda-forge
   - bioconda
 
 dependencies:
-  - pandas=2.2
+  - pandas=2.3
   - pip
-  - python=3.12
+  - pyarrow
+  - python=3.13
   - pip:
     - dms_variants==1.6.0
