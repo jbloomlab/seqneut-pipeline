@@ -354,7 +354,7 @@ if plates:
             f"results/miscellaneous_plates/{plate}/{well}_{suffix}"
             for plate in miscellaneous_plates
             for well in miscellaneous_plates[plate]["wells"]
-            for suffix in ["counts.csv", "invalid.csv", "fates.csv"]
+            for suffix in ["counts.csv", "fates.csv"]
         ],
     ]
 
@@ -364,6 +364,6 @@ else:
             f"results/miscellaneous_plates/{plate}/{well}_{suffix}"
             for plate in miscellaneous_plates
             for well in miscellaneous_plates[plate]["wells"]
-            for suffix in ["counts.csv", "invalid.csv", "fates.csv"]
+            for suffix in ["counts.csv", "fates.csv"]
         ],
     ]

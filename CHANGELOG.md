@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### version 3.4.0
+- Make the pipeline run OK even if FASTQs are not available if the counts have already been computed (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/62)). This is designed to make it more portable. Specifically:
+  - default `.gitignore` and README now suggest tracking the barcode fates files as well as the counts files, as they are needed by downstream pipeline steps.
+  - the invalid barcodes are no longer considered an output of the pipeline as they are not tracked.
+
 ### version 3.3.0
 - In internal functioning of `seqneut-pipeline.smk`, make *viral_libraries* and *neut_standard_sets* Python variables passed as params rather than CSVs passed as input file (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/60)). The advantage of this is altering the CSVs holding the viral libraries and neutralization standards now only triggers a pipeline re-run if the relevant content has changed rather than always. Specifically:
   - *viral_libraries* is now a dict of data frames rather than a dict of CSVs.
