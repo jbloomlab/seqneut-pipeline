@@ -9,7 +9,7 @@ import pandas as pd
 
 sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
 
-viral_barcodes = pd.read_csv(snakemake.input.viral_library)["barcode"].tolist()
+viral_barcodes = snakemake.params.viral_barcodes
 neut_standard_barcodes = pd.read_csv(snakemake.input.neut_standard_set)[
     "barcode"
 ].tolist()

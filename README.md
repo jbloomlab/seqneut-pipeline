@@ -147,6 +147,7 @@ ACGGAATCCCCTGAGA,A/Washington/23/2020
 GCATGGATCCTTTACT,A/Togo/845/2020
 <additional lines>
 ```
+These CSV files can optionally have additional columns as well if those are useful for storing further metadata.
 
 ### viral_strain_plot_order
 A a CSV with a column named "strain" that lists the strains in the order they should be plotted.
