@@ -9,10 +9,8 @@ import pandas as pd
 
 sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
 
-viral_barcodes = pd.read_csv(snakemake.input.viral_library)["barcode"].tolist()
-neut_standard_barcodes = pd.read_csv(snakemake.input.neut_standard_set)[
-    "barcode"
-].tolist()
+viral_barcodes = snakemake.params.viral_barcodes
+neut_standard_barcodes = snakemake.params.neut_standard_barcodes
 
 valid_barcodes = list({bc.upper() for bc in viral_barcodes + neut_standard_barcodes})
 if len(valid_barcodes) != (len(viral_barcodes) + len(neut_standard_barcodes)):

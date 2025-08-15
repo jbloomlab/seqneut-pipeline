@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### version 3.3.0
+- In internal functioning of `seqneut-pipeline.smk`, make *viral_libraries* and *neut_standard_sets* Python variables passed as params rather than CSVs passed as input file (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/60)). The advantage of this is altering the CSVs holding the viral libraries and neutralization standards now only triggers a pipeline re-run if the relevant content has changed rather than always. Specifically:
+  - *viral_libraries* is now a dict of data frames rather than a dict of CSVs.
+  - *neut_standard_sets* is now a dict of dataframes rather than a dict of CSVs.
+
 ### version 3.2.0
 - Update software versions in `conda` environments (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/58)).
 
