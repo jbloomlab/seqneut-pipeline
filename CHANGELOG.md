@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## version 4.0.0
+Primarily includes updates to make pipeline run more efficiently and produce more manageable output on large pipelines. Specifically:
+ - Update to [newer version of `neutcurve`](https://github.com/jbloomlab/neutcurve/pull/63) that plots large panels of neutralization curves faster.
+
 ### version 3.4.0
 - Make the pipeline run OK even if FASTQs are not available if the counts have already been computed (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/62)). This is designed to make it more portable. Specifically:
   - default `.gitignore` and README now suggest tracking the barcode fates files as well as the counts files, as they are needed by downstream pipeline steps.
