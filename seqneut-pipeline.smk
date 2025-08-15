@@ -31,7 +31,9 @@ else:
     ].tolist()
     assert len(viral_strain_plot_order) == len(set(viral_strain_plot_order))
 
-neut_standard_sets = config["neut_standard_sets"]
+neut_standard_sets = {
+    s: pd.read_csv(f) for (s, f) in config["neut_standard_sets"].items()
+}
 
 plates = {
     str(plate): process_plate(str(plate), plate_params)
@@ -84,11 +86,6 @@ if plates:
         """Count barcodes for a sample."""
         input:
             fastq=lambda wc: samples[wc.sample]["fastq"],
-            neut_standard_set=lambda wc: (
-                neut_standard_sets[
-                    plates[samples[wc.sample]["plate"]]["neut_standard_set"]
-                ]
-            ),
         output:
             counts="results/barcode_counts/{sample}.csv",
             invalid="results/barcode_invalid/{sample}.csv",
@@ -98,6 +95,11 @@ if plates:
                 viral_libraries[plates[samples[wc.sample]["plate"]]["viral_library"]][
                     "barcode"
                 ]
+            ),
+            neut_standard_barcodes=lambda wc: sorted(
+                neut_standard_sets[
+                    plates[samples[wc.sample]["plate"]]["neut_standard_set"]
+                ]["barcode"]
             ),
             illumina_barcode_parser_params=lambda wc: plates[
                 samples[wc.sample]["plate"]
@@ -120,9 +122,6 @@ if plates:
                 rules.count_barcodes.output.fates,
                 sample=plates[wc.plate]["samples"]["sample"],
             ),
-            neut_standard_set_csv=lambda wc: (
-                neut_standard_sets[plates[wc.plate]["neut_standard_set"]]
-            ),
         output:
             qc_drops="results/plates/{plate}/qc_drops.yml",
             frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
@@ -136,6 +135,12 @@ if plates:
                 viral_libraries[plates[wc.plate]["viral_library"]][
                     ["barcode", "strain"]
                 ]
+                .sort_values("barcode")
+                .reset_index(drop=True)
+                .to_dict()
+            ),
+            neut_standard_barcodes=lambda wc: (
+                neut_standard_sets[plates[wc.plate]["neut_standard_set"]][["barcode"]]
                 .sort_values("barcode")
                 .reset_index(drop=True)
                 .to_dict()
@@ -312,9 +317,6 @@ rule miscellaneous_plate_count_barcodes:
     """Count barcodes for a well in a miscellaneous plate."""
     input:
         fastq=lambda wc: miscellaneous_plates[wc.misc_plate]["wells"][wc.well],
-        neut_standard_set=lambda wc: neut_standard_sets[
-            miscellaneous_plates[wc.misc_plate]["neut_standard_set"]
-        ],
     output:
         counts="results/miscellaneous_plates/{misc_plate}/{well}_counts.csv",
         invalid="results/miscellaneous_plates/{misc_plate}/{well}_invalid.csv",
@@ -324,6 +326,11 @@ rule miscellaneous_plate_count_barcodes:
             viral_libraries[miscellaneous_plates[wc.misc_plate]["viral_library"]][
                 "barcode"
             ]
+        ),
+        neut_standard_barcodes=lambda wc: sorted(
+            neut_standard_sets[
+                miscellaneous_plates[wc.misc_plate]["neut_standard_set"]
+            ]["barcode"]
         ),
         illumina_barcode_parser_params=lambda wc: miscellaneous_plates[wc.misc_plate][
             "illumina_barcode_parser_params"

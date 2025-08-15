@@ -183,6 +183,7 @@ CTTTAAATTATAGTCT
 CATACAGAGTTTGTTG
 <additional lines>
 ```
+Other columns can optionally be present if you want to store additional metadata in the file.
 
 ### illumina_barcode_parser_params
 A dictionary (mapping) specifying how to parse the Illumina FASTQ files to barcode counts.
