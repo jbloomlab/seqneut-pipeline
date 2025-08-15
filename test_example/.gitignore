@@ -12,6 +12,10 @@ results/*
 results/barcode_counts/*
 !results/barcode_counts/*.csv
 
+!results/barcode_fates
+results/barcode_fates/*
+!results/barcode_fates/*.csv
+
 !results/plates
 results/plates/*/*
 !results/plates/*/frac_infectivity.csv
@@ -36,3 +40,4 @@ results/qc_drops/*
 !results/miscellaneous_plates
 results/miscellaneous_plates/*/*
 !results/miscellaneous_plates/*/*counts.csv
+!results/miscellaneous_plates/*/*fates.csv

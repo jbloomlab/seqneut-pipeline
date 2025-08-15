@@ -490,13 +490,13 @@ The output is that for each plate, the following files are created:
 
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
-We recommend using the `.gitignore` file in [./test_example/.gitignore] in your main repo to only track key results in your GitHub repo.
+We recommend using the `.gitignore` file in [./test_example/.gitignore](test_example/.gitignore) in your main repo to only track key results in your GitHub repo.
 The key results if the pipeline runs to completion are in `./results/aggregated_titers/titers_{group}.csv` for each group of sera.
 The set of full created outputs are as follows (note only some will be tracked depending on your `.gitignore`):
 
   - Outputs related to barcode counting:
     - `./results/barcode_counts/`: files giving the barcode counts for each sample. You should track this in the repo.
-    - `./results/barcode_fates/`: files giving the statistics (fates) of reads in the barcode counting for each sample. You do not need to track this in the repo as the results are plotted.
+    - `./results/barcode_fates/`: files giving the statistics (fates) of reads in the barcode counting for each sample. You should track this in the repo.
     - `./results/barcode_invalid/`: files giving counts of invalid barcodes for each sample. You do not need to track this in the repo, but it could be helpful to look at these identities in counts if QC shows you are getting many invalid barcodes.
 
   - Outputs related to processing each plate:
