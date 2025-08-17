@@ -4,6 +4,7 @@
 Primarily includes updates to make pipeline run more efficiently and produce more manageable output on large pipelines. Specifically:
  - Update to [newer version of `neutcurve`](https://github.com/jbloomlab/neutcurve/pull/63) that plots large panels of neutralization curves faster.
  - Some changes to `process_plate` notebook to accelerate plotting and improve plotted neutralization curves.
+ - Fix bug in `agregate_titers` when *viral_strain_plot_order* is *None*.
 
 ### version 3.4.0
 - Make the pipeline run OK even if FASTQs are not available if the counts have already been computed (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/62)). This is designed to make it more portable. Specifically:
