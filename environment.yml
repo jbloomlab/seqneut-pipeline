@@ -12,6 +12,7 @@ dependencies:
   - markdown=3.8
   - pandas=2.3
   - papermill=2.6
+  - pillow=11.3
   - pip
   - pyarrow
   - python=3.13
