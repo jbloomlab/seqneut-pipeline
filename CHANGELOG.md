@@ -6,7 +6,8 @@ Primarily includes updates to make pipeline run more efficiently and produce mor
  - Some changes to `process_plate` and `group_serum_titers` notebooks to accelerate plotting and improve plotted neutralization curves.
  - In `process_plate`, only plot virus-serum pairs that fail QC in that part, rather than all viruses or sera with any pair failing QC (see [here](https://github.com/jbloomlab/seqneut-pipeline/issues/65)).
  - Fix bug in `agregate_titers` when *viral_strain_plot_order* is *None*.
- - Add `curve_display_method` option to display neutralization curves in notebooks at smaller size; this involves adding the `notebook_funcs.py` file as part of the pipeline internally.
+ - Add `curve_display_method` option to display neutralization curves in notebooks at smaller size; this involves adding the `notebook_funcs.py` file as part of the pipeline internally. By default the method is now `png8` which is lower resolution but leads to much smaller notebooks in the results and docs; use `inline` for the older bigger but higher resolution plots.
+ - Shrink size of `altair` plots in `process_plate` by making them use data more efficiently.
 
 ### version 3.4.0
 - Make the pipeline run OK even if FASTQs are not available if the counts have already been computed (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/62)). This is designed to make it more portable. Specifically:

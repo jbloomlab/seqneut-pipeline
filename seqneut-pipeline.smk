@@ -73,7 +73,7 @@ else:
 if "curve_display_method" in config:
     curve_display_method = config["curve_display_method"]
 else:
-    curve_display_method = "no_display"
+    curve_display_method = "png8"
 
 # define `add_htmls_to_docs` if not already defined.
 try:
