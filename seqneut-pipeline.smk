@@ -265,6 +265,7 @@ if plates:
             ],
         output:
             plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
+            barcode_qc_drops="results/qc_drops/barcode_qc_drops.yml",
             groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
         params:
             plates=list(plates),
@@ -356,6 +357,7 @@ if plates:
         rules.aggregate_titers.output.titers,
         rules.aggregate_titers.output.pickles,
         rules.aggregate_qc_drops.output.plate_qc_drops,
+        rules.aggregate_qc_drops.output.barcode_qc_drops,
         rules.aggregate_qc_drops.output.groups_sera_qc_drops,
         rules.build_docs.output.docs,
         *[
