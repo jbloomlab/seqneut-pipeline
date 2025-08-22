@@ -28,6 +28,8 @@ viral_libraries:
 
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 
+curve_display_method: png8  # options are inline, png8, no_display
+
 neut_standard_sets:
   loes2023: data/neut_standard_sets/loes2023_neut_standards.csv
 

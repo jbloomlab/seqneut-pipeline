@@ -166,6 +166,17 @@ A/Michigan/45/2015
 <additional lines>
 ```
 
+### curve_display_method
+How large panesl of neutralizatioin curves are displayed in the notebooks created by pipeline an drendered in the documentation.
+Set such as:
+```
+curve_display_method: png8
+```
+Options are:
+ - *inline*: display inline at matplotlib objects, best resolution leads to very large files
+ - *png8*: show a `*.png8` files: lower resolution but leads to smaller files
+ - *no_display*: do not show curves at all in notebooks; smallest files but then you cannot see curves
+
 ### neut_standard_sets
 A dictionary (mapping) of neutralization-standard set names to CSV files holding the barcodes for the neutralization standard set.
 So in general, this key will look like:

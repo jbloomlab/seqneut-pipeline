@@ -3,6 +3,7 @@
 builtins = [
     "snakemake",  # may appear undefined as passed to scripts via `Snakefile`
     "display",  # builtin of Jupyter notebooks
+    "display_curve_fig",  # defined in `notebook_funcs`
 ]
 
 extend-include = ["*.ipynb"]

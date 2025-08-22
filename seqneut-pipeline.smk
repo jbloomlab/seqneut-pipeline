@@ -70,6 +70,10 @@ if "miscellaneous_plates" in config:
 else:
     miscellaneous_plates = {}
 
+if "curve_display_method" in config:
+    curve_display_method = config["curve_display_method"]
+else:
+    curve_display_method = "png8"
 
 # define `add_htmls_to_docs` if not already defined.
 try:
@@ -122,6 +126,7 @@ if plates:
                 rules.count_barcodes.output.fates,
                 sample=plates[wc.plate]["samples"]["sample"],
             ),
+            notebook_funcs=workflow.source_path("notebook_funcs.py"),
         output:
             qc_drops="results/plates/{plate}/qc_drops.yml",
             frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
@@ -150,6 +155,7 @@ if plates:
                 param: (val if param != "samples" else val.to_dict())
                 for (param, val) in plates[wc.plate].items()
             },
+            curve_display_method=curve_display_method,
         conda:
             "environment.yml"
         notebook:
@@ -177,6 +183,7 @@ if plates:
                 rules.process_plate.output.fits_pickle.format(plate=plate)
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
             ],
+            notebook_funcs=workflow.source_path("notebook_funcs.py"),
         output:
             per_rep_titers="results/sera/{group}_{serum}/titers_per_replicate.csv",
             titers="results/sera/{group}_{serum}/titers.csv",
@@ -209,6 +216,7 @@ if plates:
                 )
                 else config["default_serum_qc_thresholds"]
             ),
+            curve_display_method=curve_display_method,
         log:
             notebook="results/sera/{group}_{serum}/{group}_{serum}_titers.ipynb",
         conda:
