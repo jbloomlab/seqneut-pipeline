@@ -535,10 +535,11 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/aggregated_titers/aggregate_titers.ipynb`: Jupyter notebook that aggregates all the titers. You do not need to track this in the repo.
 
   - Results summarizing data dropped due to QC:
-    - `./results/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC. You should track this in repo.
-    - `./results/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
-    - `./results/aggregate_qc_drops.ipynb`: Jupypter notebook summarizing the QC drops. You do not need to track as an HTML version is rendered in `./docs/`
-    - `./results/aggregate_qc_drops.html`: HTML version Jupypter notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
+    - `./results/qc_drops/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-plate. You should track this in repo.
+    - `./results/qc_drops/barcode_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-barcode. You should track this in repo.
+    - `./results/qc_drops/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
+    - `./results/qc_drops/aggregate_qc_drops.ipynb`: Jupypter notebook summarizing the QC drops. You do not need to track as an HTML version is rendered in `./docs/`
+    - `./results/qc_drops/aggregate_qc_drops.html`: HTML version Jupypter notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
 
 ## Examining the output and setting appropriate QC values in the configuration
 When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML notebooks summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.

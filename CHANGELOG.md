@@ -8,6 +8,7 @@ Primarily includes updates to make pipeline run more efficiently and produce mor
  - Fix bug in `agregate_titers` when *viral_strain_plot_order* is *None*.
  - Add `curve_display_method` option to display neutralization curves in notebooks at smaller size; this involves adding the `notebook_funcs.py` file as part of the pipeline internally. By default the method is now `png8` which is lower resolution but leads to much smaller notebooks in the results and docs; use `inline` for the older bigger but higher resolution plots.
  - Shrink size of `altair` plots in `process_plate` by making them use data more efficiently.
+ - Add a file summarizing QC drops at barcode level (`results/qc_drops/barcode_qc_drops.yml`) (addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/69))
 
 ### version 3.4.0
 - Make the pipeline run OK even if FASTQs are not available if the counts have already been computed (see [here](https://github.com/jbloomlab/seqneut-pipeline/pull/62)). This is designed to make it more portable. Specifically:
