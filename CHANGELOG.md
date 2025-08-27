@@ -1,5 +1,8 @@
 # CHANGELOG
 
+#### version 4.0.1
+Fix bug in how docs show plots added via `add_htmls_to_docs`.
+
 ## version 4.0.0
 Primarily includes updates to make pipeline run more efficiently and produce more manageable output on large pipelines. Specifically:
  - Update to [newer version of `neutcurve`](https://github.com/jbloomlab/neutcurve/pull/63) that plots large panels of neutralization curves faster.
