@@ -256,6 +256,7 @@ if plates:
     rule aggregate_qc_drops:
         """Aggregate all QC drops."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_qc_drops.py"),
             plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
             groups_sera_qc_drops=lambda wc: [
                 rules.group_serum_titers.output.qc_drops.format(
@@ -264,6 +265,8 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
+            marimo_html="results/qc_drops/aggregate_qc_drops.html",
+            context_pickle="results/qc_drops/aggregate_qc_drops_context.pickle",
             plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
             barcode_qc_drops="results/qc_drops/barcode_qc_drops.yml",
             groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
@@ -273,9 +276,9 @@ if plates:
         conda:
             "environment.yml"
         log:
-            notebook="results/qc_drops/aggregate_qc_drops.ipynb",
-        notebook:
-            "notebooks/aggregate_qc_drops.py.ipynb"
+            "results/logs/aggregate_qc_drops.txt",
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     rule notebook_to_html:
         """Convert Jupyter notebook to HTML"""
