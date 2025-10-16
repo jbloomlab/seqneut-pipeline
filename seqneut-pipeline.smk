@@ -118,6 +118,7 @@ if plates:
     rule process_plate:
         """Process a plate to QC and convert counts to fraction infectivity."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/process_plate.py"),
             count_csvs=lambda wc: expand(
                 rules.count_barcodes.output.counts,
                 sample=plates[wc.plate]["samples"]["sample"],
@@ -126,14 +127,15 @@ if plates:
                 rules.count_barcodes.output.fates,
                 sample=plates[wc.plate]["samples"]["sample"],
             ),
-            notebook_funcs=workflow.source_path("notebook_funcs.py"),
         output:
+            marimo_html="results/plates/{plate}/process_{plate}.html",
+            context_pickle="results/plates/{plate}/process_{plate}_context.pickle",
             qc_drops="results/plates/{plate}/qc_drops.yml",
             frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
             fits_csv="results/plates/{plate}/curvefits.csv",
             fits_pickle="results/plates/{plate}/curvefits.pickle",
         log:
-            notebook="results/plates/{plate}/process_{plate}.ipynb",
+            "results/logs/process_{plate}.txt",
         params:
             # pass DataFrames/Series as dict/list for snakemake params rerun triggers
             viral_barcodes=lambda wc: (
@@ -158,8 +160,8 @@ if plates:
             curve_display_method=curve_display_method,
         conda:
             "environment.yml"
-        notebook:
-            "notebooks/process_plate.py.ipynb"
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     checkpoint groups_sera_by_plate:
         """Get list of all groups/sera and plates they are on."""
