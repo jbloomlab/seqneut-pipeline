@@ -231,6 +231,7 @@ if plates:
     rule aggregate_titers:
         """Aggregate all serum titers."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_titers.py"),
             pickles=lambda wc: [
                 rules.group_serum_titers.output.pickle.format(group=group, serum=serum)
                 for (group, serum) in groups_sera_plates()
@@ -240,6 +241,8 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
+            marimo_html="results/aggregated_titers/aggregate_titers.html",
+            context_pickle="results/aggregated_titers/aggregate_titers_context.pickle",
             pickles=[
                 f"results/aggregated_titers/curvefits_{group}.pickle"
                 for group in groups
@@ -253,9 +256,9 @@ if plates:
         conda:
             "environment.yml"
         log:
-            notebook="results/aggregated_titers/aggregate_titers.ipynb",
-        notebook:
-            "notebooks/aggregate_titers.py.ipynb"
+            "results/logs/aggregate_titers.txt",
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     rule aggregate_qc_drops:
         """Aggregate all QC drops."""
