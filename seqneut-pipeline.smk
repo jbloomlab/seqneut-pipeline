@@ -181,12 +181,14 @@ if plates:
     rule group_serum_titers:
         """Aggregate and analyze titers for a group / serum."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/group_serum_titers.py"),
             pickles=lambda wc: [
                 rules.process_plate.output.fits_pickle.format(plate=plate)
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
             ],
-            notebook_funcs=workflow.source_path("notebook_funcs.py"),
         output:
+            marimo_html="results/sera/{group}_{serum}/{group}_{serum}_titers.html",
+            context_pickle="results/sera/{group}_{serum}/{group}_{serum}_titers_context.pickle",
             per_rep_titers="results/sera/{group}_{serum}/titers_per_replicate.csv",
             titers="results/sera/{group}_{serum}/titers.csv",
             curves_pdf="results/sera/{group}_{serum}/curves.pdf",
@@ -220,11 +222,11 @@ if plates:
             ),
             curve_display_method=curve_display_method,
         log:
-            notebook="results/sera/{group}_{serum}/{group}_{serum}_titers.ipynb",
+            "results/logs/group_serum_titers_{group}_{serum}.txt",
         conda:
             "environment.yml"
-        notebook:
-            "notebooks/group_serum_titers.py.ipynb"
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     rule aggregate_titers:
         """Aggregate all serum titers."""
