@@ -287,19 +287,6 @@ if plates:
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
-    rule notebook_to_html:
-        """Convert Jupyter notebook to HTML"""
-        input:
-            notebook="{notebook}.ipynb",
-        output:
-            html="{notebook}.html",
-        log:
-            "results/logs/notebook_to_html_{notebook}.txt",
-        conda:
-            "environment.yml"
-        shell:
-            "jupyter nbconvert --to html {input.notebook} &> {log}"
-
     rule build_docs:
         """Build the HTML documentation."""
         input:
