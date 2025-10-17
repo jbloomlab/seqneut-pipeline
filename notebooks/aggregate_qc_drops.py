@@ -18,7 +18,7 @@ def __():
     with open(pathlib.Path(args.context_pickle), "rb") as f:
         context = pickle.load(f)
 
-    return context,
+    return (context,)
 
 
 @app.cell
@@ -125,9 +125,7 @@ def __(mo):
 
 @app.cell
 def __(alt, plate_qc_drop_counts, plates):
-    plate_selection = alt.selection_point(
-        fields=["plate"], on="mouseover", empty=False
-    )
+    plate_selection = alt.selection_point(fields=["plate"], on="mouseover", empty=False)
 
     plate_qc_drop_counts_chart = (
         alt.Chart(plate_qc_drop_counts)
@@ -229,7 +227,9 @@ def __(output_barcode_qc_drops, plate_qc_drops, yaml):
 
 @app.cell(hide_code=True)
 def __(mo):
-    mo.md(r"""Now make a plot showing how often each barcode is dropped for each reason:""")
+    mo.md(
+        r"""Now make a plot showing how often each barcode is dropped for each reason:"""
+    )
     return
 
 

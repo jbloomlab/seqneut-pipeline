@@ -126,11 +126,17 @@ def _(
     assert len(input_titers) == len(input_pickles) == len(groups_sera)
     assert len(groups) == len(output_titers) == len(output_pickles)
 
-    titers = pd.concat([pd.read_csv(f_titer) for f_titer in input_titers], ignore_index=True)
+    titers = pd.concat(
+        [pd.read_csv(f_titer) for f_titer in input_titers], ignore_index=True
+    )
     assert len(titers) == len(titers.groupby(["group", "serum", "virus"]))
     for group, f_out_titer in zip(groups, output_titers):
-        mo.output.append(mo.md(f"Writing aggregated titers for `{group}` to `{f_out_titer}`"))
-        titers.query("group == @group").to_csv(f_out_titer, index=False, float_format="%.4g")
+        mo.output.append(
+            mo.md(f"Writing aggregated titers for `{group}` to `{f_out_titer}`")
+        )
+        titers.query("group == @group").to_csv(
+            f_out_titer, index=False, float_format="%.4g"
+        )
 
     for group, f_out_pickle in zip(groups, output_pickles):
         fits_list = []
@@ -139,7 +145,9 @@ def _(
                 with open(pickle_f, "rb") as f_in_pickle:
                     fits_list.append(pickle_module.load(f_in_pickle))
         curvefits = neutcurve.CurveFits.combineCurveFits(fits_list)
-        mo.output.append(mo.md(f"Pickling aggregated `CurveFits` for `{group}` to `{f_out_pickle}`"))
+        mo.output.append(
+            mo.md(f"Pickling aggregated `CurveFits` for `{group}` to `{f_out_pickle}`")
+        )
         with open(f_out_pickle, "wb") as f_out_pickle_file:
             pickle_module.dump(curvefits, f_out_pickle_file)
     return curvefits, titers
@@ -281,9 +289,9 @@ def _(
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
 if __name__ == "__main__":
     app.run()
-

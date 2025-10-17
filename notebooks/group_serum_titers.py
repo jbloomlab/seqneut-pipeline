@@ -56,7 +56,7 @@ def __(pickle):
     with open(pathlib.Path(args.context_pickle), "rb") as f:
         context = pickle.load(f)
 
-    return context,
+    return (context,)
 
 
 @app.cell
@@ -92,8 +92,6 @@ def __(context, mo):
     )
 
 
-
-
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
@@ -107,10 +105,14 @@ def _(mo):
 
 @app.cell
 def _(group, mo, neutcurve, pickle, pickle_fits, serum):
-    mo.output.append(mo.md(f'Combining the curve fits for `group={group!r}`, `serum={serum!r}` from `pickle_fits={pickle_fits!r}`'))
+    mo.output.append(
+        mo.md(
+            f"Combining the curve fits for `group={group!r}`, `serum={serum!r}` from `pickle_fits={pickle_fits!r}`"
+        )
+    )
     fits_to_combine = []
     for fname in pickle_fits:
-        with open(fname, 'rb') as f_combine:
+        with open(fname, "rb") as f_combine:
             fits_to_combine.append(pickle.load(f_combine))
     fits_noqc = neutcurve.CurveFits.combineCurveFits(fits_to_combine, sera=[serum])
     return (fits_noqc,)
@@ -142,37 +144,38 @@ def _(mo):
 
 @app.cell
 def _(fits_noqc, group, mo, serum, serum_titer_as, viral_strain_plot_order):
-    per_rep_titers = (
-        fits_noqc.fitParams(average_only=False, no_average=True)
-        .assign(
-            group=group,
-            nt50=lambda x: 1 / x["ic50"],
-            midpoint=lambda x: 1 / x["midpoint_bound"],
-            titer=lambda x: x["midpoint"] if serum_titer_as == "midpoint" else x["nt50"],
-            titer_bound=lambda x: (
-                x["midpoint_bound_type"] if serum_titer_as == "midpoint" else x["ic50_bound"]
-            ).map({"lower": "upper", "upper": "lower", "interpolated": "interpolated"}),
-            titer_as=serum_titer_as,
-        )[
-            [
-                "group",
-                "serum",
-                "virus",
-                "replicate",
-                "titer",
-                "titer_bound",
-                "titer_as",
-                "nt50",
-                "midpoint",
-                "top",
-                "bottom",
-                "slope",
-            ]
+    per_rep_titers = fits_noqc.fitParams(average_only=False, no_average=True).assign(
+        group=group,
+        nt50=lambda x: 1 / x["ic50"],
+        midpoint=lambda x: 1 / x["midpoint_bound"],
+        titer=lambda x: x["midpoint"] if serum_titer_as == "midpoint" else x["nt50"],
+        titer_bound=lambda x: (
+            x["midpoint_bound_type"]
+            if serum_titer_as == "midpoint"
+            else x["ic50_bound"]
+        ).map({"lower": "upper", "upper": "lower", "interpolated": "interpolated"}),
+        titer_as=serum_titer_as,
+    )[
+        [
+            "group",
+            "serum",
+            "virus",
+            "replicate",
+            "titer",
+            "titer_bound",
+            "titer_as",
+            "nt50",
+            "midpoint",
+            "top",
+            "bottom",
+            "slope",
         ]
-    )
+    ]
     assert per_rep_titers.notnull().all().all()
 
-    if len(invalid_titer_as := per_rep_titers.query("(titer_as == 'nt50') and top <= 0.5")):
+    if len(
+        invalid_titer_as := per_rep_titers.query("(titer_as == 'nt50') and top <= 0.5")
+    ):
         raise ValueError(
             f"There are titers computed as nt50 when curve top <= 0.5:\n{invalid_titer_as}"
         )
@@ -187,7 +190,9 @@ def _(fits_noqc, group, mo, serum, serum_titer_as, viral_strain_plot_order):
                 + str(set(viruses) - set(viral_strain_plot_order))
             )
         viruses = [v for v in viral_strain_plot_order if v in viruses]
-    mo.output.append(mo.md(f"`{serum}` has titers for a total of {len(viruses)} viruses"))
+    mo.output.append(
+        mo.md(f"`{serum}` has titers for a total of {len(viruses)} viruses")
+    )
     return per_rep_titers, viruses
 
 
@@ -207,24 +212,28 @@ def _(mo):
 
 @app.cell
 def _(alt, group, mo, per_rep_titers, serum):
-    _virus_selection_1 = alt.selection_point(fields=['virus'], on='mouseover', empty=False)
+    _virus_selection_1 = alt.selection_point(
+        fields=["virus"], on="mouseover", empty=False
+    )
     midpoint_vs_nt50_chart = (
         alt.Chart(per_rep_titers)
         .add_params(_virus_selection_1)
         .encode(
-            alt.X('nt50', scale=alt.Scale(type='log', nice=False, padding=8)),
-            alt.Y('midpoint', scale=alt.Scale(type='log', nice=False, padding=8)),
-            alt.Color('titer_bound'),
+            alt.X("nt50", scale=alt.Scale(type="log", nice=False, padding=8)),
+            alt.Y("midpoint", scale=alt.Scale(type="log", nice=False, padding=8)),
+            alt.Color("titer_bound"),
             strokeWidth=alt.condition(_virus_selection_1, alt.value(3), alt.value(0)),
             size=alt.condition(_virus_selection_1, alt.value(100), alt.value(60)),
             tooltip=[
-                alt.Tooltip(c, format='.2g') if per_rep_titers[c].dtype == float else c
+                alt.Tooltip(c, format=".2g") if per_rep_titers[c].dtype == float else c
                 for c in per_rep_titers.columns
-                if c not in {'group', 'serum', 'titer_as'}
+                if c not in {"group", "serum", "titer_as"}
             ],
         )
-        .mark_circle(stroke='black', fillOpacity=0.45, color='black')
-        .properties(width=350, height=350, title=f'NT50 versus midpoint for {group} {serum}')
+        .mark_circle(stroke="black", fillOpacity=0.45, color="black")
+        .properties(
+            width=350, height=350, title=f"NT50 versus midpoint for {group} {serum}"
+        )
         .configure_axis(grid=False)
     )
     mo.output.append(midpoint_vs_nt50_chart)
@@ -233,13 +242,19 @@ def _(alt, group, mo, per_rep_titers, serum):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Write the individual per-replicate titers to a file, this is before any QC has been applied:""")
+    mo.md(
+        r"""Write the individual per-replicate titers to a file, this is before any QC has been applied:"""
+    )
     return
 
 
 @app.cell
 def _(mo, per_rep_titers, per_rep_titers_csv):
-    mo.output.append(mo.md(f"Writing per-replicate titers (without QC filtering) to `{per_rep_titers_csv}`"))
+    mo.output.append(
+        mo.md(
+            f"Writing per-replicate titers (without QC filtering) to `{per_rep_titers_csv}`"
+        )
+    )
     per_rep_titers.to_csv(per_rep_titers_csv, index=False, float_format="%.4g")
     return
 
@@ -260,7 +275,6 @@ def _(mo):
 def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
     mo.output.append(mo.md(f"Using the following `qc_thresholds={qc_thresholds!r}`"))
 
-
     def get_median_bound(s):
         """Get the bound on titer when taking median."""
         s = list(s)
@@ -275,7 +289,6 @@ def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
                 return [b for b in bounds if b != "interpolated"][0]
             else:
                 return "inconsistent"
-
 
     median_titers_noqc = (
         per_rep_titers.sort_values("titer")  # for getting median bound
@@ -331,7 +344,9 @@ def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
 
     # get viruses failing QC in order to plot
     viruses_failing_qc = (
-        median_titers_noqc.query("fails_qc").set_index("virus")["fails_qc_reason"].to_dict()
+        median_titers_noqc.query("fails_qc")
+        .set_index("virus")["fails_qc_reason"]
+        .to_dict()
     )
     viruses_failing_qc = {
         v: viruses_failing_qc[v] for v in viruses if v in viruses_failing_qc
@@ -371,40 +386,54 @@ def _(
     serum,
     viruses,
 ):
-    _virus_selection_2 = alt.selection_point(fields=['virus'], on='mouseover', empty=False)
+    _virus_selection_2 = alt.selection_point(
+        fields=["virus"], on="mouseover", empty=False
+    )
     per_rep_chart = (
         alt.Chart(per_rep_titers_w_fc)
         .encode(
-            alt.X('titer', scale=alt.Scale(nice=False, padding=5, type='log')),
-            alt.Y('virus', sort=viruses),
+            alt.X("titer", scale=alt.Scale(nice=False, padding=5, type="log")),
+            alt.Y("virus", sort=viruses),
             alt.Fill(
-                'fails_qc',
+                "fails_qc",
                 title=f"fails qc_thresholds['min_replicates']={qc_thresholds['min_replicates']!r}, qc_thresholds['max_fold_change_from_median']={qc_thresholds['max_fold_change_from_median']!r}",
                 legend=alt.Legend(titleLimit=500),
             ),
-            alt.Shape('titer_bound'),
+            alt.Shape("titer_bound"),
             strokeWidth=alt.condition(_virus_selection_2, alt.value(2), alt.value(0)),
             tooltip=[
-                alt.Tooltip(c, format='.3g') if per_rep_titers_w_fc[c].dtype == float else c
+                (
+                    alt.Tooltip(c, format=".3g")
+                    if per_rep_titers_w_fc[c].dtype == float
+                    else c
+                )
                 for c in per_rep_titers_w_fc
             ],
         )
-        .mark_point(size=35, filled=True, fillOpacity=0.5, strokeOpacity=1, stroke='black')
+        .mark_point(
+            size=35, filled=True, fillOpacity=0.5, strokeOpacity=1, stroke="black"
+        )
     )
     median_chart = (
         alt.Chart(median_titers_noqc)
         .encode(
-            alt.X('titer', scale=alt.Scale(nice=False, padding=5, type='log')),
-            alt.Y('virus', sort=viruses),
-            alt.Fill('fails_qc'),
-            alt.Shape('titer_bound'),
+            alt.X("titer", scale=alt.Scale(nice=False, padding=5, type="log")),
+            alt.Y("virus", sort=viruses),
+            alt.Fill("fails_qc"),
+            alt.Shape("titer_bound"),
             strokeWidth=alt.condition(_virus_selection_2, alt.value(2), alt.value(0.5)),
             tooltip=[
-                alt.Tooltip(c, format='.3g') if median_titers_noqc[c].dtype == float else c
+                (
+                    alt.Tooltip(c, format=".3g")
+                    if median_titers_noqc[c].dtype == float
+                    else c
+                )
                 for c in median_titers_noqc
             ],
         )
-        .mark_point(size=75, filled=True, fillOpacity=0.9, strokeOpacity=1, stroke='black')
+        .mark_point(
+            size=75, filled=True, fillOpacity=0.9, strokeOpacity=1, stroke="black"
+        )
     )
     titer_chart = (
         (per_rep_chart + median_chart)
@@ -412,7 +441,7 @@ def _(
         .properties(
             height=alt.Step(11),
             width=250,
-            title=f'{group} {serum} median (large points) and per-replicate (small points) titers',
+            title=f"{group} {serum} median (large points) and per-replicate (small points) titers",
         )
         .configure_axis(grid=False)
     )
@@ -442,7 +471,11 @@ def _(
     serum,
     viruses_failing_qc,
 ):
-    mo.output.append(mo.md(f'Neutralization curves for the {len(viruses_failing_qc)} viruses failing QC:'))
+    mo.output.append(
+        mo.md(
+            f"Neutralization curves for the {len(viruses_failing_qc)} viruses failing QC:"
+        )
+    )
     if len(viruses_failing_qc):
         _fig_failing, _ = fits_noqc.plotReplicates(
             viruses=viruses_failing_qc,
@@ -452,14 +485,14 @@ def _(
             ncol=4,
             heightscale=1.2,
             widthscale=1.2,
-            subplot_titles='{virus}',
+            subplot_titles="{virus}",
             draw_in_bounds=True,
         )
         _ = _fig_failing.suptitle(
-            f'neutralization curves for viruses failing QC for {group} {serum}',
+            f"neutralization curves for viruses failing QC for {group} {serum}",
             y=1,
             fontsize=18,
-            fontweight='bold',
+            fontweight="bold",
         )
         _fig_failing.tight_layout()
         mo.output.append(_fig_failing)
@@ -483,27 +516,27 @@ def _(io, mo, qc_drops_file, qc_thresholds, sys, viruses_failing_qc, yaml):
     viruses_to_drop = {
         v: reason
         for v, reason in viruses_failing_qc.items()
-        if v not in qc_thresholds['viruses_ignore_qc']
+        if v not in qc_thresholds["viruses_ignore_qc"]
     }
-    mo.output.append(mo.md(f'Dropping {len(viruses_to_drop)} viruses for failing QC:'))
+    mo.output.append(mo.md(f"Dropping {len(viruses_to_drop)} viruses for failing QC:"))
     yaml_buffer_viruses_drop = io.StringIO()
-    yaml.YAML(typ='rt').dump(viruses_to_drop, stream=yaml_buffer_viruses_drop)
+    yaml.YAML(typ="rt").dump(viruses_to_drop, stream=yaml_buffer_viruses_drop)
     mo.output.append(mo.md(f"```yaml\n{yaml_buffer_viruses_drop.getvalue()}```"))
-    if (nkept := (len(viruses_failing_qc) - len(viruses_to_drop))):
+    if nkept := (len(viruses_failing_qc) - len(viruses_to_drop)):
         kept_viruses = {
             v: reason
             for v, reason in viruses_failing_qc.items()
-            if v in qc_thresholds['viruses_ignore_qc']
+            if v in qc_thresholds["viruses_ignore_qc"]
         }
         mo.output.append(
             mo.md(
-                f'Retaining {nkept} viruses that fail QC because they are in `viruses_ignore_qc`: '
-                f'{kept_viruses}'
+                f"Retaining {nkept} viruses that fail QC because they are in `viruses_ignore_qc`: "
+                f"{kept_viruses}"
             )
         )
-    mo.output.append(mo.md(f'Writing QC drops to `{qc_drops_file}`'))
-    with open(qc_drops_file, 'w') as f_qc_drops:
-        yaml.YAML(typ='rt').dump(viruses_to_drop, f_qc_drops)
+    mo.output.append(mo.md(f"Writing QC drops to `{qc_drops_file}`"))
+    with open(qc_drops_file, "w") as f_qc_drops:
+        yaml.YAML(typ="rt").dump(viruses_to_drop, f_qc_drops)
     return (viruses_to_drop,)
 
 
@@ -543,19 +576,19 @@ def _(
         ncol=4,
         heightscale=1.2,
         widthscale=1.2,
-        subplot_titles='{virus}',
+        subplot_titles="{virus}",
         viruses=[v for v in viruses if v not in viruses_to_drop],
         draw_in_bounds=True,
     )
     _ = _fig_retained.suptitle(
-        f'neutralization curves for retained viruses for {group} {serum}',
+        f"neutralization curves for retained viruses for {group} {serum}",
         y=1,
         fontsize=18,
-        fontweight='bold',
+        fontweight="bold",
     )
     _fig_retained.tight_layout()
     mo.output.append(_fig_retained)
-    mo.output.append(mo.md(f'Saving to plot of curves to `{curves_pdf}`'))
+    mo.output.append(mo.md(f"Saving to plot of curves to `{curves_pdf}`"))
     _fig_retained.savefig(curves_pdf)
     plt.close(_fig_retained)
     return (fits_qc,)
@@ -569,7 +602,7 @@ def _(mo):
 
 @app.cell
 def _(fits_qc, output_pickle, pickle):
-    with open(output_pickle, 'wb') as f_out_pickle:
+    with open(output_pickle, "wb") as f_out_pickle:
         pickle.dump(fits_qc, f_out_pickle)
     return
 
@@ -603,4 +636,3 @@ def _(median_titers_noqc, mo, titers_csv, viruses_to_drop):
 
 if __name__ == "__main__":
     app.run()
-

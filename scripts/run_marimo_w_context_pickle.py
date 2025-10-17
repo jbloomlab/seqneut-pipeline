@@ -1,6 +1,5 @@
 """Run a marimo notebook with snakemake context passed via pickle."""
 
-import os
 import pickle
 import subprocess
 import sys

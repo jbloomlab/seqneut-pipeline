@@ -79,7 +79,7 @@ def __(pickle):
     with open(pathlib.Path(args.context_pickle), "rb") as f:
         context = pickle.load(f)
 
-    return context,
+    return (context,)
 
 
 @app.cell
@@ -155,11 +155,11 @@ def __(context, io, mo, pd, sys, yaml):
     )
 
 
-
-
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Set up dictionary to keep track of wells, barcodes, well-barcodes, and serum-replicates that are dropped:""")
+    mo.md(
+        r"""Set up dictionary to keep track of wells, barcodes, well-barcodes, and serum-replicates that are dropped:"""
+    )
     return
 
 
@@ -212,7 +212,14 @@ def _(alt, fate_csvs, pd, plate, samples, samples_df):
             sample_well=lambda x: x["sample_noplate"] + " (" + x["well"] + ")",
         )
         .query("fate_counts > 0")[  # only keep fates with at least one count
-            ["fate", "count", "well", "serum_replicate", "sample_well", "dilution_factor"]
+            [
+                "fate",
+                "count",
+                "well",
+                "serum_replicate",
+                "sample_well",
+                "dilution_factor",
+            ]
         ]
     )
 
@@ -222,7 +229,6 @@ def _(alt, fate_csvs, pd, plate, samples, samples_df):
     sample_wells = list(
         fates.sort_values(["serum_replicate", "dilution_factor"])["sample_well"]
     )
-
 
     serum_selection = alt.selection_point(
         fields=["serum_replicate"],
@@ -285,7 +291,9 @@ def _(
 ):
     # get barcode counts
     counts = (
-        pd.concat([pd.read_csv(c).assign(sample=s) for c, s in zip(count_csvs, samples)])
+        pd.concat(
+            [pd.read_csv(c).assign(sample=s) for c, s in zip(count_csvs, samples)]
+        )
         .merge(samples_df, validate="many_to_one", on="sample")
         .drop(columns=["replicate", "plate", "fastq"])
         .assign(sample_well=lambda x: x["sample_noplate"] + " (" + x["well"] + ")")
@@ -295,7 +303,9 @@ def _(
     barcode_class = pd.concat(
         [
             pd.DataFrame(viral_barcodes).assign(neut_standard=False),
-            pd.DataFrame(neut_standard_barcodes).assign(neut_standard=True, strain=pd.NA),
+            pd.DataFrame(neut_standard_barcodes).assign(
+                neut_standard=True, strain=pd.NA
+            ),
         ],
         ignore_index=True,
     )
@@ -318,36 +328,50 @@ def _(mo):
 def _(counts, manual_drops, mo, qc_drops):
     counts_qc_1 = counts.copy()
     for filter_type, filter_drops in manual_drops.items():
-        mo.output.append(mo.md(f'Dropping {len(filter_drops)} {filter_type} specified in manual_drops'))
+        mo.output.append(
+            mo.md(
+                f"Dropping {len(filter_drops)} {filter_type} specified in manual_drops"
+            )
+        )
         assert filter_type in qc_drops
-        qc_drops[filter_type].update({w: 'manual_drop' for w in filter_drops if not isinstance(w, list)})
-        if filter_type == 'barcode_wells':
+        qc_drops[filter_type].update(
+            {w: "manual_drop" for w in filter_drops if not isinstance(w, list)}
+        )
+        if filter_type == "barcode_wells":
             counts_qc_1 = counts_qc_1[
                 ~counts.assign(
                     barcode_well=lambda x: x.apply(
-                        lambda r: (r['barcode'], r['well']), axis=1
+                        lambda r: (r["barcode"], r["well"]), axis=1
                     )
-                )['barcode_well'].isin(qc_drops[filter_type])
+                )["barcode_well"].isin(qc_drops[filter_type])
             ]
-        elif filter_type == 'barcode_serum_replicates':
+        elif filter_type == "barcode_serum_replicates":
             counts_qc_1 = counts_qc_1[
                 ~counts_qc_1.assign(
                     barcode_serum_replicate=lambda x: x.apply(
-                        lambda r: (r['barcode'], r['serum_replicate']), axis=1
+                        lambda r: (r["barcode"], r["serum_replicate"]), axis=1
                     )
-                )['barcode_serum_replicate'].isin(qc_drops[filter_type])
+                )["barcode_serum_replicate"].isin(qc_drops[filter_type])
             ]
-        elif filter_type == 'wells':
-            counts_qc_1 = counts_qc_1[~counts_qc_1['well'].isin(qc_drops[filter_type])]
-        elif filter_type == 'barcodes':
-            counts_qc_1 = counts_qc_1[~counts_qc_1['barcode'].isin(qc_drops[filter_type])]
-        elif filter_type == 'serum_replicates':
-            counts_qc_1 = counts_qc_1[~counts_qc_1['serum_replicate'].isin(qc_drops[filter_type])]
-        elif filter_type == 'barcode_serum_replicates':
-            counts_qc_1 = counts_qc_1[~counts_qc_1['barcode_serum_replicate'].isin(qc_drops[filter_type])]
+        elif filter_type == "wells":
+            counts_qc_1 = counts_qc_1[~counts_qc_1["well"].isin(qc_drops[filter_type])]
+        elif filter_type == "barcodes":
+            counts_qc_1 = counts_qc_1[
+                ~counts_qc_1["barcode"].isin(qc_drops[filter_type])
+            ]
+        elif filter_type == "serum_replicates":
+            counts_qc_1 = counts_qc_1[
+                ~counts_qc_1["serum_replicate"].isin(qc_drops[filter_type])
+            ]
+        elif filter_type == "barcode_serum_replicates":
+            counts_qc_1 = counts_qc_1[
+                ~counts_qc_1["barcode_serum_replicate"].isin(qc_drops[filter_type])
+            ]
         else:
             assert filter_type in set(counts_qc_1.columns)
-            counts_qc_1 = counts_qc_1[~counts_qc_1[filter_type].isin(qc_drops[filter_type])]
+            counts_qc_1 = counts_qc_1[
+                ~counts_qc_1[filter_type].isin(qc_drops[filter_type])
+            ]
     return (counts_qc_1,)
 
 
@@ -383,14 +407,14 @@ def _(
     # Compute average barcode counts per well
     avg_barcode_counts = (
         counts_qc_1.groupby(
-            ['well', 'serum_replicate', 'sample_well'],
+            ["well", "serum_replicate", "sample_well"],
             dropna=False,
             as_index=False,
         )
-        .aggregate(avg_count=pd.NamedAgg('count', 'mean'))
+        .aggregate(avg_count=pd.NamedAgg("count", "mean"))
         .assign(
             fails_qc=lambda x: (
-                x['avg_count'] < qc_thresholds['avg_barcode_counts_per_well']
+                x["avg_count"] < qc_thresholds["avg_barcode_counts_per_well"]
             )
         )
     )
@@ -402,26 +426,30 @@ def _(
         .transform_filter(serum_selection)
         .encode(
             alt.X(
-                'avg_count',
-                title='average barcode counts per well',
+                "avg_count",
+                title="average barcode counts per well",
                 scale=alt.Scale(nice=False, padding=3),
             ),
-            alt.Y('sample_well', sort=sample_wells),
+            alt.Y("sample_well", sort=sample_wells),
             alt.Color(
-                'fails_qc',
+                "fails_qc",
                 title=f"fails qc_thresholds['avg_barcode_counts_per_well']={qc_thresholds['avg_barcode_counts_per_well']!r}",
                 legend=alt.Legend(titleLimit=500),
             ),
             tooltip=[
-                alt.Tooltip(c, format='.3g') if avg_barcode_counts[c].dtype == float else c
+                (
+                    alt.Tooltip(c, format=".3g")
+                    if avg_barcode_counts[c].dtype == float
+                    else c
+                )
                 for c in avg_barcode_counts.columns
             ],
         )
-        .mark_bar(height={'band': 0.85})
+        .mark_bar(height={"band": 0.85})
         .properties(
             height=alt.Step(10),
             width=250,
-            title=f'Average barcode counts per well for {plate}',
+            title=f"Average barcode counts per well for {plate}",
         )
         .configure_axis(grid=False)
     )
@@ -430,7 +458,9 @@ def _(
     mo.output.append(avg_barcode_counts_chart)
 
     # Drop wells failing QC
-    avg_barcode_counts_per_well_drops = list(avg_barcode_counts.query('fails_qc')['well'])
+    avg_barcode_counts_per_well_drops = list(
+        avg_barcode_counts.query("fails_qc")["well"]
+    )
     mo.output.append(
         mo.md(
             f"Dropping {len(avg_barcode_counts_per_well_drops)} wells for failing "
@@ -438,8 +468,10 @@ def _(
             f"{avg_barcode_counts_per_well_drops}"
         )
     )
-    qc_drops['wells'].update({w: 'avg_barcode_counts_per_well' for w in avg_barcode_counts_per_well_drops})
-    counts_qc_2 = counts_qc_1[~counts_qc_1['well'].isin(qc_drops['wells'])]
+    qc_drops["wells"].update(
+        {w: "avg_barcode_counts_per_well" for w in avg_barcode_counts_per_well_drops}
+    )
+    counts_qc_2 = counts_qc_1[~counts_qc_1["well"].isin(qc_drops["wells"])]
 
     return avg_barcode_counts_chart, counts_qc_2
 
@@ -468,21 +500,22 @@ def _(
     # Compute neutralization standard fractions per well
     neut_standard_fracs = (
         counts_qc_2.assign(
-            neut_standard_count=lambda x: x['count'] * x['neut_standard'].astype(int)
+            neut_standard_count=lambda x: x["count"] * x["neut_standard"].astype(int)
         )
         .groupby(
-            ['well', 'serum_replicate', 'sample_well'],
+            ["well", "serum_replicate", "sample_well"],
             dropna=False,
             as_index=False,
         )
         .aggregate(
-            total_count=pd.NamedAgg('count', 'sum'),
-            neut_standard_count=pd.NamedAgg('neut_standard_count', 'sum'),
+            total_count=pd.NamedAgg("count", "sum"),
+            neut_standard_count=pd.NamedAgg("neut_standard_count", "sum"),
         )
         .assign(
-            neut_standard_frac=lambda x: x['neut_standard_count'] / x['total_count'],
+            neut_standard_frac=lambda x: x["neut_standard_count"] / x["total_count"],
             fails_qc=lambda x: (
-                x['neut_standard_frac'] < qc_thresholds['min_neut_standard_frac_per_well']
+                x["neut_standard_frac"]
+                < qc_thresholds["min_neut_standard_frac_per_well"]
             ),
         )
     )
@@ -494,26 +527,30 @@ def _(
         .transform_filter(serum_selection)
         .encode(
             alt.X(
-                'neut_standard_frac',
-                title='frac counts from neutralization standard per well',
+                "neut_standard_frac",
+                title="frac counts from neutralization standard per well",
                 scale=alt.Scale(nice=False, padding=3),
             ),
-            alt.Y('sample_well', sort=sample_wells),
+            alt.Y("sample_well", sort=sample_wells),
             alt.Color(
-                'fails_qc',
+                "fails_qc",
                 title=f"fails qc_thresholds['min_neut_standard_frac_per_well']={qc_thresholds['min_neut_standard_frac_per_well']!r}",
                 legend=alt.Legend(titleLimit=500),
             ),
             tooltip=[
-                alt.Tooltip(c, format='.3g') if neut_standard_fracs[c].dtype == float else c
+                (
+                    alt.Tooltip(c, format=".3g")
+                    if neut_standard_fracs[c].dtype == float
+                    else c
+                )
                 for c in neut_standard_fracs.columns
             ],
         )
-        .mark_bar(height={'band': 0.85})
+        .mark_bar(height={"band": 0.85})
         .properties(
             height=alt.Step(10),
             width=250,
-            title=f'Neutralization-standard fracs per well for {plate}',
+            title=f"Neutralization-standard fracs per well for {plate}",
         )
         .configure_axis(grid=False)
         .configure_legend(titleLimit=1000)
@@ -528,10 +565,21 @@ def _(
 @app.cell
 def _(counts_qc_2, mo, neut_standard_fracs, qc_drops, qc_thresholds):
     # drop wells failing QC
-    min_neut_standard_frac_per_well_drops = list(neut_standard_fracs.query('fails_qc')['well'])
-    mo.output.append(mo.md(f"Dropping {len(min_neut_standard_frac_per_well_drops)} wells for failing `qc_thresholds['min_neut_standard_frac_per_well']={qc_thresholds['min_neut_standard_frac_per_well']!r}`: {min_neut_standard_frac_per_well_drops}"))
-    qc_drops['wells'].update({w: 'min_neut_standard_frac_per_well' for w in min_neut_standard_frac_per_well_drops})
-    counts_qc_3 = counts_qc_2[~counts_qc_2['well'].isin(qc_drops['wells'])]
+    min_neut_standard_frac_per_well_drops = list(
+        neut_standard_fracs.query("fails_qc")["well"]
+    )
+    mo.output.append(
+        mo.md(
+            f"Dropping {len(min_neut_standard_frac_per_well_drops)} wells for failing `qc_thresholds['min_neut_standard_frac_per_well']={qc_thresholds['min_neut_standard_frac_per_well']!r}`: {min_neut_standard_frac_per_well_drops}"
+        )
+    )
+    qc_drops["wells"].update(
+        {
+            w: "min_neut_standard_frac_per_well"
+            for w in min_neut_standard_frac_per_well_drops
+        }
+    )
+    counts_qc_3 = counts_qc_2[~counts_qc_2["well"].isin(qc_drops["wells"])]
     return (counts_qc_3,)
 
 
@@ -571,59 +619,68 @@ def _(
 ):
     # Create barcode selection parameter for mouseover highlighting
     barcode_selection = alt.selection_point(
-        fields=['barcode'],
-        on='mouseover',
+        fields=["barcode"],
+        on="mouseover",
         empty=False,
     )
 
     # Analyze barcode evenness for two groups: neut-standard barcodes and viral barcodes
     counts_qc_4 = counts_qc_3.copy()
 
-    for is_neut_standard, df in counts_qc_3.groupby('neut_standard'):
+    for is_neut_standard, df in counts_qc_3.groupby("neut_standard"):
         # Determine which QC to apply based on barcode type
         if is_neut_standard:
-            mo.output.append(mo.md(f"{'=' * 89}\n\nAnalyzing neut-standard barcodes from all samples (wells)"))
-            qc_name = 'per_neut_standard_barcode_filters'
+            mo.output.append(
+                mo.md(
+                    f"{'=' * 89}\n\nAnalyzing neut-standard barcodes from all samples (wells)"
+                )
+            )
+            qc_name = "per_neut_standard_barcode_filters"
         else:
-            mo.output.append(mo.md(f"{'=' * 89}\n\nAnalyzing all barcodes from no-serum samples (wells)"))
-            qc_name = 'no_serum_per_viral_barcode_filters'
+            mo.output.append(
+                mo.md(
+                    f"{'=' * 89}\n\nAnalyzing all barcodes from no-serum samples (wells)"
+                )
+            )
+            qc_name = "no_serum_per_viral_barcode_filters"
             df = df.query("serum == 'none'")
 
         # Compute barcode fractions and fold changes
-        df = (
-            df.assign(
-                sample_counts=lambda x: x.groupby('sample')['count'].transform('sum'),
-                count_frac=lambda x: x['count'] / x['sample_counts'],
-                median_count_frac=lambda x: x.groupby('barcode')['count_frac'].transform('median'),
-                fold_change_from_median=lambda x: numpy.where(
-                    x['count_frac'] > x['median_count_frac'],
-                    x['count_frac'] / x['median_count_frac'],
-                    x['median_count_frac'] / x['count_frac'],
-                ),
-            )[
-                ['barcode', 'count', 'sample_well', 'count_frac', 'fold_change_from_median']
-                + ([] if is_neut_standard else ['strain'])
-            ]
-        )
+        df = df.assign(
+            sample_counts=lambda x: x.groupby("sample")["count"].transform("sum"),
+            count_frac=lambda x: x["count"] / x["sample_counts"],
+            median_count_frac=lambda x: x.groupby("barcode")["count_frac"].transform(
+                "median"
+            ),
+            fold_change_from_median=lambda x: numpy.where(
+                x["count_frac"] > x["median_count_frac"],
+                x["count_frac"] / x["median_count_frac"],
+                x["median_count_frac"] / x["count_frac"],
+            ),
+        )[
+            ["barcode", "count", "sample_well", "count_frac", "fold_change_from_median"]
+            + ([] if is_neut_standard else ["strain"])
+        ]
 
         # Apply QC thresholds
         qc = qc_thresholds[qc_name]
-        mo.output.append(mo.md(f'Apply QC `{qc_name}`: `{qc}`'))
+        mo.output.append(mo.md(f"Apply QC `{qc_name}`: `{qc}`"))
 
         fails_qc = (
             df.assign(
                 fails_qc=lambda x: ~(
-                    (x['count_frac'] >= qc['min_frac'])
-                    & (x['fold_change_from_median'] <= qc['max_fold_change'])
+                    (x["count_frac"] >= qc["min_frac"])
+                    & (x["fold_change_from_median"] <= qc["max_fold_change"])
                 )
             )
-            .groupby('barcode', as_index=False)
-            .aggregate(n_wells_fail_qc=pd.NamedAgg('fails_qc', 'sum'))
-            .assign(fails_qc=lambda x: x['n_wells_fail_qc'] >= qc['max_wells'])
-            [['barcode', 'fails_qc']]
+            .groupby("barcode", as_index=False)
+            .aggregate(n_wells_fail_qc=pd.NamedAgg("fails_qc", "sum"))
+            .assign(fails_qc=lambda x: x["n_wells_fail_qc"] >= qc["max_wells"])[
+                ["barcode", "fails_qc"]
+            ]
         )
 
-        df = df.merge(fails_qc, on='barcode', validate='many_to_one')
+        df = df.merge(fails_qc, on="barcode", validate="many_to_one")
 
         # Create evenness chart
         evenness_chart = (
@@ -631,7 +688,7 @@ def _(
             .add_params(barcode_selection)
             .encode(
                 alt.X(
-                    'count_frac',
+                    "count_frac",
                     title=(
                         "barcode's fraction of neut standard counts"
                         if is_neut_standard
@@ -639,28 +696,32 @@ def _(
                     ),
                     scale=alt.Scale(nice=False, padding=5),
                 ),
-                alt.Y('sample_well', sort=sample_wells),
+                alt.Y("sample_well", sort=sample_wells),
                 alt.Fill(
-                    'fails_qc',
-                    title=f'fails {qc_name}',
+                    "fails_qc",
+                    title=f"fails {qc_name}",
                     legend=alt.Legend(titleLimit=500),
                 ),
-                strokeWidth=alt.condition(barcode_selection, alt.value(2), alt.value(0)),
+                strokeWidth=alt.condition(
+                    barcode_selection, alt.value(2), alt.value(0)
+                ),
                 size=alt.condition(barcode_selection, alt.value(60), alt.value(35)),
                 tooltip=[
-                    alt.Tooltip(c, format='.2g') if df[c].dtype == float else c
+                    alt.Tooltip(c, format=".2g") if df[c].dtype == float else c
                     for c in df.columns
                 ],
             )
-            .mark_circle(fillOpacity=0.45, stroke='black', strokeOpacity=1)
+            .mark_circle(fillOpacity=0.45, stroke="black", strokeOpacity=1)
             .properties(
                 height=alt.Step(10),
                 width=300,
                 title=alt.TitleParams(
-                    f'{plate} all samples, neut-standard barcodes'
-                    if is_neut_standard
-                    else f'{plate} no-serum samples, all barcodes',
-                    subtitle='x-axis is zoomable (use mouse scroll/pan)',
+                    (
+                        f"{plate} all samples, neut-standard barcodes"
+                        if is_neut_standard
+                        else f"{plate} no-serum samples, all barcodes"
+                    ),
+                    subtitle="x-axis is zoomable (use mouse scroll/pan)",
                 ),
             )
             .configure_axis(grid=False)
@@ -672,10 +733,16 @@ def _(
         mo.output.append(evenness_chart)
 
         # Drop barcodes failing QC
-        barcode_drops = list(fails_qc.query('fails_qc')['barcode'])
-        mo.output.append(mo.md(f'Dropping {len(barcode_drops)} barcodes for failing `qc={qc!r}`: {barcode_drops}'))
-        qc_drops['barcodes'].update({bc: 'min_neut_standard_frac_per_well' for bc in barcode_drops})
-        counts_qc_4 = counts_qc_4[~counts_qc_4['barcode'].isin(qc_drops['barcodes'])]
+        barcode_drops = list(fails_qc.query("fails_qc")["barcode"])
+        mo.output.append(
+            mo.md(
+                f"Dropping {len(barcode_drops)} barcodes for failing `qc={qc!r}`: {barcode_drops}"
+            )
+        )
+        qc_drops["barcodes"].update(
+            {bc: "min_neut_standard_frac_per_well" for bc in barcode_drops}
+        )
+        counts_qc_4 = counts_qc_4[~counts_qc_4["barcode"].isin(qc_drops["barcodes"])]
 
     return barcode_selection, counts_qc_4
 
@@ -716,16 +783,17 @@ def _(
 ):
     # Compute neutralization standard counts per well
     neut_standard_counts = (
-        counts_qc_4.query('neut_standard')
+        counts_qc_4.query("neut_standard")
         .groupby(
-            ['well', 'serum_replicate', 'sample_well', 'dilution_factor'],
+            ["well", "serum_replicate", "sample_well", "dilution_factor"],
             dropna=False,
             as_index=False,
         )
-        .aggregate(neut_standard_count=pd.NamedAgg('count', 'sum'))
+        .aggregate(neut_standard_count=pd.NamedAgg("count", "sum"))
         .assign(
             fails_qc=lambda x: (
-                x['neut_standard_count'] < qc_thresholds['min_neut_standard_count_per_well']
+                x["neut_standard_count"]
+                < qc_thresholds["min_neut_standard_count_per_well"]
             )
         )
     )
@@ -737,26 +805,30 @@ def _(
         .transform_filter(serum_selection)
         .encode(
             alt.X(
-                'neut_standard_count',
-                title='counts from neutralization standard',
+                "neut_standard_count",
+                title="counts from neutralization standard",
                 scale=alt.Scale(nice=False, padding=3),
             ),
-            alt.Y('sample_well', sort=sample_wells),
+            alt.Y("sample_well", sort=sample_wells),
             alt.Color(
-                'fails_qc',
+                "fails_qc",
                 title=f"fails qc_thresholds['min_neut_standard_count_per_well']={qc_thresholds['min_neut_standard_count_per_well']!r}",
                 legend=alt.Legend(titleLimit=500),
             ),
             tooltip=[
-                alt.Tooltip(c, format='.3g') if neut_standard_counts[c].dtype == float else c
+                (
+                    alt.Tooltip(c, format=".3g")
+                    if neut_standard_counts[c].dtype == float
+                    else c
+                )
                 for c in neut_standard_counts.columns
             ],
         )
-        .mark_bar(height={'band': 0.85})
+        .mark_bar(height={"band": 0.85})
         .properties(
             height=alt.Step(10),
             width=250,
-            title=f'Neutralization-standard counts for {plate}',
+            title=f"Neutralization-standard counts for {plate}",
         )
         .configure_axis(grid=False)
         .configure_legend(titleLimit=1000)
@@ -771,17 +843,32 @@ def _(
 @app.cell
 def _(counts_qc_4, mo, neut_standard_counts, qc_drops, qc_thresholds):
     # drop wells failing QC
-    min_neut_standard_count_per_well_drops = list(neut_standard_counts.query('fails_qc')['well'])
-    mo.output.append(mo.md(f"Dropping {len(min_neut_standard_count_per_well_drops)} wells for failing `qc_thresholds['min_neut_standard_count_per_well']={qc_thresholds['min_neut_standard_count_per_well']!r}`: {min_neut_standard_count_per_well_drops}"))
-    qc_drops['wells'].update({w: 'min_neut_standard_count_per_well' for w in min_neut_standard_count_per_well_drops})
-    neut_standard_counts_1 = neut_standard_counts[~neut_standard_counts['well'].isin(qc_drops['wells'])]
-    counts_qc_5 = counts_qc_4[~counts_qc_4['well'].isin(qc_drops['wells'])]
+    min_neut_standard_count_per_well_drops = list(
+        neut_standard_counts.query("fails_qc")["well"]
+    )
+    mo.output.append(
+        mo.md(
+            f"Dropping {len(min_neut_standard_count_per_well_drops)} wells for failing `qc_thresholds['min_neut_standard_count_per_well']={qc_thresholds['min_neut_standard_count_per_well']!r}`: {min_neut_standard_count_per_well_drops}"
+        )
+    )
+    qc_drops["wells"].update(
+        {
+            w: "min_neut_standard_count_per_well"
+            for w in min_neut_standard_count_per_well_drops
+        }
+    )
+    neut_standard_counts_1 = neut_standard_counts[
+        ~neut_standard_counts["well"].isin(qc_drops["wells"])
+    ]
+    counts_qc_5 = counts_qc_4[~counts_qc_4["well"].isin(qc_drops["wells"])]
     return counts_qc_5, neut_standard_counts_1
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Compute and plot the no-serum sample viral barcode counts and check if they pass the QC filters.""")
+    mo.md(
+        r"""Compute and plot the no-serum sample viral barcode counts and check if they pass the QC filters."""
+    )
     return
 
 
@@ -798,30 +885,31 @@ def _(
     # Compute no-serum viral barcode counts with QC
     no_serum_counts = (
         counts_qc_5.query("serum == 'none'")
-        .query('not neut_standard')
-        .merge(neut_standard_counts_1, validate='many_to_one')
-        [['barcode', 'strain', 'well', 'sample_well', 'count', 'neut_standard_count']]
+        .query("not neut_standard")
+        .merge(neut_standard_counts_1, validate="many_to_one")[
+            ["barcode", "strain", "well", "sample_well", "count", "neut_standard_count"]
+        ]
         .assign(
             fails_qc=lambda x: (
-                x['count'] <= qc_thresholds['min_no_serum_count_per_viral_barcode_well']
+                x["count"] <= qc_thresholds["min_no_serum_count_per_viral_barcode_well"]
             )
         )
     )
 
     # Create strain selection dropdown
-    strains = sorted(no_serum_counts['strain'].unique())
+    strains = sorted(no_serum_counts["strain"].unique())
     strain_selection_dropdown = alt.selection_point(
-        fields=['strain'],
+        fields=["strain"],
         bind=alt.binding_select(
             options=[None] + strains,
-            labels=['all'] + strains,
-            name='virus strain',
+            labels=["all"] + strains,
+            name="virus strain",
         ),
     )
 
     # Prepare data for plotting
     no_serum_counts_plot_df = no_serum_counts.drop(
-        columns=['well', 'neut_standard_count']
+        columns=["well", "neut_standard_count"]
     )
 
     # Create chart
@@ -831,13 +919,13 @@ def _(
         .transform_filter(strain_selection_dropdown)
         .encode(
             alt.X(
-                'count',
-                title='viral barcode count',
+                "count",
+                title="viral barcode count",
                 scale=alt.Scale(nice=False, padding=5),
             ),
-            alt.Y('sample_well', sort=sample_wells),
+            alt.Y("sample_well", sort=sample_wells),
             alt.Fill(
-                'fails_qc',
+                "fails_qc",
                 title=f"fails qc_thresholds['min_no_serum_count_per_viral_barcode_well']={qc_thresholds['min_no_serum_count_per_viral_barcode_well']!r}",
                 legend=alt.Legend(titleLimit=500),
             ),
@@ -845,11 +933,11 @@ def _(
             size=alt.condition(barcode_selection, alt.value(60), alt.value(35)),
             tooltip=no_serum_counts_plot_df.columns.tolist(),
         )
-        .mark_circle(fillOpacity=0.6, stroke='black', strokeOpacity=1)
+        .mark_circle(fillOpacity=0.6, stroke="black", strokeOpacity=1)
         .properties(
             height=alt.Step(10),
             width=400,
-            title=f'{plate} viral barcode counts in no-serum samples',
+            title=f"{plate} viral barcode counts in no-serum samples",
         )
         .configure_axis(grid=False)
         .configure_legend(titleLimit=1000)
@@ -865,18 +953,31 @@ def _(
 @app.cell
 def _(counts_qc_5, mo, no_serum_counts, qc_drops, qc_thresholds):
     # drop barcode / wells failing QC
-    min_no_serum_count_per_viral_barcode_well_drops = list(no_serum_counts.query('fails_qc')[['barcode', 'well']].itertuples(index=False, name=None))
-    mo.output.append(mo.md(f"Dropping {len(min_no_serum_count_per_viral_barcode_well_drops)} barcode-wells for failing `qc_thresholds['min_no_serum_count_per_viral_barcode_well']={qc_thresholds['min_no_serum_count_per_viral_barcode_well']!r}`: {min_no_serum_count_per_viral_barcode_well_drops}"))
-    qc_drops['barcode_wells'].update({w: 'min_no_serum_count_per_viral_barcode_well' for w in min_no_serum_count_per_viral_barcode_well_drops})
+    min_no_serum_count_per_viral_barcode_well_drops = list(
+        no_serum_counts.query("fails_qc")[["barcode", "well"]].itertuples(
+            index=False, name=None
+        )
+    )
+    mo.output.append(
+        mo.md(
+            f"Dropping {len(min_no_serum_count_per_viral_barcode_well_drops)} barcode-wells for failing `qc_thresholds['min_no_serum_count_per_viral_barcode_well']={qc_thresholds['min_no_serum_count_per_viral_barcode_well']!r}`: {min_no_serum_count_per_viral_barcode_well_drops}"
+        )
+    )
+    qc_drops["barcode_wells"].update(
+        {
+            w: "min_no_serum_count_per_viral_barcode_well"
+            for w in min_no_serum_count_per_viral_barcode_well_drops
+        }
+    )
     no_serum_counts_1 = no_serum_counts[
         ~no_serum_counts.assign(
-            barcode_well=lambda x: x.apply(lambda r: (r['barcode'], r['well']), axis=1)
-        )['barcode_well'].isin(qc_drops['barcode_wells'])
+            barcode_well=lambda x: x.apply(lambda r: (r["barcode"], r["well"]), axis=1)
+        )["barcode_well"].isin(qc_drops["barcode_wells"])
     ]
     counts_qc_6 = counts_qc_5[
         ~counts_qc_5.assign(
-            barcode_well=lambda x: x.apply(lambda r: (r['barcode'], r['well']), axis=1)
-        )['barcode_well'].isin(qc_drops['barcode_wells'])
+            barcode_well=lambda x: x.apply(lambda r: (r["barcode"], r["well"]), axis=1)
+        )["barcode_well"].isin(qc_drops["barcode_wells"])
     ]
     return counts_qc_6, no_serum_counts_1
 
@@ -896,17 +997,15 @@ def _(mo):
 def _(alt, no_serum_counts_1, pd, plate):
     # Compute median ratio of viral barcode to neut standard counts
     median_no_serum_ratio = (
-        no_serum_counts_1.assign(
-            ratio=lambda x: x['count'] / x['neut_standard_count']
-        )
-        .groupby(['barcode', 'strain'], as_index=False)
-        .aggregate(median_no_serum_ratio=pd.NamedAgg('ratio', 'median'))
+        no_serum_counts_1.assign(ratio=lambda x: x["count"] / x["neut_standard_count"])
+        .groupby(["barcode", "strain"], as_index=False)
+        .aggregate(median_no_serum_ratio=pd.NamedAgg("ratio", "median"))
     )
 
     # Create strain selection for mouseover
     strain_selection = alt.selection_point(
-        fields=['strain'],
-        on='mouseover',
+        fields=["strain"],
+        on="mouseover",
         empty=False,
     )
 
@@ -916,30 +1015,34 @@ def _(alt, no_serum_counts_1, pd, plate):
         .add_params(strain_selection)
         .encode(
             alt.X(
-                'median_no_serum_ratio',
-                title='median ratio of counts',
+                "median_no_serum_ratio",
+                title="median ratio of counts",
                 scale=alt.Scale(nice=False, padding=5),
             ),
             alt.Y(
-                'barcode',
-                sort=alt.SortField('median_no_serum_ratio', order='descending'),
+                "barcode",
+                sort=alt.SortField("median_no_serum_ratio", order="descending"),
                 axis=alt.Axis(labelFontSize=5),
             ),
             color=alt.condition(
                 strain_selection,
-                alt.value('orange'),
-                alt.value('gray'),
+                alt.value("orange"),
+                alt.value("gray"),
             ),
             tooltip=[
-                alt.Tooltip(c, format='.3g') if median_no_serum_ratio[c].dtype == float else c
+                (
+                    alt.Tooltip(c, format=".3g")
+                    if median_no_serum_ratio[c].dtype == float
+                    else c
+                )
                 for c in median_no_serum_ratio.columns
             ],
         )
-        .mark_bar(height={'band': 0.85})
+        .mark_bar(height={"band": 0.85})
         .properties(
             height=alt.Step(5),
             width=250,
-            title=f'{plate} no-serum median ratio viral barcode to neut-standard barcode',
+            title=f"{plate} no-serum median ratio viral barcode to neut-standard barcode",
         )
         .configure_axis(grid=False)
         .configure_legend(titleLimit=1000)
@@ -970,44 +1073,50 @@ def _(
     neut_standard_counts_1,
 ):
     frac_infectivity = (
-        counts_qc_6.query('not neut_standard')
+        counts_qc_6.query("not neut_standard")
         .query("serum != 'none'")
-        .merge(median_no_serum_ratio, validate='many_to_one')
-        .merge(neut_standard_counts_1, validate='many_to_one')
+        .merge(median_no_serum_ratio, validate="many_to_one")
+        .merge(neut_standard_counts_1, validate="many_to_one")
         .assign(
             frac_infectivity_raw=lambda x: (
-                x['count'] / x['neut_standard_count'] / x['median_no_serum_ratio']
+                x["count"] / x["neut_standard_count"] / x["median_no_serum_ratio"]
             ),
             frac_infectivity_ceiling=lambda x: (
-                x['frac_infectivity_raw'].clip(upper=curvefit_params['frac_infectivity_ceiling'])
+                x["frac_infectivity_raw"].clip(
+                    upper=curvefit_params["frac_infectivity_ceiling"]
+                )
             ),
-            concentration=lambda x: 1 / x['dilution_factor'],
-            plate_barcode=lambda x: x['plate_replicate'] + '-' + x['barcode'],
+            concentration=lambda x: 1 / x["dilution_factor"],
+            plate_barcode=lambda x: x["plate_replicate"] + "-" + x["barcode"],
         )[
             [
-                'barcode',
-                'plate_barcode',
-                'well',
-                'strain',
-                'serum',
-                'serum_replicate',
-                'dilution_factor',
-                'concentration',
-                'frac_infectivity_raw',
-                'frac_infectivity_ceiling',
+                "barcode",
+                "plate_barcode",
+                "well",
+                "strain",
+                "serum",
+                "serum_replicate",
+                "dilution_factor",
+                "concentration",
+                "frac_infectivity_raw",
+                "frac_infectivity_ceiling",
             ]
         ]
     )
-    assert len(frac_infectivity.groupby(['serum', 'plate_barcode', 'dilution_factor'])) == len(frac_infectivity)
-    assert frac_infectivity['dilution_factor'].notnull().all()
-    assert frac_infectivity['frac_infectivity_raw'].notnull().all()
-    assert frac_infectivity['frac_infectivity_ceiling'].notnull().all()
+    assert len(
+        frac_infectivity.groupby(["serum", "plate_barcode", "dilution_factor"])
+    ) == len(frac_infectivity)
+    assert frac_infectivity["dilution_factor"].notnull().all()
+    assert frac_infectivity["frac_infectivity_raw"].notnull().all()
+    assert frac_infectivity["frac_infectivity_ceiling"].notnull().all()
     return (frac_infectivity,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Plot the fraction infectivities, both the raw values and with the ceiling applied:""")
+    mo.md(
+        r"""Plot the fraction infectivities, both the raw values and with the ceiling applied:"""
+    )
     return
 
 
@@ -1079,7 +1188,9 @@ def _(
         .transform_lookup(
             lookup="well",
             from_=alt.LookupData(
-                well_lookup_df, key="well", fields=["serum_replicate", "dilution_factor"]
+                well_lookup_df,
+                key="well",
+                fields=["serum_replicate", "dilution_factor"],
             ),
         )
         .transform_fold(
@@ -1102,7 +1213,9 @@ def _(
                 "ceiling_applied:N",
                 sort="descending",
                 title=None,
-                header=alt.Header(labelFontSize=13, labelFontStyle="bold", labelPadding=2),
+                header=alt.Header(
+                    labelFontSize=13, labelFontStyle="bold", labelPadding=2
+                ),
             ),
             alt.Row(
                 "serum_replicate:N",
@@ -1157,13 +1270,26 @@ def _(
 @app.cell
 def _(frac_infectivity, frac_infectivity_chart_df, mo, qc_drops, qc_thresholds):
     # drop barcode / wells failing QC
-    max_frac_infectivity_per_viral_barcode_well_drops = list(frac_infectivity_chart_df.query('fails_qc')[['barcode', 'well']].drop_duplicates().itertuples(index=False, name=None))
-    mo.output.append(mo.md(f"Dropping {len(max_frac_infectivity_per_viral_barcode_well_drops)} barcode-wells for failing `qc_thresholds['max_frac_infectivity_per_viral_barcode_well']={qc_thresholds['max_frac_infectivity_per_viral_barcode_well']!r}`: {max_frac_infectivity_per_viral_barcode_well_drops}"))
-    qc_drops['barcode_wells'].update({w: 'max_frac_infectivity_per_viral_barcode_well' for w in max_frac_infectivity_per_viral_barcode_well_drops})
+    max_frac_infectivity_per_viral_barcode_well_drops = list(
+        frac_infectivity_chart_df.query("fails_qc")[["barcode", "well"]]
+        .drop_duplicates()
+        .itertuples(index=False, name=None)
+    )
+    mo.output.append(
+        mo.md(
+            f"Dropping {len(max_frac_infectivity_per_viral_barcode_well_drops)} barcode-wells for failing `qc_thresholds['max_frac_infectivity_per_viral_barcode_well']={qc_thresholds['max_frac_infectivity_per_viral_barcode_well']!r}`: {max_frac_infectivity_per_viral_barcode_well_drops}"
+        )
+    )
+    qc_drops["barcode_wells"].update(
+        {
+            w: "max_frac_infectivity_per_viral_barcode_well"
+            for w in max_frac_infectivity_per_viral_barcode_well_drops
+        }
+    )
     frac_infectivity_1 = frac_infectivity[
         ~frac_infectivity.assign(
-            barcode_well=lambda x: x.apply(lambda r: (r['barcode'], r['well']), axis=1)
-        )['barcode_well'].isin(qc_drops['barcode_wells'])
+            barcode_well=lambda x: x.apply(lambda r: (r["barcode"], r["well"]), axis=1)
+        )["barcode_well"].isin(qc_drops["barcode_wells"])
     ]
     return (frac_infectivity_1,)
 
@@ -1187,13 +1313,14 @@ def _(
     # Count number of dilutions per barcode/serum-replicate
     n_dilutions = (
         frac_infectivity_1.groupby(
-            ['serum_replicate', 'strain', 'barcode'],
+            ["serum_replicate", "strain", "barcode"],
             as_index=False,
         )
-        .aggregate(**{'number of dilutions': pd.NamedAgg('dilution_factor', 'nunique')})
+        .aggregate(**{"number of dilutions": pd.NamedAgg("dilution_factor", "nunique")})
         .assign(
             fails_qc=lambda x: (
-                x['number of dilutions'] < qc_thresholds['min_dilutions_per_barcode_serum_replicate']
+                x["number of dilutions"]
+                < qc_thresholds["min_dilutions_per_barcode_serum_replicate"]
             )
         )
     )
@@ -1204,37 +1331,37 @@ def _(
         .add_params(barcode_selection)
         .encode(
             alt.X(
-                'number of dilutions',
+                "number of dilutions",
                 scale=alt.Scale(nice=False, padding=4),
             ),
-            alt.Y('strain', title=None),
+            alt.Y("strain", title=None),
             alt.Column(
-                'serum_replicate',
+                "serum_replicate",
                 title=None,
                 header=alt.Header(
                     labelFontSize=12,
-                    labelFontStyle='bold',
+                    labelFontStyle="bold",
                     labelPadding=0,
                 ),
             ),
             alt.Fill(
-                'fails_qc',
+                "fails_qc",
                 title=f"fails qc_thresholds['min_dilutions_per_barcode_serum_replicate']={qc_thresholds['min_dilutions_per_barcode_serum_replicate']!r}",
-                legend=alt.Legend(titleLimit=500, orient='bottom'),
+                legend=alt.Legend(titleLimit=500, orient="bottom"),
             ),
             strokeWidth=alt.condition(barcode_selection, alt.value(2), alt.value(0)),
             size=alt.condition(barcode_selection, alt.value(55), alt.value(35)),
             tooltip=[
-                alt.Tooltip(c, format='.3g') if n_dilutions[c].dtype == float else c
+                alt.Tooltip(c, format=".3g") if n_dilutions[c].dtype == float else c
                 for c in n_dilutions.columns
             ],
         )
-        .mark_circle(stroke='black', strokeOpacity=1, fillOpacity=0.45)
+        .mark_circle(stroke="black", strokeOpacity=1, fillOpacity=0.45)
         .properties(
             height=alt.Step(10),
             width=120,
             title=alt.TitleParams(
-                'number of dilutions for each barcode for each serum-replicate',
+                "number of dilutions for each barcode for each serum-replicate",
                 dy=-2,
             ),
         )
@@ -1244,15 +1371,28 @@ def _(
     mo.output.append(n_dilutions_chart)
 
     # Drop barcode/serum-replicates failing QC
-    min_dilutions_per_barcode_serum_replicate_drops = list(n_dilutions.query('fails_qc')[['barcode', 'serum_replicate']].itertuples(index=False, name=None))
-    mo.output.append(mo.md(f"Dropping {len(min_dilutions_per_barcode_serum_replicate_drops)} barcode/serum-replicates for failing `qc_thresholds['min_dilutions_per_barcode_serum_replicate']={qc_thresholds['min_dilutions_per_barcode_serum_replicate']!r}`: {min_dilutions_per_barcode_serum_replicate_drops}"))
-    qc_drops['barcode_serum_replicates'].update({w: 'min_dilutions_per_barcode_serum_replicate' for w in min_dilutions_per_barcode_serum_replicate_drops})
+    min_dilutions_per_barcode_serum_replicate_drops = list(
+        n_dilutions.query("fails_qc")[["barcode", "serum_replicate"]].itertuples(
+            index=False, name=None
+        )
+    )
+    mo.output.append(
+        mo.md(
+            f"Dropping {len(min_dilutions_per_barcode_serum_replicate_drops)} barcode/serum-replicates for failing `qc_thresholds['min_dilutions_per_barcode_serum_replicate']={qc_thresholds['min_dilutions_per_barcode_serum_replicate']!r}`: {min_dilutions_per_barcode_serum_replicate_drops}"
+        )
+    )
+    qc_drops["barcode_serum_replicates"].update(
+        {
+            w: "min_dilutions_per_barcode_serum_replicate"
+            for w in min_dilutions_per_barcode_serum_replicate_drops
+        }
+    )
     frac_infectivity_2 = frac_infectivity_1[
         ~frac_infectivity_1.assign(
             barcode_serum_replicate=lambda x: x.apply(
-                lambda r: (r['barcode'], r['serum_replicate']), axis=1
+                lambda r: (r["barcode"], r["serum_replicate"]), axis=1
             )
-        )['barcode_serum_replicate'].isin(qc_drops['barcode_serum_replicates'])
+        )["barcode_serum_replicate"].isin(qc_drops["barcode_serum_replicates"])
     ]
 
     return frac_infectivity_2, n_dilutions_chart
@@ -1275,18 +1415,18 @@ def _(curvefit_params, frac_infectivity_2, neutcurve):
     fits_noqc = neutcurve.CurveFits(
         frac_infectivity_2.rename(
             columns={
-                'frac_infectivity_ceiling': 'fraction infectivity',
-                'concentration': 'serum concentration',
+                "frac_infectivity_ceiling": "fraction infectivity",
+                "concentration": "serum concentration",
             }
         ),
-        conc_col='serum concentration',
-        fracinf_col='fraction infectivity',
-        virus_col='strain',
-        serum_col='serum_replicate',
-        replicate_col='barcode',
-        fixtop=curvefit_params['fixtop'],
-        fixbottom=curvefit_params['fixbottom'],
-        fixslope=curvefit_params['fixslope'],
+        conc_col="serum concentration",
+        fracinf_col="fraction infectivity",
+        virus_col="strain",
+        serum_col="serum_replicate",
+        replicate_col="barcode",
+        fixtop=curvefit_params["fixtop"],
+        fixbottom=curvefit_params["fixbottom"],
+        fixslope=curvefit_params["fixslope"],
     )
     return (fits_noqc,)
 
@@ -1304,32 +1444,33 @@ def _(mo):
 
 @app.cell
 def _(curvefit_qc, fits_noqc, frac_infectivity_2, pd):
-    goodness_of_fit = curvefit_qc['goodness_of_fit']
+    goodness_of_fit = curvefit_qc["goodness_of_fit"]
     fit_params_noqc = (
-        frac_infectivity_2.groupby(['serum_replicate', 'barcode'], as_index=False)
-        .aggregate(max_frac_infectivity=pd.NamedAgg('frac_infectivity_ceiling', 'max'))
+        frac_infectivity_2.groupby(["serum_replicate", "barcode"], as_index=False)
+        .aggregate(max_frac_infectivity=pd.NamedAgg("frac_infectivity_ceiling", "max"))
         .merge(
             fits_noqc.fitParams(average_only=False, no_average=True)[
-                ['serum', 'virus', 'replicate', 'r2', 'rmsd']
-            ].rename(columns={'serum': 'serum_replicate', 'replicate': 'barcode'}),
-            validate='one_to_one',
+                ["serum", "virus", "replicate", "r2", "rmsd"]
+            ].rename(columns={"serum": "serum_replicate", "replicate": "barcode"}),
+            validate="one_to_one",
         )
         .assign(
             fails_max_frac_infectivity_at_least=lambda x: (
-                x['max_frac_infectivity'] < curvefit_qc['max_frac_infectivity_at_least']
+                x["max_frac_infectivity"] < curvefit_qc["max_frac_infectivity_at_least"]
             ),
             fails_goodness_of_fit=lambda x: (
-                (x['r2'] < goodness_of_fit['min_R2'])
-                & (x['rmsd'] > goodness_of_fit['max_RMSD'])
+                (x["r2"] < goodness_of_fit["min_R2"])
+                & (x["rmsd"] > goodness_of_fit["max_RMSD"])
             ),
             fails_qc=lambda x: (
-                x['fails_max_frac_infectivity_at_least'] | x['fails_goodness_of_fit']
+                x["fails_max_frac_infectivity_at_least"] | x["fails_goodness_of_fit"]
             ),
             ignore_qc=lambda x: x.apply(
                 lambda r: (
-                    r['serum_replicate'] in curvefit_qc['serum_replicates_ignore_curvefit_qc']
-                    or (r['barcode'], r['serum_replicate'])
-                    in curvefit_qc['barcode_serum_replicates_ignore_curvefit_qc']
+                    r["serum_replicate"]
+                    in curvefit_qc["serum_replicates_ignore_curvefit_qc"]
+                    or (r["barcode"], r["serum_replicate"])
+                    in curvefit_qc["barcode_serum_replicates_ignore_curvefit_qc"]
                 ),
                 axis=1,
             ),
@@ -1340,9 +1481,15 @@ def _(curvefit_qc, fits_noqc, frac_infectivity_2, pd):
 
 @app.cell
 def _(alt, barcode_selection, curvefit_qc, fit_params_noqc, mo):
-    mo.output.append(mo.md(f"Plotting barcode / serum-replicates that fail `curvefit_qc={curvefit_qc!r}`"))
+    mo.output.append(
+        mo.md(
+            f"Plotting barcode / serum-replicates that fail `curvefit_qc={curvefit_qc!r}`"
+        )
+    )
 
-    fit_params_noqc_base_chart = alt.Chart(fit_params_noqc).add_params(barcode_selection)
+    fit_params_noqc_base_chart = alt.Chart(fit_params_noqc).add_params(
+        barcode_selection
+    )
     for prop, col in [
         ("max frac infectivity", "max_frac_infectivity"),
         ("curve fit R2", "r2"),
@@ -1360,10 +1507,16 @@ def _(alt, barcode_selection, curvefit_qc, fit_params_noqc, mo):
                         labelFontSize=12, labelFontStyle="bold", labelPadding=0
                     ),
                 ),
-                strokeWidth=alt.condition(barcode_selection, alt.value(2), alt.value(0)),
+                strokeWidth=alt.condition(
+                    barcode_selection, alt.value(2), alt.value(0)
+                ),
                 size=alt.condition(barcode_selection, alt.value(55), alt.value(35)),
                 tooltip=[
-                    alt.Tooltip(c, format=".3g") if fit_params_noqc[c].dtype == float else c
+                    (
+                        alt.Tooltip(c, format=".3g")
+                        if fit_params_noqc[c].dtype == float
+                        else c
+                    )
                     for c in fit_params_noqc.columns
                 ],
             )
@@ -1371,7 +1524,9 @@ def _(alt, barcode_selection, curvefit_qc, fit_params_noqc, mo):
             .properties(
                 height=alt.Step(10),
                 width=90,
-                title=alt.TitleParams(f"{prop} for each barcode serum-replicate", dy=-2),
+                title=alt.TitleParams(
+                    f"{prop} for each barcode serum-replicate", dy=-2
+                ),
             )
         )
 
@@ -1404,23 +1559,62 @@ def _(
     pd,
     plt,
 ):
-    barcode_serum_replicates_fail_qc = fit_params_noqc.query('fails_qc').reset_index(drop=True)
-    mo.output.append(mo.md(f'Here are barcode / serum-replicates that fail `curvefit_qc={curvefit_qc!r}`'))
+    barcode_serum_replicates_fail_qc = fit_params_noqc.query("fails_qc").reset_index(
+        drop=True
+    )
+    mo.output.append(
+        mo.md(
+            f"Here are barcode / serum-replicates that fail `curvefit_qc={curvefit_qc!r}`"
+        )
+    )
     mo.output.append(barcode_serum_replicates_fail_qc)
 
     if len(barcode_serum_replicates_fail_qc):
-        mo.output.append(mo.md('Curves for virus vs serum-replicates with at least one failed barcode.\n\nColor key labels indicate if barcodes failed or passed QC.'))
+        mo.output.append(
+            mo.md(
+                "Curves for virus vs serum-replicates with at least one failed barcode.\n\nColor key labels indicate if barcodes failed or passed QC."
+            )
+        )
         plots = {}
         ncol = 6
-        for iplot, (serum, virus, failed_barcodes) in enumerate(barcode_serum_replicates_fail_qc.groupby(['serum_replicate', 'virus'], as_index=False).aggregate(barcodes=pd.NamedAgg('barcode', list)).itertuples(index=False)):
-            passed_barcodes = [bc for bc in fits_noqc.replicates[serum, virus] if bc not in failed_barcodes and bc != 'average']
+        for iplot, (serum, virus, failed_barcodes) in enumerate(
+            barcode_serum_replicates_fail_qc.groupby(
+                ["serum_replicate", "virus"], as_index=False
+            )
+            .aggregate(barcodes=pd.NamedAgg("barcode", list))
+            .itertuples(index=False)
+        ):
+            passed_barcodes = [
+                bc
+                for bc in fits_noqc.replicates[serum, virus]
+                if bc not in failed_barcodes and bc != "average"
+            ]
             curvelist = []
             assert len(CBMARKERS) >= len(failed_barcodes + passed_barcodes)
             assert len(CBPALETTE) >= len(failed_barcodes + passed_barcodes)
-            for replicate, marker, color in zip(failed_barcodes + passed_barcodes, CBMARKERS, CBPALETTE):
-                curvelist.append({'serum': serum, 'virus': virus, 'replicate': replicate, 'label': replicate + ('-fail' if replicate in failed_barcodes else '-pass'), 'color': color, 'marker': marker})
-            plots[iplot // ncol, iplot % ncol] = (f'{serum} vs {virus}', curvelist)
-        _fig_fail_qc, _ = fits_noqc.plotGrid(plots, attempt_shared_legend=False, legendfontsize=8, titlesize=9, ticksize=10, draw_in_bounds=True)
+            for replicate, marker, color in zip(
+                failed_barcodes + passed_barcodes, CBMARKERS, CBPALETTE
+            ):
+                curvelist.append(
+                    {
+                        "serum": serum,
+                        "virus": virus,
+                        "replicate": replicate,
+                        "label": replicate
+                        + ("-fail" if replicate in failed_barcodes else "-pass"),
+                        "color": color,
+                        "marker": marker,
+                    }
+                )
+            plots[iplot // ncol, iplot % ncol] = (f"{serum} vs {virus}", curvelist)
+        _fig_fail_qc, _ = fits_noqc.plotGrid(
+            plots,
+            attempt_shared_legend=False,
+            legendfontsize=8,
+            titlesize=9,
+            ticksize=10,
+            draw_in_bounds=True,
+        )
         mo.output.append(_fig_fail_qc)
 
     return (barcode_serum_replicates_fail_qc,)
@@ -1429,23 +1623,35 @@ def _(
 @app.cell
 def _(curvefit_qc, fit_params_noqc, frac_infectivity_2, mo, qc_drops):
     # drop barcode / serum-replicates failing QC
-    for qc_filter in ['max_frac_infectivity_at_least', 'goodness_of_fit']:
-        fits_qc_drops = list(fit_params_noqc.query(f'fails_{qc_filter} and (not ignore_qc)')[['barcode', 'serum_replicate']].itertuples(index=False, name=None))
-        mo.output.append(mo.md(f'Dropping {len(fits_qc_drops)} barcode/serum-replicates for failing `{qc_filter}={curvefit_qc[qc_filter]}`: {fits_qc_drops}'))
-        qc_drops['barcode_serum_replicates'].update({w: qc_filter for w in fits_qc_drops})
-        frac_infectivity_3 = frac_infectivity_2[
-            ~frac_infectivity_2.assign(
+    frac_infectivity_3 = frac_infectivity_2.copy()
+    fit_params_noqc_1 = fit_params_noqc.copy()
+    for qc_filter in ["max_frac_infectivity_at_least", "goodness_of_fit"]:
+        fits_qc_drops = list(
+            fit_params_noqc_1.query(f"fails_{qc_filter} and (not ignore_qc)")[
+                ["barcode", "serum_replicate"]
+            ].itertuples(index=False, name=None)
+        )
+        mo.output.append(
+            mo.md(
+                f"Dropping {len(fits_qc_drops)} barcode/serum-replicates for failing `{qc_filter}={curvefit_qc[qc_filter]}`: {fits_qc_drops}"
+            )
+        )
+        qc_drops["barcode_serum_replicates"].update(
+            {w: qc_filter for w in fits_qc_drops}
+        )
+        frac_infectivity_3 = frac_infectivity_3[
+            ~frac_infectivity_3.assign(
                 barcode_serum_replicate=lambda x: x.apply(
-                    lambda r: (r['barcode'], r['serum_replicate']), axis=1
+                    lambda r: (r["barcode"], r["serum_replicate"]), axis=1
                 )
-            )['barcode_serum_replicate'].isin(qc_drops['barcode_serum_replicates'])
+            )["barcode_serum_replicate"].isin(qc_drops["barcode_serum_replicates"])
         ]
-        fit_params_noqc_1 = fit_params_noqc[
-            ~fit_params_noqc.assign(
+        fit_params_noqc_1 = fit_params_noqc_1[
+            ~fit_params_noqc_1.assign(
                 barcode_serum_replicate=lambda x: x.apply(
-                    lambda r: (r['barcode'], r['serum_replicate']), axis=1
+                    lambda r: (r["barcode"], r["serum_replicate"]), axis=1
                 )
-            )['barcode_serum_replicate'].isin(qc_drops['barcode_serum_replicates'])
+            )["barcode_serum_replicate"].isin(qc_drops["barcode_serum_replicates"])
         ]
     return (frac_infectivity_3,)
 
@@ -1466,23 +1672,25 @@ def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve):
     fits_qc = neutcurve.CurveFits(
         frac_infectivity_3.rename(
             columns={
-                'frac_infectivity_ceiling': 'fraction infectivity',
-                'concentration': 'serum concentration',
+                "frac_infectivity_ceiling": "fraction infectivity",
+                "concentration": "serum concentration",
             }
         ),
-        conc_col='serum concentration',
-        fracinf_col='fraction infectivity',
-        virus_col='strain',
-        serum_col='serum',
-        replicate_col='plate_barcode',
-        fixtop=curvefit_params['fixtop'],
-        fixbottom=curvefit_params['fixbottom'],
-        fixslope=curvefit_params['fixslope'],
+        conc_col="serum concentration",
+        fracinf_col="fraction infectivity",
+        virus_col="strain",
+        serum_col="serum",
+        replicate_col="plate_barcode",
+        fixtop=curvefit_params["fixtop"],
+        fixbottom=curvefit_params["fixbottom"],
+        fixslope=curvefit_params["fixslope"],
     )
     fit_params_qc = fits_qc.fitParams(average_only=False, no_average=True)
-    assert len(fit_params_qc) <= len(fits_noqc.fitParams(average_only=False, no_average=True))
-    mo.output.append(mo.md(f'Assigning fits for this plate to `{group}`'))
-    fit_params_qc.insert(0, 'group', group)
+    assert len(fit_params_qc) <= len(
+        fits_noqc.fitParams(average_only=False, no_average=True)
+    )
+    mo.output.append(mo.md(f"Assigning fits for this plate to `{group}`"))
+    fit_params_qc.insert(0, "group", group)
     return fit_params_qc, fits_qc
 
 
@@ -1495,10 +1703,17 @@ def _(mo):
 @app.cell
 def _(curve_display_method, fits_qc, mo, plt):
     if fits_qc.sera:
-        _fig_passed_qc, _ = fits_qc.plotReplicates(attempt_shared_legend=False, legendfontsize=8, titlesize=9, ticksize=10, ncol=6, draw_in_bounds=True)
+        _fig_passed_qc, _ = fits_qc.plotReplicates(
+            attempt_shared_legend=False,
+            legendfontsize=8,
+            titlesize=9,
+            ticksize=10,
+            ncol=6,
+            draw_in_bounds=True,
+        )
         mo.output.append(_fig_passed_qc)
     else:
-        mo.output.append(mo.md('No sera passed QC.'))
+        mo.output.append(mo.md("No sera passed QC."))
     return
 
 
@@ -1524,40 +1739,49 @@ def _(
     sys,
     yaml,
 ):
-    mo.output.append(mo.md(f'Writing fraction infectivities to `{frac_infectivity_csv}`'))
+    mo.output.append(
+        mo.md(f"Writing fraction infectivities to `{frac_infectivity_csv}`")
+    )
     (
         frac_infectivity_3[
             [
-                'serum',
-                'strain',
-                'plate_barcode',
-                'dilution_factor',
-                'frac_infectivity_raw',
-                'frac_infectivity_ceiling',
+                "serum",
+                "strain",
+                "plate_barcode",
+                "dilution_factor",
+                "frac_infectivity_raw",
+                "frac_infectivity_ceiling",
             ]
         ]
-        .sort_values(['serum', 'plate_barcode', 'dilution_factor'])
-        .to_csv(frac_infectivity_csv, index=False, float_format='%.4g')
+        .sort_values(["serum", "plate_barcode", "dilution_factor"])
+        .to_csv(frac_infectivity_csv, index=False, float_format="%.4g")
     )
-    mo.output.append(mo.md(f'Writing fit parameters to `{fits_csv}`'))
-    fit_params_qc.drop(columns=['nreplicates', 'ic50_str']).to_csv(fits_csv, index=False, float_format='%.4g')
-    mo.output.append(mo.md(f'Pickling neutcurve.CurveFits object for these data to `{fits_pickle}`'))
-    with open(fits_pickle, 'wb') as f_pickle:
+    mo.output.append(mo.md(f"Writing fit parameters to `{fits_csv}`"))
+    fit_params_qc.drop(columns=["nreplicates", "ic50_str"]).to_csv(
+        fits_csv, index=False, float_format="%.4g"
+    )
+    mo.output.append(
+        mo.md(f"Pickling neutcurve.CurveFits object for these data to `{fits_pickle}`")
+    )
+    with open(fits_pickle, "wb") as f_pickle:
         pickle.dump(fits_qc, f_pickle)
-    mo.output.append(mo.md(f'Writing QC drops to `{qc_drops_yaml}`'))
+    mo.output.append(mo.md(f"Writing QC drops to `{qc_drops_yaml}`"))
 
     def tup_to_str(x):
-        return ' '.join(x) if isinstance(x, tuple) else x
-    qc_drops_for_yaml = {key: {tup_to_str(key2): val2 for key2, val2 in val.items()} for key, val in qc_drops.items()}
-    with open(qc_drops_yaml, 'w') as f_yaml:
-        yaml.YAML(typ='rt').dump(qc_drops_for_yaml, f_yaml)
-    mo.output.append(mo.md('Here are the QC drops:'))
+        return " ".join(x) if isinstance(x, tuple) else x
+
+    qc_drops_for_yaml = {
+        key: {tup_to_str(key2): val2 for key2, val2 in val.items()}
+        for key, val in qc_drops.items()
+    }
+    with open(qc_drops_yaml, "w") as f_yaml:
+        yaml.YAML(typ="rt").dump(qc_drops_for_yaml, f_yaml)
+    mo.output.append(mo.md("Here are the QC drops:"))
     yaml_buffer_qc_drops = io.StringIO()
-    yaml.YAML(typ='rt').dump(qc_drops_for_yaml, stream=yaml_buffer_qc_drops)
+    yaml.YAML(typ="rt").dump(qc_drops_for_yaml, stream=yaml_buffer_qc_drops)
     mo.output.append(mo.md(f"```yaml\n{yaml_buffer_qc_drops.getvalue()}```"))
     return
 
 
 if __name__ == "__main__":
     app.run()
-
