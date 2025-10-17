@@ -38,7 +38,7 @@ The pipeline performs these sequential steps:
    - Outputs: aggregated titers CSV and pickled `CurveFits` objects
 
 5. **Documentation** (`build_docs` rule)
-   - Converts Jupyter notebooks to HTML
+   - Collects marimo notebook HTML outputs
    - Builds navigable documentation for GitHub Pages
    - Outputs: `docs/` directory with index.html and all results
 
@@ -47,19 +47,19 @@ The pipeline performs these sequential steps:
 ### Pipeline Core Files
 - **`seqneut-pipeline.smk`**: Main Snakemake rules file (included by project Snakefiles)
 - **`funcs.smk`**: Python functions for processing configuration (plate setup, sample validation)
-- **`notebook_funcs.py`**: Helper functions used inside Jupyter notebooks (e.g., `display_curve_fig`); the main purpose of this function currently is to display very large matplotlib figures in a way where the rendered HTML of the Jupyter notebooks does not take up too much space.
 - **`environment.yml`**: Conda environment specification for the pipeline
 
 ### Scripts (in `scripts/`)
 - **`count_barcodes.py`**: Counts barcodes from FASTQ files
 - **`groups_sera_by_plate.py`**: Creates mapping of sera to plates (checkpoint)
 - **`build_docs.py`**: Builds HTML documentation with markdown-based index
+- **`run_marimo_w_context_pickle.py`**: Driver script for executing marimo notebooks with context
 
-### Notebooks (in `notebooks/`)
-- **`process_plate.py.ipynb`**: Processes a single plate (QC, fraction infectivity, curve fitting)
-- **`group_serum_titers.py.ipynb`**: Aggregates titers for a serum across plates
-- **`aggregate_titers.py.ipynb`**: Combines all titers and creates visualizations
-- **`aggregate_qc_drops.py.ipynb`**: Summarizes all QC filtering
+### Marimo Notebooks (in `notebooks/`)
+- **`process_plate.py`**: Processes a single plate (QC, fraction infectivity, curve fitting)
+- **`group_serum_titers.py`**: Aggregates titers for a serum across plates
+- **`aggregate_titers.py`**: Combines all titers and creates visualizations
+- **`aggregate_qc_drops.py`**: Summarizes all QC filtering
 
 ### Test Example
 - **`test_example/`**: Small working example with subsetted data
@@ -78,7 +78,6 @@ The pipeline is configured via a `config.yml` file in the parent repository. Key
 4. **`viral_libraries`**: Dict mapping library names to CSV files with barcode→strain mappings
 5. **`neut_standard_sets`**: Dict mapping set names to CSV files with neutralization standard barcodes
 6. **`illumina_barcode_parser_params`**: Global parameters for barcode parsing
-7. **`curve_display_method`**: How to display curves in notebooks (`inline`, `png8`, or `no_display`)
 
 ### Plate Configuration
 
@@ -183,8 +182,8 @@ Titers computed as:
 ### Intermediate Files (may not need git tracking)
 - **`results/barcode_counts/`**: Per-sample barcode counts
 - **`results/barcode_fates/`**: Read fate statistics
-- **`results/plates/{plate}/*.ipynb`**: Jupyter notebooks (HTML versions in docs)
-- **`results/sera/{group}_{serum}/*.ipynb`**: Jupyter notebooks (HTML versions in docs)
+- **`results/plates/{plate}/*.html`**: Marimo notebook HTML outputs (collected in docs)
+- **`results/sera/{group}_{serum}/*.html`**: Marimo notebook HTML outputs (collected in docs)
 
 ## Using the Pipeline in a New Project
 
@@ -244,6 +243,7 @@ See [flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025) for a comp
 
 - Python code formatted with [black](https://github.com/psf/black)
 - Snakemake code formatted with [snakefmt](https://github.com/snakemake/snakefmt)
+- Marimo notebooks checked with [marimo check](https://docs.marimo.io/guides/editor_features/linting_and_formatting.html)
 - Linted with [ruff](https://github.com/astral-sh/ruff) and `snakemake --lint`
 - Tested via GitHub Actions on `test_example/`
 

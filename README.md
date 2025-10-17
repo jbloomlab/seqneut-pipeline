@@ -166,17 +166,6 @@ A/Michigan/45/2015
 <additional lines>
 ```
 
-### curve_display_method
-How large panesl of neutralizatioin curves are displayed in the notebooks created by pipeline an drendered in the documentation.
-Set such as:
-```
-curve_display_method: png8
-```
-Options are:
- - *inline*: display inline at matplotlib objects, best resolution leads to very large files
- - *png8*: show a `*.png8` files: lower resolution but leads to smaller files
- - *no_display*: do not show curves at all in notebooks; smallest files but then you cannot see curves
-
 ### neut_standard_sets
 A dictionary (mapping) of neutralization-standard set names to CSV files holding the barcodes for the neutralization standard set.
 So in general, this key will look like:
@@ -512,8 +501,7 @@ The set of full created outputs are as follows (note only some will be tracked d
 
   - Outputs related to processing each plate:
     - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
-    - `./results/plates/{plate}/process_{plate}.ipynb`: Jupyter notebook processing counts for a plate. You do not need to track this as an HTML version will be rendered in `./docs/` when pipeline runs successfully.
-    - `./results/plates/{plate}/process_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
+    - `./results/plates/{plate}/process_{plate}.html`: HTML of marimo notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
     - `./results/plates/{plate}/qc_drops.yml`: details on data (barcodes, wells, etc) dropped for failing QC when processing this plate.
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
@@ -524,28 +512,25 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/sera/{group}_{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the group/serum. You should track this file in the repo.
     - `./results/sera/{group}_{serum}/curves.pdf`: PDF rendering of the neutralization curves for the group/serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
     - `./results/sera/{group}_{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this group/serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.ipynb`: Jupyter notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
-    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of the Jupyter notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of marimo notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
     - `./results/sera/{group}_{serum}/qc_drops.yml`: virus-group/serum titers dropped due to QC when processing this serum's titers.
 
   - Results related to aggregated titers across all sera in a group after applying all quality control:
     - `./results/aggregated_titers/titers_{group}.csv`: titers for all sera / virus in a group (median of replicates). You should track this file as it has the final processed results.
     - `./results/aggregated_titers/curvefits_{group}.pickle`: pickle file with the `neutcurve.CurveFits` object holding all final curves for a group. You do not need to track this in the repo, but if you have further code that makes specific plots you may want to use this.
     - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this in the repo as it is rendered in `./docs/` when the pipeline runs successfully.
-    - `./results/aggregated_titers/aggregate_titers.ipynb`: Jupyter notebook that aggregates all the titers. You do not need to track this in the repo.
 
   - Results summarizing data dropped due to QC:
     - `./results/qc_drops/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-plate. You should track this in repo.
     - `./results/qc_drops/barcode_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-barcode. You should track this in repo.
     - `./results/qc_drops/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
-    - `./results/qc_drops/aggregate_qc_drops.ipynb`: Jupypter notebook summarizing the QC drops. You do not need to track as an HTML version is rendered in `./docs/`
-    - `./results/qc_drops/aggregate_qc_drops.html`: HTML version Jupypter notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
+    - `./results/qc_drops/aggregate_qc_drops.html`: HTML of marimo notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
 
 ## Examining the output and setting appropriate QC values in the configuration
-When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML notebooks summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.
+When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML documentation summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.
 YAML summaries of the QC are also created.
 
-While the QC is designed to hopefully make reasonable default choices, you should **always** carefully look through these notebooks after adding new data, and potentially adjust the QC in the configuration and re-run.
+While the QC is designed to hopefully make reasonable default choices, you should **always** carefully look through this documentation after adding new data, and potentially adjust the QC in the configuration and re-run.
 
 ## Rendering HTML plots and notebooks in docs
 If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, per-plate analyses and overall QC summary in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).

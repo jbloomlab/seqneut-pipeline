@@ -73,11 +73,9 @@ def __(context, mo):
     qc_thresholds = context["params"]["qc_thresholds"]
     serum = context["wildcards"]["serum"]
     group = context["wildcards"]["group"]
-    curve_display_method = context["params"]["curve_display_method"]
 
     mo.output.append(mo.md(f"Processing `{group}`, `{serum}`"))
     return (
-        curve_display_method,
         curves_pdf,
         group,
         output_pickle,
@@ -463,7 +461,6 @@ def _(mo):
 
 @app.cell
 def _(
-    curve_display_method,
     fits_noqc,
     group,
     mo,
@@ -553,7 +550,6 @@ def _(mo):
 
 @app.cell
 def _(
-    curve_display_method,
     curves_pdf,
     fits_noqc,
     group,

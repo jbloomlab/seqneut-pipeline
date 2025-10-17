@@ -96,7 +96,6 @@ def __(context, io, mo, pd, sys, yaml):
     samples = context["params"]["samples"]
     plate = context["wildcards"]["plate"]
     plate_params = context["params"]["plate_params"]
-    curve_display_method = context["params"]["curve_display_method"]
 
     # get thresholds turning lists into tuples as needed
     manual_drops = {
@@ -136,7 +135,6 @@ def __(context, io, mo, pd, sys, yaml):
         mo.output.append(mo.md(f"```yaml\n{yaml_buffer_params.getvalue()}```"))
     return (
         count_csvs,
-        curve_display_method,
         curvefit_params,
         curvefit_qc,
         fate_csvs,
@@ -1551,7 +1549,6 @@ def _(mo):
 def _(
     CBMARKERS,
     CBPALETTE,
-    curve_display_method,
     curvefit_qc,
     fit_params_noqc,
     fits_noqc,
@@ -1701,7 +1698,7 @@ def _(mo):
 
 
 @app.cell
-def _(curve_display_method, fits_qc, mo, plt):
+def _(fits_qc, mo, plt):
     if fits_qc.sera:
         _fig_passed_qc, _ = fits_qc.plotReplicates(
             attempt_shared_legend=False,

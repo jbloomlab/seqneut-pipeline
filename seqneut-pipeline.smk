@@ -70,11 +70,6 @@ if "miscellaneous_plates" in config:
 else:
     miscellaneous_plates = {}
 
-if "curve_display_method" in config:
-    curve_display_method = config["curve_display_method"]
-else:
-    curve_display_method = "png8"
-
 # define `add_htmls_to_docs` if not already defined.
 try:
     add_htmls_to_docs
@@ -157,7 +152,6 @@ if plates:
                 param: (val if param != "samples" else val.to_dict())
                 for (param, val) in plates[wc.plate].items()
             },
-            curve_display_method=curve_display_method,
         conda:
             "environment.yml"
         script:
@@ -220,7 +214,6 @@ if plates:
                 )
                 else config["default_serum_qc_thresholds"]
             ),
-            curve_display_method=curve_display_method,
         log:
             "results/logs/group_serum_titers_{group}_{serum}.txt",
         conda:
