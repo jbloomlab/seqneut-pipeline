@@ -104,7 +104,7 @@ if plates:
                 samples[wc.sample]["plate"]
             ]["illumina_barcode_parser_params"],
         conda:
-            "envs/count_barcodes.yml"
+            "environment.yml"
         log:
             "results/logs/count_barcodes_{sample}.txt",
         script:
@@ -335,7 +335,7 @@ rule miscellaneous_plate_count_barcodes:
             "illumina_barcode_parser_params"
         ],
     conda:
-        "envs/count_barcodes.yml"
+        "environment.yml"
     log:
         "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
     script:

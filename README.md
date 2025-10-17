@@ -93,8 +93,6 @@ conda activate seqneut-pipeline
 snakemake -j <n_jobs> --software-deployment-method conda
 ```
 
-Note also that a few rules have rule-specific `conda` environments in [./envs/](envs).
-
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
 An example configuration file is in [./test_example/config.yml](test_example/config.yml) (although some of the QC thresholds are set more leniently to make the test example work for small data as described in the comments in that YAML).
