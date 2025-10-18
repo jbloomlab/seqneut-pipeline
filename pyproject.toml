@@ -1,0 +1,20 @@
+[project]
+name = "seqneut-pipeline"
+version = "5.0.0"
+description = "Modular analysis pipeline for high-throughput sequencing-based neutralization assays"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Bloom Lab", email = "jbloom@fredhutch.org"}
+]
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://github.com/jbloomlab/seqneut-pipeline"
+Repository = "https://github.com/jbloomlab/seqneut-pipeline"
+Issues = "https://github.com/jbloomlab/seqneut-pipeline/issues"
+
+[tool.ruff]
+builtins = [
+    "snakemake",  # may appear undefined as passed to scripts via `Snakefile`
+]
