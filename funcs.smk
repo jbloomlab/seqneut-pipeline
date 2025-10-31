@@ -140,7 +140,9 @@ def process_plate(plate, plate_params):
         .drop(columns="one_serum_replicate")
     )
 
-    assert len(samples_df) == samples_df["sample"].nunique(), plate
+    duplicated_samples = samples_df[samples_df.duplicated("sample", False)]
+    if len(duplicated_samples):
+        raise ValueError(f"Duplicated samples for {plate=}:\n{duplicated_samples}")
 
     # make sure serum_replicate and dilution_factor are unique
     dup_rows = (
