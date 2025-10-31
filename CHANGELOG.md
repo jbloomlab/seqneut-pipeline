@@ -1,5 +1,8 @@
 # CHANGELOG
 
+#### version 4.0.2
+Provide a better error message when there are duplicated samples.
+
 #### version 4.0.1
 Fix bug in how docs show plots added via `add_htmls_to_docs`.
 
