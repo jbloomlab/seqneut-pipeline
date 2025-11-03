@@ -1,7 +1,12 @@
+# /// script
+# [tool.marimo.runtime]
+# auto_instantiate = false
+# ///
+
 import marimo
 
-__generated_with = "0.16.5"
-app = marimo.App()
+__generated_with = "0.17.6"
+app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
@@ -44,24 +49,83 @@ def _():
 
 
 @app.cell
-def __(pickle):
+def _(pickle, sys):
     # Load context from pickled file.
+    #
+    # This cell supports multiple ways to provide context:
+    # 1. Via command-line: marimo export html notebook.py -- --context-pickle path/to/context.pickle
+    # 2. Via saved pickle: Manually save a context pickle to test_example/results/context_dev.pickle
+    # 3. Stub context: If no pickle available, creates minimal empty context for exploration
+    #
+    # For interactive development with `marimo edit`, you can:
+    # - Run the pipeline once to generate a real context pickle, then copy it to context_dev.pickle
+    # - Or work with the stub context (downstream cells will show warnings/empty data)
+
     import argparse
+    import os
     import pathlib
 
-    p = argparse.ArgumentParser()
-    p.add_argument("--context-pickle", required=True)
-    args = p.parse_args()
+    # Check if context-pickle argument is provided (run by driver script)
+    from_cmdline = "--context-pickle" in sys.argv
 
-    with open(pathlib.Path(args.context_pickle), "rb") as f:
-        context = pickle.load(f)
+    if from_cmdline:
+        # Running via driver script - parse args
+        print("Loading context from command-line argument")
+        p = argparse.ArgumentParser()
+        p.add_argument("--context-pickle", required=True)
+        args = p.parse_args()
+        context_pickle_path = pathlib.Path(args.context_pickle)
+    else:
+        # Running in marimo edit - try to use development pickle
+        print("Running in marimo edit mode")
+        # set `context_pickle_path` to valid option if using edit more
+        context_pickle_path = None
+        # context_pickle_path = pathlib.Path("test_example/results/sera/serum_M099d0/serum_M099d0_titers_context.pickle")
 
+    # Load context if pickle path exists and is valid
+    if context_pickle_path and context_pickle_path.exists():
+        print(f"Reading context from {context_pickle_path}")
+        with open(context_pickle_path, "rb") as f_context:
+            context = pickle.load(f_context)
+
+        # Handle working directory
+        context_workdir = context["workdir"]
+        current_workdir = os.getcwd()
+
+        if from_cmdline:
+            # Running via snakemake - verify workdir matches
+            if context_workdir != current_workdir:
+                raise RuntimeError(
+                    f"Context workdir mismatch!\n"
+                    f"  Context was created in: {context_workdir}\n"
+                    f"  Currently running in:   {current_workdir}\n"
+                    f"This should not happen when running via Snakemake."
+                )
+            print(f"Verified working directory: {current_workdir}")
+        else:
+            # Running in marimo edit - change to context workdir
+            if context_workdir and context_workdir != current_workdir:
+                print(f"Changing directory from {current_workdir} to {context_workdir}")
+                os.chdir(context_workdir)
+            elif context_workdir:
+                print(f"Already in correct working directory: {context_workdir}")
+    else:
+        # Create a minimal stub context for interactive development
+        print("Creating minimal stub context that you need to complete")
+        context = {
+            "input": {},
+            "output": {},
+            "params": {},
+            "wildcards": {},
+            "threads": 1,
+            "resources": {},
+        }
     return (context,)
 
 
 @app.cell
-def __(context, mo):
-    # Extract variables from context
+def _(context, mo):
+    # Extract variables from context - raises KeyError if required keys missing
     pickle_fits = context["input"]["pickles"]
     per_rep_titers_csv = context["output"]["per_rep_titers"]
     titers_csv = context["output"]["titers"]
@@ -74,7 +138,22 @@ def __(context, mo):
     serum = context["wildcards"]["serum"]
     group = context["wildcards"]["group"]
 
-    mo.output.append(mo.md(f"Processing `{group}`, `{serum}`"))
+    # Show informative message about context mode
+    if not context["input"]:
+        mo.output.append(
+            mo.callout(
+                mo.md(
+                    "**⚠️ Running in interactive mode with stub context**\n\n"
+                    "To run with real data:\n"
+                    "1. Run the pipeline to generate a context pickle\n"
+                    "2. Copy it to `test_example/results/context_dev.pickle`\n"
+                    "3. Or run: `marimo export html notebook.py -- --context-pickle path/to/context.pickle`"
+                ),
+                kind="warn",
+            )
+        )
+
+    mo.output.append(mo.md(f"Processing `{group=}`, `{serum=}`"))
     return (
         curves_pdf,
         group,
@@ -118,7 +197,11 @@ def _(group, mo, neutcurve, pickle, pickle_fits, serum):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Indicate how we are calculating the titer:""")
+    mo.md(
+        r"""
+    Indicate how we are calculating the titer:
+    """
+    )
     return
 
 
@@ -241,7 +324,9 @@ def _(alt, group, mo, per_rep_titers, serum):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(
-        r"""Write the individual per-replicate titers to a file, this is before any QC has been applied:"""
+        r"""
+    Write the individual per-replicate titers to a file, this is before any QC has been applied:
+    """
     )
     return
 
@@ -263,7 +348,7 @@ def _(mo):
         r"""
     ## Plot median titers and determine if they pass QC
     Get the median titers for each virus across replicates, then add these median titers to the per-replicate titers and calculate the fold-change in titer between each replicate and its median.
-    Finally, for each virus indicates whether it passes the QC:
+    Finally, for each virus indicate whether it passes the QC:
     """
     )
     return
@@ -460,14 +545,7 @@ def _(mo):
 
 
 @app.cell
-def _(
-    fits_noqc,
-    group,
-    mo,
-    plt,
-    serum,
-    viruses_failing_qc,
-):
+def _(fits_noqc, group, mo, plt, serum, viruses_failing_qc):
     mo.output.append(
         mo.md(
             f"Neutralization curves for the {len(viruses_failing_qc)} viruses failing QC:"
@@ -494,6 +572,8 @@ def _(
         _fig_failing.tight_layout()
         mo.output.append(_fig_failing)
         plt.close(_fig_failing)
+    else:
+        mo.output.append(mo.md("No curves fail QC"))
     return
 
 
@@ -502,14 +582,14 @@ def _(mo):
     mo.md(
         r"""
     ## Get the viruses to drop for QC failures
-    Drop any viruses that fail QC and are not specified in `viruses_ignore_qc` of `qc_thresholds`:
+    Drop any viruses that fail QC and are not specified in `viruses_ignore_qc` of `qc_thresholds`.
     """
     )
     return
 
 
 @app.cell
-def _(io, mo, qc_drops_file, qc_thresholds, sys, viruses_failing_qc, yaml):
+def _(io, mo, qc_drops_file, qc_thresholds, viruses_failing_qc, yaml):
     viruses_to_drop = {
         v: reason
         for v, reason in viruses_failing_qc.items()
@@ -592,25 +672,35 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Save the `CurveFits` to a pickle file:""")
+    mo.md(
+        r"""
+    Save the `CurveFits` to a pickle file:
+    """
+    )
     return
 
 
 @app.cell
-def _(fits_qc, output_pickle, pickle):
+def _(fits_qc, mo, output_pickle, pickle):
     with open(output_pickle, "wb") as f_out_pickle:
         pickle.dump(fits_qc, f_out_pickle)
+
+    mo.output.append(mo.md(f"Writing curve fits to {output_pickle}"))
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""Write the titers (excluding QC dropped viruses) to a CSV:""")
+    mo.md(
+        r"""
+    Write the titers (excluding QC dropped viruses) to a CSV:
+    """
+    )
     return
 
 
 @app.cell
-def _(median_titers_noqc, mo, titers_csv, viruses_to_drop):
+def _(median_titers_noqc, mo, titers_csv):
     mo.output.append(mo.md(f"Writing titers to `{titers_csv}`"))
 
     (

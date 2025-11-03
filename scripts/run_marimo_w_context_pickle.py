@@ -1,5 +1,6 @@
 """Run a marimo notebook with snakemake context passed via pickle."""
 
+import os
 import pickle
 import subprocess
 import sys
@@ -10,6 +11,7 @@ sys.stderr = sys.stdout = log_file
 
 # Build context dictionary from snakemake object
 context = {
+    "workdir": os.getcwd(),
     "input": dict(snakemake.input),
     "output": dict(snakemake.output),
     "params": snakemake.params,

@@ -1,29 +1,96 @@
+# /// script
+# [tool.marimo.runtime]
+# auto_instantiate = false
+# ///
+
 import marimo
 
-__generated_with = "0.16.5"
-app = marimo.App()
+__generated_with = "0.17.6"
+app = marimo.App(width="medium")
 
 
 @app.cell
-def __():
+def _():
     # Load context from pickled file.
+    #
+    # This cell supports multiple ways to provide context:
+    # 1. Via command-line: marimo export html notebook.py -- --context-pickle path/to/context.pickle
+    # 2. Via saved pickle: Manually save a context pickle to test_example/results/context_dev.pickle
+    # 3. Stub context: If no pickle available, creates minimal empty context for exploration
+    #
+    # For interactive development with `marimo edit`, you can:
+    # - Run the pipeline once to generate a real context pickle, then copy it to context_dev.pickle
+    # - Or work with the stub context (downstream cells will show warnings/empty data)
+
     import argparse
+    import os
     import pathlib
     import pickle
+    import sys
 
-    p = argparse.ArgumentParser()
-    p.add_argument("--context-pickle", required=True)
-    args = p.parse_args()
+    import marimo as mo
 
-    with open(pathlib.Path(args.context_pickle), "rb") as f:
-        context = pickle.load(f)
+    # Check if context-pickle argument is provided (run by driver script)
+    from_cmdline = "--context-pickle" in sys.argv
 
-    return (context,)
+    if from_cmdline:
+        # Running via driver script - parse args
+        print("Loading context from command-line argument")
+        p = argparse.ArgumentParser()
+        p.add_argument("--context-pickle", required=True)
+        args = p.parse_args()
+        context_pickle_path = pathlib.Path(args.context_pickle)
+    else:
+        # Running in marimo edit - try to use development pickle
+        print("Running in marimo edit mode")
+        # set `context_pickle_path` to valid pickle if running via marimo edit
+        context_pickle_path = None
+        # context_pickle_path = pathlib.Path("test_example/results/qc_drops/aggregate_qc_drops_context.pickle")
+
+    # Load context if pickle path exists and is valid
+    if context_pickle_path and context_pickle_path.exists():
+        print(f"Reading context from {context_pickle_path}")
+        with open(context_pickle_path, "rb") as f_context:
+            context = pickle.load(f_context)
+
+        # Handle working directory
+        context_workdir = context["workdir"]
+        current_workdir = os.getcwd()
+
+        if from_cmdline:
+            # Running via snakemake - verify workdir matches
+            if context_workdir != current_workdir:
+                raise RuntimeError(
+                    f"Context workdir mismatch!\n"
+                    f"  Context was created in: {context_workdir}\n"
+                    f"  Currently running in:   {current_workdir}\n"
+                    f"This should not happen when running via Snakemake."
+                )
+            print(f"Verified working directory: {current_workdir}")
+        else:
+            # Running in marimo edit - change to context workdir
+            if context_workdir and context_workdir != current_workdir:
+                print(f"Changing directory from {current_workdir} to {context_workdir}")
+                os.chdir(context_workdir)
+            elif context_workdir:
+                print(f"Already in correct working directory: {context_workdir}")
+    else:
+        # Create a minimal stub context for interactive development
+        print("Creating minimal stub context that you need to complete")
+        context = {
+            "input": {},
+            "output": {},
+            "params": {},
+            "wildcards": {},
+            "threads": 1,
+            "resources": {},
+        }
+    return context, mo
 
 
 @app.cell
-def __(context):
-    # Extract variables from context
+def _(context, mo):
+    # Extract variables from context - raises KeyError if required keys missing
     input_plate_qc_drops = context["input"]["plate_qc_drops"]
     input_groups_sera_qc_drops = context["input"]["groups_sera_qc_drops"]
     output_plate_qc_drops = context["output"]["plate_qc_drops"]
@@ -31,6 +98,21 @@ def __(context):
     output_groups_sera_qc_drops = context["output"]["groups_sera_qc_drops"]
     plates = context["params"]["plates"]
     groups_sera = context["params"]["groups_sera"]
+
+    # Show informative message about context mode
+    if not context["input"]:
+        mo.output.append(
+            mo.callout(
+                mo.md(
+                    "**⚠️ Running in interactive mode with stub context**\n\n"
+                    "To run with real data:\n"
+                    "1. Run the pipeline to generate a context pickle\n"
+                    "2. Copy it to `test_example/results/context_dev.pickle`\n"
+                    "3. Or run: `marimo export html notebook.py -- --context-pickle path/to/context.pickle`"
+                ),
+                kind="warn",
+            )
+        )
     return (
         groups_sera,
         input_groups_sera_qc_drops,
@@ -43,13 +125,17 @@ def __(context):
 
 
 @app.cell(hide_code=True)
-def __(mo):
-    mo.md(r"""# Aggregate and analyze the drops from QC-ing the plates and sera""")
+def _(mo):
+    mo.md(
+        r"""
+    # Aggregate and analyze the drops from QC-ing the plates and sera
+    """
+    )
     return
 
 
 @app.cell
-def __():
+def _():
     import altair as alt
 
     import pandas as pd
@@ -63,7 +149,7 @@ def __():
 
 
 @app.cell(hide_code=True)
-def __(mo):
+def _(mo):
     mo.md(
         r"""
     ## Analyze plate QC drops
@@ -75,7 +161,7 @@ def __(mo):
 
 
 @app.cell
-def __(input_plate_qc_drops, output_plate_qc_drops, pd, plates, yaml):
+def _(input_plate_qc_drops, mo, output_plate_qc_drops, pd, plates, yaml):
     # read dictionary of QC drops
     assert len(plates) == len(input_plate_qc_drops)
     plate_qc_drops = {}
@@ -84,7 +170,7 @@ def __(input_plate_qc_drops, output_plate_qc_drops, pd, plates, yaml):
             plate_qc_drops[_plate] = yaml.load(_f)
     assert len(plate_qc_drops) == len(input_plate_qc_drops)
 
-    print(f"Writing merged plate drops to {output_plate_qc_drops}")
+    mo.output.append(mo.md(f"Writing merged plate drops to {output_plate_qc_drops}"))
     with open(output_plate_qc_drops, "w") as _f:
         yaml.dump(plate_qc_drops, stream=_f)
 
@@ -104,7 +190,7 @@ def __(input_plate_qc_drops, output_plate_qc_drops, pd, plates, yaml):
 
 
 @app.cell
-def __(pd, plate_qc_drops_df):
+def _(pd, plate_qc_drops_df):
     plate_qc_drop_counts = plate_qc_drops_df.groupby(
         ["plate", "drop type", "reason"], as_index=False
     ).aggregate(n_drops=pd.NamedAgg("drop", "nunique"))
@@ -113,7 +199,7 @@ def __(pd, plate_qc_drops_df):
 
 
 @app.cell(hide_code=True)
-def __(mo):
+def _(mo):
     mo.md(
         r"""
     Now plot the number of drops for each plate.
@@ -124,7 +210,7 @@ def __(mo):
 
 
 @app.cell
-def __(alt, plate_qc_drop_counts, plates):
+def _(alt, plate_qc_drop_counts, plates):
     plate_selection = alt.selection_point(fields=["plate"], on="mouseover", empty=False)
 
     plate_qc_drop_counts_chart = (
@@ -171,11 +257,11 @@ def __(alt, plate_qc_drop_counts, plates):
     )
 
     plate_qc_drop_counts_chart
-    return plate_qc_drop_counts_chart, plate_selection
+    return
 
 
 @app.cell(hide_code=True)
-def __(mo):
+def _(mo):
     mo.md(
         r"""
     ## Analyze barcode QC drops
@@ -188,7 +274,7 @@ def __(mo):
 
 
 @app.cell
-def __(output_barcode_qc_drops, plate_qc_drops, yaml):
+def _(mo, output_barcode_qc_drops, plate_qc_drops, yaml):
     barcode_qc_drops = {}
 
     for _plate, plate_d in plate_qc_drops.items():
@@ -219,22 +305,26 @@ def __(output_barcode_qc_drops, plate_qc_drops, yaml):
 
     barcode_qc_drops = sort_nested(barcode_qc_drops)
 
-    print(f"Writing merged barcode drops to {output_barcode_qc_drops}")
+    mo.output.append(
+        mo.md((f"Writing merged barcode drops to {output_barcode_qc_drops}"))
+    )
     with open(output_barcode_qc_drops, "w") as _f:
         yaml.dump(barcode_qc_drops, stream=_f)
-    return barcode, barcode_qc_drops, sort_nested
+    return
 
 
 @app.cell(hide_code=True)
-def __(mo):
+def _(mo):
     mo.md(
-        r"""Now make a plot showing how often each barcode is dropped for each reason:"""
+        r"""
+    Now make a plot showing how often each barcode is dropped for each reason:
+    """
     )
     return
 
 
 @app.cell
-def __(pd, plate_qc_drops_df):
+def _(pd, plate_qc_drops_df):
     barcode_drops = (
         plate_qc_drops_df.query("`drop type`.str.startswith('barcode')")
         .assign(barcode=lambda x: x["drop"].str.split().str[0])
@@ -248,7 +338,7 @@ def __(pd, plate_qc_drops_df):
 
 
 @app.cell
-def __(alt, barcode_drops):
+def _(alt, barcode_drops):
     barcode_selection = alt.selection_point(
         fields=["barcode"], on="mouseover", empty=False
     )
@@ -290,11 +380,11 @@ def __(alt, barcode_drops):
     )
 
     barcode_drops_chart
-    return barcode_drops_chart, barcode_selection
+    return
 
 
 @app.cell(hide_code=True)
-def __(mo):
+def _(mo):
     mo.md(
         r"""
     ## Analyze the groups/sera QC
@@ -308,9 +398,10 @@ def __(mo):
 
 
 @app.cell
-def __(
+def _(
     groups_sera,
     input_groups_sera_qc_drops,
+    mo,
     output_groups_sera_qc_drops,
     pd,
     yaml,
@@ -324,7 +415,9 @@ def __(
         with open(_qc_drops_yaml) as _f:
             groups_sera_qc_drops[group][serum] = yaml.load(_f)
 
-    print(f"Writing merged groups/sera drops to {output_groups_sera_qc_drops}")
+    mo.output.append(
+        mo.md(f"Writing merged groups/sera drops to {output_groups_sera_qc_drops}")
+    )
     with open(output_groups_sera_qc_drops, "w") as _f:
         yaml.dump(groups_sera_qc_drops, stream=_f)
 
@@ -344,7 +437,7 @@ def __(
 
 
 @app.cell(hide_code=True)
-def __(mo):
+def _(mo):
     mo.md(
         r"""
     Plot the number of viruses dropped for each group/serum.
@@ -355,7 +448,7 @@ def __(mo):
 
 
 @app.cell
-def __(alt, groups_sera_qc_drops_df, pd):
+def _(alt, groups_sera_qc_drops_df, pd):
     groups_sera_n_drops = groups_sera_qc_drops_df.groupby(
         ["group", "serum", "reason"], as_index=False
     ).aggregate(n_viruses=pd.NamedAgg("virus", "nunique"))
@@ -383,11 +476,11 @@ def __(alt, groups_sera_qc_drops_df, pd):
     )
 
     groups_sera_n_drops_chart
-    return groups_sera_n_drops, groups_sera_n_drops_chart
+    return
 
 
 @app.cell(hide_code=True)
-def __(mo):
+def _(mo):
     mo.md(
         r"""
     Plot the number of sera for which each virus is dropped during serum QC.
@@ -398,7 +491,7 @@ def __(mo):
 
 
 @app.cell
-def __(alt, groups_sera_qc_drops_df, pd):
+def _(alt, groups_sera_qc_drops_df, pd):
     virus_n_drops = groups_sera_qc_drops_df.groupby(
         ["group", "virus", "reason"], as_index=False
     ).aggregate(n_sera=pd.NamedAgg("serum", "nunique"))
@@ -426,14 +519,7 @@ def __(alt, groups_sera_qc_drops_df, pd):
     )
 
     virus_n_drops_chart
-    return virus_n_drops, virus_n_drops_chart
-
-
-@app.cell
-def __():
-    import marimo as mo
-
-    return (mo,)
+    return
 
 
 if __name__ == "__main__":
