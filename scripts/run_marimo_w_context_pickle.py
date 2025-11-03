@@ -69,6 +69,29 @@ except Exception as e:
     print(f"ERROR: Exception running marimo export: {e}")
     raise
 
+# Post-process HTML to set showAppCode to false
+print("Post-processing HTML to set showAppCode to false...")
+with open(marimo_html, "r") as f:
+    html_content = f.read()
+
+old_string = '"view": {"showAppCode": true}'
+new_string = '"view": {"showAppCode": false}'
+
+occurrence_count = html_content.count(old_string)
+if occurrence_count != 1:
+    error_msg = (
+        f"ERROR: Expected exactly 1 occurrence of '{old_string}' in HTML, "
+        f"but found {occurrence_count} occurrences"
+    )
+    print(error_msg)
+    raise ValueError(error_msg)
+
+html_content = html_content.replace(old_string, new_string)
+
+with open(marimo_html, "w") as f:
+    f.write(html_content)
+
+print("Successfully updated showAppCode setting in HTML")
 print(f"HTML output written to: {marimo_html}")
 
 log_file.close()
