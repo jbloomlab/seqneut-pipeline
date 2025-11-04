@@ -10,10 +10,12 @@
 ---
 
 This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://jbloomlab.org).
-See [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) for a description of these assays.
-
-
 Please cite [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) if you use this pipeline for your scientific study.
+Here are some other studies using this pipeline:
+  - [Kikawa et al (2025), Virus Evolution](https://doi.org/10.1093/ve/veaf086)
+  - [Kikawa et al (2025), eLife](https://doi.org/10.7554/eLife.106811)
+
+For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025).
 
 See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a list of the contributors to this pipeline.
 
@@ -85,6 +87,8 @@ In addition, you need to create the configuration file `config.yml` and ensure i
 
 To track the correct files in the created results, we suggest you copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
 This will track key results files, but not an excessive number of non-essential files.
+Note that the `docs` subdirectory created by the pipeline has a lot of large output files; this is convenient for rendering on GitHub Pages (see below) but is a lot to track via git.
+Therefore, you may want to initially include `docs` in the `.gitignore` and only remove it when you have the pipeline close to final and want to render the results on GitHub Pages.
 
 Finally, you need to create a `conda` environment that minimally includes the packages needed to run the pipeline, which are a recent version of [snakemake](https://snakemake.readthedocs.io/) and [pandas](https://pandas.pydata.org/).
 You can either create your own environment containing these, or simply build and use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. So if you are using that environment, you can simply run the pipeline with:
@@ -550,6 +554,8 @@ This HTML documentation can be rendered via [GitHub Pages](https://docs.github.c
 
 Looking at this documentation is a good way to QC the data and understand the results.
 
+Note however that the outputs in `./docs/` can be quite large, so you may want to put `docs` in your `.gitignore` until your analysis is mostly complete and you want to render final results on GitHub Pages.
+
 The documentation for the test example for this pipeline is at [https://jbloomlab.github.io/seqneut-pipeline/](https://jbloomlab.github.io/seqneut-pipeline/).
 
 If you want to add additional HTML files to the docs, specify a dict in the top-level `Snakefile` with the name `add_htmls_to_docs` like this:
@@ -579,3 +585,7 @@ ruff check .
 marimo check --ignore-scripts .
 cd test_example && snakemake --lint && cd ..
 ```
+
+## Further developing the pipeline
+Please raise [GitHub issues](https://github.com/jbloomlab/seqneut-pipeline/issues) or [make a pull request](https://github.com/jbloomlab/seqneut-pipeline/pulls) to improve the pipeline.
+Do note that any updates should be described in the [CHANGELOG](CHANGELOG.md), and versions updated in [pyproject.toml](pyproject.toml).
