@@ -1,6 +1,7 @@
 # /// script
 # [tool.marimo.runtime]
 # auto_instantiate = false
+# output_max_bytes = 50_000_000
 # ///
 
 import marimo
