@@ -4,6 +4,9 @@ _*
 *.out
 
 docs/*
+# the next line you may want to comment out when developing your pipeline and
+# only ignore `docs/*.html` when pipeline is complete if you want to not track
+# many large files.
 !docs/*.html
 
 results/*
