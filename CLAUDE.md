@@ -48,14 +48,22 @@ The pipeline performs these sequential steps:
 - **`seqneut-pipeline.smk`**: Main Snakemake rules file (included by project Snakefiles)
 - **`funcs.smk`**: Python functions for processing configuration (plate setup, sample validation)
 - **`environment.yml`**: Conda environment specification for the pipeline
+- **`pyproject.toml`**: Project configuration including version number and ruff settings
 
 ### Scripts (in `scripts/`)
 - **`count_barcodes.py`**: Counts barcodes from FASTQ files
 - **`groups_sera_by_plate.py`**: Creates mapping of sera to plates (checkpoint)
 - **`build_docs.py`**: Builds HTML documentation with markdown-based index
-- **`run_marimo_w_context_pickle.py`**: Driver script for executing marimo notebooks with context
+- **`run_marimo_w_context_pickle.py`**: Driver script for executing marimo notebooks with context (pickles snakemake context and runs marimo export)
 
 ### Marimo Notebooks (in `notebooks/`)
+All analysis is performed via marimo notebooks (migrated from Jupyter in v5.0.0). These notebooks:
+- Are executed via `run_marimo_w_context_pickle.py` which passes snakemake context as a pickle
+- Render with code hidden by default (can be shown by clicking option in upper left)
+- Output at full width for better visualization
+- Can be run interactively in marimo edit mode or via snakemake
+
+Notebooks:
 - **`process_plate.py`**: Processes a single plate (QC, fraction infectivity, curve fitting)
 - **`group_serum_titers.py`**: Aggregates titers for a serum across plates
 - **`aggregate_titers.py`**: Combines all titers and creates visualizations
@@ -77,7 +85,9 @@ The pipeline is configured via a `config.yml` file in the parent repository. Key
 3. **`description`**: Markdown description for documentation
 4. **`viral_libraries`**: Dict mapping library names to CSV files with barcode→strain mappings
 5. **`neut_standard_sets`**: Dict mapping set names to CSV files with neutralization standard barcodes
-6. **`illumina_barcode_parser_params`**: Global parameters for barcode parsing
+6. **`viral_strain_plot_order`**: Optional CSV specifying order for plotting viral strains (or null for alphabetical)
+7. **`curve_display_method`**: Required (v5.0.0+). How neutralization curves are displayed: 'svg', 'pdf', 'png8', or 'inline'
+8. **`illumina_barcode_parser_params`**: Global parameters for barcode parsing
 
 ### Plate Configuration
 
@@ -244,8 +254,9 @@ See [flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025) for a comp
 - Python code formatted with [black](https://github.com/psf/black)
 - Snakemake code formatted with [snakefmt](https://github.com/snakemake/snakefmt)
 - Marimo notebooks checked with [marimo check](https://docs.marimo.io/guides/editor_features/linting_and_formatting.html)
-- Linted with [ruff](https://github.com/astral-sh/ruff) and `snakemake --lint`
+- Linted with [ruff](https://github.com/astral-sh/ruff) (configured in `pyproject.toml`) and `snakemake --lint`
 - Tested via GitHub Actions on `test_example/`
+- Version number managed in `pyproject.toml` (as of v5.0.0)
 
 ## Important Notes
 
@@ -256,3 +267,5 @@ See [flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025) for a comp
 5. **QC thresholds in test_example are lenient** - real experiments should use stricter values
 6. **Always examine QC drops** after adding new data before trusting results
 7. **Curve fitting uses data WITH ceiling applied** but raw values are also saved
+8. **Marimo notebooks** (as of v5.0.0): All analysis notebooks are marimo, not Jupyter
+9. **curve_display_method required** (as of v5.0.0): Must specify how curves are displayed in config.yml

@@ -5,6 +5,7 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 """
 
 import pandas as pd
+import re
 
 
 snakemake.utils.min_version("9.0")
