@@ -11,12 +11,14 @@ app = marimo.App(width="full")
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     # Process plate counts to get fraction infectivities and fit curves
     This notebook analyzes a plate of sequencing-based neutralization assays.
 
     The plots are interactive, so you can mouseover points for details, use the mouse-scroll to zoom and pan, and use interactive dropdowns at the bottom of the plots.
-    """)
+    """
+    )
     return
 
 
@@ -35,6 +37,7 @@ def _():
 
     import neutcurve
     from neutcurve.colorschemes import CBPALETTE, CBMARKERS
+    from neutcurve.marimo_utils import display_fig_marimo
 
     import numpy
 
@@ -51,26 +54,13 @@ def _():
 
     # faster plotting of neut curves
     matplotlib.style.use("fast")
-
-    # get marimo PDF from matplotlib figure
-    def mo_pdf_from_fig(fig):
-        buf = io.BytesIO()
-        with matplotlib.rc_context({
-            "pdf.use14corefonts": True,
-            "pdf.compression": 7,
-            "path.simplify": True,
-            "path.simplify_threshold": 0.2,
-        }):
-            fig.savefig(buf, format="pdf", metadata={})
-        buf.seek(0)
-        return mo.pdf(src=buf, width="100%")
     return (
         CBMARKERS,
         CBPALETTE,
         alt,
+        display_fig_marimo,
         io,
         mo,
-        mo_pdf_from_fig,
         neutcurve,
         numpy,
         pd,
@@ -169,6 +159,7 @@ def _(context, io, mo, pd, yaml):
     samples = context["params"]["samples"]
     plate = context["wildcards"]["plate"]
     plate_params = context["params"]["plate_params"]
+    curve_display_method = context["params"]["curve_display_method"]
 
     # Show informative message about context mode
     if not context["input"]:
@@ -235,6 +226,7 @@ def _(context, io, mo, pd, yaml):
         samples_df = pd.DataFrame()
     return (
         count_csvs,
+        curve_display_method,
         curvefit_params,
         curvefit_qc,
         fate_csvs,
@@ -272,7 +264,8 @@ def _(manual_drops):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Statistics on barcode-parsing for each sample
     Make interactive chart of the "fates" of the sequencing reads parsed for each sample on the plate.
 
@@ -287,7 +280,8 @@ def _(mo):
      - *failed chastity filter*: reads that failed the Illumina chastity filter, if these are reported in the FASTQ (they may not be).
 
     Also, if the number of reads per sample is very uneven, that could indicate that you did not do a good job of balancing the different samples in the Illumina sequencing.
-    """)
+    """
+    )
     return
 
 
@@ -358,10 +352,12 @@ def _(alt, fate_csvs, pd, plate, samples, samples_df):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Read barcode counts and apply manually specified drops
     Read the counts per barcode, then apply any manually specified drops.
-    """)
+    """
+    )
     return
 
 
@@ -461,18 +457,22 @@ def _(counts, manual_drops, mo, qc_drops):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Average counts per barcode in each well
-    """)
+    """
+    )
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     Plot average counts per barcode.
     If a sample has inadequate barcode counts, it may not have good enough statistics for accurate analysis, and a QC-threshold is applied:
-    """)
+    """
+    )
     return
 
 
@@ -561,10 +561,12 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Fraction of counts from neutralization standard
     Determine the fraction of counts from the neutralization standard in each sample, and make sure this fraction passess the QC threshold.
-    """)
+    """
+    )
     return
 
 
@@ -665,7 +667,8 @@ def _(counts_qc_2, mo, neut_standard_fracs, qc_drops, qc_thresholds):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Consistency and minimum fractions for barcodes
     We examine the fraction of counts attributable to each barcode. We do this splitting the data two ways:
 
@@ -679,7 +682,8 @@ def _(mo):
     We plot these fractions in interactive plots (you can mouseover points and zoom) so you can identify barcodes that fail the expected consistency QC thresholds.
 
     We also make sure the barcodes meet specified QC minimum thresholds for all samples, and flag any that do not.
-    """)
+    """
+    )
     return
 
 
@@ -826,7 +830,8 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Compute fraction infectivity
 
     The fraction infectivity for viral barcode $v_b$ in sample $s$ is computed as:
@@ -842,7 +847,8 @@ def _(mo):
 
     First, compute the total neutralization-standard counts for each sample (well).
     Plot these, and drop any wells that do not meet the QC threshold.
-    """)
+    """
+    )
     return
 
 
@@ -940,9 +946,11 @@ def _(counts_qc_4, mo, neut_standard_counts, qc_drops, qc_thresholds):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     Compute and plot the no-serum sample viral barcode counts and check if they pass the QC filters.
-    """)
+    """
+    )
     return
 
 
@@ -1057,10 +1065,12 @@ def _(counts_qc_5, mo, no_serum_counts, qc_drops, qc_thresholds):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     Compute and plot the median ratio of viral barcode count to neut standard counts across no-serum samples.
     If library composition is equal, all of these values should be similar:
-    """)
+    """
+    )
     return
 
 
@@ -1126,10 +1136,12 @@ def _(alt, no_serum_counts_1, pd, plate):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     Compute and plot the actual fraction infectivities.
     We compute both the raw fraction infectivities and the ones with the ceiling applied:
-    """)
+    """
+    )
     return
 
 
@@ -1361,9 +1373,11 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     Check how many dilutions we have per barcode / serum-replicate:
-    """)
+    """
+    )
     return
 
 
@@ -1466,11 +1480,13 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Fit neutralization curves without applying QC to curves
     First fit curves to all serum replicates, then we will apply QC on the curve fits.
     Note that the fitting is done to the fraction infectivities **with** the ceiling.
-    """)
+    """
+    )
     return
 
 
@@ -1497,10 +1513,12 @@ def _(curvefit_params, frac_infectivity_2, neutcurve):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     Determine which fits fail the curve fitting QC, and plot them.
     Note the plot indicates as failing QC any barcode / serum-replicate that fails, even if we are also specified to ignore the QC for that one (so it will not be removed later):
-    """)
+    """
+    )
     return
 
 
@@ -1599,10 +1617,12 @@ def _(alt, barcode_selection, curvefit_qc, fit_params_noqc, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     Now plot curves for all virus vs serum-replicates that have a barcode that fails any of the QC.
     In these plots, the suffix on the barcode name in the color key indicates if it passed or failed QC:
-    """)
+    """
+    )
     return
 
 
@@ -1610,24 +1630,25 @@ def _(mo):
 def _(
     CBMARKERS,
     CBPALETTE,
+    curve_display_method,
     curvefit_qc,
+    display_fig_marimo,
     fit_params_noqc,
     fits_noqc,
     mo,
-    mo_pdf_from_fig,
     pd,
 ):
     barcode_serum_replicates_fail_qc = fit_params_noqc.query("fails_qc").reset_index(
         drop=True
     )
-    mo.output.append(
-        mo.md(
-            f"Here are barcode / serum-replicates that fail `curvefit_qc={curvefit_qc!r}`"
-        )
-    )
-    mo.output.append(barcode_serum_replicates_fail_qc)
 
     if len(barcode_serum_replicates_fail_qc):
+        mo.output.append(
+            mo.md(
+                f"Here are barcode / serum-replicates that fail `curvefit_qc={curvefit_qc!r}`"
+            )
+        )
+        mo.output.append(barcode_serum_replicates_fail_qc)
         mo.output.append(
             mo.md(
                 "Curves for virus vs serum-replicates with at least one failed barcode.\n\nColor key labels indicate if barcodes failed or passed QC."
@@ -1673,7 +1694,9 @@ def _(
             ticksize=10,
             draw_in_bounds=True,
         )
-        mo.output.append(mo_pdf_from_fig(_fig_fail_qc))
+        mo.output.append(
+            display_fig_marimo(_fig_fail_qc, display_method=curve_display_method)
+        )
     else:
         mo.output.append(mo.md("No serum-replicates fail QC."))
     return
@@ -1717,10 +1740,12 @@ def _(curvefit_qc, fit_params_noqc, frac_infectivity_2, mo, qc_drops):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Fit neutralization curves after applying QC
     No we re-fit and plot curves after applying all the QC.
-    """)
+    """
+    )
     return
 
 
@@ -1752,7 +1777,7 @@ def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve):
 
 
 @app.cell
-def _(fits_qc, mo, mo_pdf_from_fig):
+def _(curve_display_method, display_fig_marimo, fits_qc, mo):
     if fits_qc.sera:
         _fig_passed_qc, _ = fits_qc.plotReplicates(
             attempt_shared_legend=False,
@@ -1762,7 +1787,9 @@ def _(fits_qc, mo, mo_pdf_from_fig):
             ncol=6,
             draw_in_bounds=True,
         )
-        mo.output.append(mo_pdf_from_fig(_fig_passed_qc))
+        mo.output.append(
+            display_fig_marimo(_fig_passed_qc, display_method=curve_display_method)
+        )
     else:
         mo.output.append(mo.md("No sera passed QC."))
     return
@@ -1770,9 +1797,11 @@ def _(fits_qc, mo, mo_pdf_from_fig):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
+    mo.md(
+        r"""
     ## Save results to files
-    """)
+    """
+    )
     return
 
 

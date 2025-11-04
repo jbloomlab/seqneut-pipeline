@@ -152,6 +152,7 @@ if plates:
                 param: (val if param != "samples" else val.to_dict())
                 for (param, val) in plates[wc.plate].items()
             },
+            curve_display_method=config["curve_display_method"],
         conda:
             "environment.yml"
         script:
@@ -190,6 +191,7 @@ if plates:
             qc_drops="results/sera/{group}_{serum}/qc_drops.yml",
         params:
             viral_strain_plot_order=viral_strain_plot_order,
+            curve_display_method=config["curve_display_method"],
             serum_titer_as=lambda wc: (
                 config["sera_override_defaults"][wc.group][wc.serum]["titer_as"]
                 if (

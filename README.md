@@ -164,6 +164,20 @@ A/Michigan/45/2015
 <additional lines>
 ```
 
+### curve_display_method
+How large panels of neutralization curves are displayed in notebooks created by pipeline and rendered in the documentation.
+Set such as:
+```
+curve_display_method: svg
+```
+
+Options are:
+  - *svg*: high-resolution SVGs, but large file sizes
+  - *pdf*: high-resolution PDFs, file size is smaller than *svg* however these may not render in some browsers (eg, Chrome)
+  - *png8*: lower-resolution PNG8 but much smaller file sizes
+  - *inline*: display as inline `matplotlib` plots, usually inferior to other options as both the largest file size and relatively poor resolution.
+
+
 ### neut_standard_sets
 A dictionary (mapping) of neutralization-standard set names to CSV files holding the barcodes for the neutralization standard set.
 So in general, this key will look like:

@@ -32,6 +32,7 @@ def _():
     import matplotlib.pyplot as plt
 
     import neutcurve
+    from neutcurve.marimo_utils import display_fig_marimo
 
     import numpy
 
@@ -45,7 +46,19 @@ def _():
 
     # faster plotting of neut curves
     matplotlib.style.use("fast")
-    return alt, io, mo, neutcurve, numpy, pd, pickle, plt, sys, yaml
+    return (
+        alt,
+        display_fig_marimo,
+        io,
+        mo,
+        neutcurve,
+        numpy,
+        pd,
+        pickle,
+        plt,
+        sys,
+        yaml,
+    )
 
 
 @app.cell
@@ -135,6 +148,7 @@ def _(context, mo):
     viral_strain_plot_order = context["params"]["viral_strain_plot_order"]
     serum_titer_as = context["params"]["serum_titer_as"]
     qc_thresholds = context["params"]["qc_thresholds"]
+    curve_display_method = context["params"]["curve_display_method"]
     serum = context["wildcards"]["serum"]
     group = context["wildcards"]["group"]
 
@@ -155,6 +169,7 @@ def _(context, mo):
 
     mo.output.append(mo.md(f"Processing `{group=}`, `{serum=}`"))
     return (
+        curve_display_method,
         curves_pdf,
         group,
         output_pickle,
@@ -545,7 +560,16 @@ def _(mo):
 
 
 @app.cell
-def _(fits_noqc, group, mo, plt, serum, viruses_failing_qc):
+def _(
+    curve_display_method,
+    display_fig_marimo,
+    fits_noqc,
+    group,
+    mo,
+    plt,
+    serum,
+    viruses_failing_qc,
+):
     mo.output.append(
         mo.md(
             f"Neutralization curves for the {len(viruses_failing_qc)} viruses failing QC:"
@@ -570,7 +594,9 @@ def _(fits_noqc, group, mo, plt, serum, viruses_failing_qc):
             fontweight="bold",
         )
         _fig_failing.tight_layout()
-        mo.output.append(_fig_failing)
+        mo.output.append(
+            display_fig_marimo(_fig_failing, display_method=curve_display_method)
+        )
         plt.close(_fig_failing)
     else:
         mo.output.append(mo.md("No curves fail QC"))
@@ -630,7 +656,9 @@ def _(mo):
 
 @app.cell
 def _(
+    curve_display_method,
     curves_pdf,
+    display_fig_marimo,
     fits_noqc,
     group,
     mo,
@@ -663,7 +691,9 @@ def _(
         fontweight="bold",
     )
     _fig_retained.tight_layout()
-    mo.output.append(_fig_retained)
+    mo.output.append(
+        display_fig_marimo(_fig_retained, display_method=curve_display_method)
+    )
     mo.output.append(mo.md(f"Saving to plot of curves to `{curves_pdf}`"))
     _fig_retained.savefig(curves_pdf)
     plt.close(_fig_retained)
