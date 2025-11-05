@@ -298,7 +298,7 @@ if plates:
             ),
             qc_drops_html="results/qc_drops/aggregate_qc_drops.html",
         output:
-            docs=directory(config["docs"]),
+            docs=directory("results/docs"),
         params:
             description=config["description"],
             groups_sera=lambda wc: list(groups_sera_plates()),

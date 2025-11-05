@@ -7,10 +7,6 @@
 # certainly be "seqneut-pipeline'
 seqneut-pipeline: ../
 
-# for this test example the location is "../docs", but for real analyses it should
-# almost certainly be "docs"
-docs: ../docs
-
 # change this to a good description of your project
 description: |
   # Test example for [seqneut-pipeline](https://github.com/jbloomlab/seqneut-pipeline)
