@@ -9,9 +9,11 @@
 #   directory (default: ./results/docs relative to your *current working directory*).
 # - This script publishes that directory to a dedicated Pages branch via a temporary
 #   Git worktree and a single force-pushed snapshot commit.
-# - Each publish *replaces* the branch with one fresh commit (no history growth), so
-#   your main branch and repo history stay clean.
-# - Configure GitHub Pages to serve from: Settings → Pages → “Deploy from a branch”
+# - Each publish *completely replaces* the branch with one fresh orphan commit that has
+#   no parent history. The gh-pages branch will ALWAYS contain exactly one commit.
+# - Your main branch and repo history stay clean, and the Pages branch never accumulates
+#   history from previous publishes.
+# - Configure GitHub Pages to serve from: Settings → Pages → "Deploy from a branch"
 #   → Branch: (the Pages branch, default: gh-pages), Folder: /.
 #
 # WHAT THE KEY COMMANDS DO
@@ -130,6 +132,23 @@ fi
 _info "[6/10] Fetching remote refs (prune) from '${PUBLISH_DOCS_GH_PAGES_REMOTE}'…"
 git fetch --prune "${PUBLISH_DOCS_GH_PAGES_REMOTE}"
 
+# Clean up any stale worktrees and delete local branch to ensure clean orphan creation
+_info "• Cleaning up any existing worktrees for '${PUBLISH_DOCS_GH_PAGES_BRANCH}'…"
+git worktree prune
+# Remove any worktrees still associated with the Pages branch
+while IFS= read -r worktree_path; do
+  if [[ -n "$worktree_path" ]]; then
+    _info "  - Removing stale worktree at: $worktree_path"
+    git worktree remove --force "$worktree_path" 2>/dev/null || true
+  fi
+done < <(git worktree list --porcelain | grep -A 2 "branch refs/heads/${PUBLISH_DOCS_GH_PAGES_BRANCH}" | grep "^worktree " | cut -d' ' -f2-)
+
+# Now safe to delete the local branch if it exists
+if git show-ref --verify --quiet "refs/heads/${PUBLISH_DOCS_GH_PAGES_BRANCH}"; then
+  _info "• Deleting existing local branch '${PUBLISH_DOCS_GH_PAGES_BRANCH}' to create fresh orphan…"
+  git branch -D "${PUBLISH_DOCS_GH_PAGES_BRANCH}"
+fi
+
 # ------------------------- Step 7: Create temporary worktree -------------------------
 _info "[7/10] Creating temporary worktree for '${PUBLISH_DOCS_GH_PAGES_BRANCH}'…"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/publish-pages.XXXXXX")"
@@ -144,25 +163,16 @@ trap 'echo "Publish failed on line $LINENO" >&2; exit 1' ERR
 trap 'exit 130' INT
 trap 'exit 143' TERM HUP
 
-if git ls-remote --exit-code --heads "${PUBLISH_DOCS_GH_PAGES_REMOTE}" "${PUBLISH_DOCS_GH_PAGES_BRANCH}" >/dev/null 2>&1; then
-  _info "• Remote branch exists; attaching worktree at its tip…"
-  git worktree add --detach "$TMP_DIR" "refs/remotes/${PUBLISH_DOCS_GH_PAGES_REMOTE}/${PUBLISH_DOCS_GH_PAGES_BRANCH}"
-  (
-    cd "$TMP_DIR"
-    # Portable: create/reset a local branch at the current detached HEAD
-    git checkout -B "${PUBLISH_DOCS_GH_PAGES_BRANCH}"
-  )
-else
-  _info "• No remote branch yet; creating an orphan Pages branch…"
-  git worktree add --no-checkout "$TMP_DIR"
-  (
-    cd "$TMP_DIR"
-    # Portable orphan (first publish) – no history
-    git checkout --orphan "${PUBLISH_DOCS_GH_PAGES_BRANCH}"
-    # Ensure index starts empty (working tree will be wiped by rsync --delete)
-    git rm -r --cached . >/dev/null 2>&1 || true
-  )
-fi
+# Always create a fresh orphan branch (no history)
+_info "• Creating fresh orphan branch (no history)…"
+git worktree add --no-checkout "$TMP_DIR"
+(
+  cd "$TMP_DIR"
+  # Create orphan branch with no parent commits
+  git checkout --orphan "${PUBLISH_DOCS_GH_PAGES_BRANCH}"
+  # Ensure index starts empty (working tree will be populated by rsync)
+  git rm -r --cached . >/dev/null 2>&1 || true
+)
 
 # ------------------------- Step 8: Rsync snapshot -------------------------
 _info "[8/10] Syncing '${SITE_DIR_ABS}' → worktree (exact snapshot)…"
@@ -178,25 +188,15 @@ _info "[9/10] Committing and force-pushing to '${PUBLISH_DOCS_GH_PAGES_REMOTE}/$
   SRC_COMMIT="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
   DATE_UTC="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
-  # Does this worktree have any commit yet? (unborn branch if not)
-  if git rev-parse --verify HEAD >/dev/null 2>&1; then
-    # Normal path: create a real snapshot commit if there are staged changes
-    if ! git diff --cached --quiet; then
-      git commit --quiet -m "Publish site snapshot (${DATE_UTC}) from ${SRC_COMMIT} [source: ${SITE_DIR_ABS}]"
-    else
-      _info "• No changes detected; remote already matches ${SITE_DIR_ABS}."
-    fi
+  # Create a single snapshot commit (orphan branch has no history)
+  if ! git diff --cached --quiet; then
+    git commit --quiet -m "Publish site snapshot (${DATE_UTC}) from ${SRC_COMMIT} [source: ${SITE_DIR_ABS}]"
   else
-    # First publish path: ensure the branch ref exists even if nothing appeared staged
-    if ! git diff --cached --quiet; then
-      git commit --quiet -m "Initialize Pages branch with first snapshot (${DATE_UTC}) [source: ${SITE_DIR_ABS}]"
-    else
-      _info "• Nothing staged on first publish; creating an empty initial commit so the branch exists…"
-      git commit --quiet --allow-empty -m "Initialize empty Pages branch (${DATE_UTC})"
-    fi
+    _info "• Nothing to publish; creating empty commit so branch exists…"
+    git commit --quiet --allow-empty -m "Publish empty snapshot (${DATE_UTC})"
   fi
 
-  # Force-push and set upstream so subsequent pushes are simpler/clearer.
+  # Force-push to completely replace the remote branch (no history preserved)
   git push -f -u "${PUBLISH_DOCS_GH_PAGES_REMOTE}" "HEAD:${PUBLISH_DOCS_GH_PAGES_BRANCH}"
 )
 
