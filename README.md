@@ -10,10 +10,13 @@
 ---
 
 This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://jbloomlab.org).
+
 Please cite [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) if you use this pipeline for your scientific study.
-Here are some other studies using this pipeline:
+
+Here is a list of studies using this pipeline:
   - [Kikawa et al (2025), Virus Evolution](https://doi.org/10.1093/ve/veaf086)
   - [Kikawa et al (2025), eLife](https://doi.org/10.7554/eLife.106811)
+  - [Loes et al (2024), Virus Evolution](https://doi.org/10.1128/jvi.00689-24)
 
 For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025).
 
@@ -52,7 +55,6 @@ So the overall structure will look like this:
 ├── Snakefile [top-level snakemake file that includes `seqneut-pipeline.smk`]
 ├── data [subdirectory with input data for your project]
 ├── results [subdirectory with results created by pipeline]
-├── docs [HTML summary of results created by pipeline]
 └── <other files / subdirectories that are part of project>
 ```
 
@@ -87,8 +89,6 @@ In addition, you need to create the configuration file `config.yml` and ensure i
 
 To track the correct files in the created results, we suggest you copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
 This will track key results files, but not an excessive number of non-essential files.
-Note that the `docs` subdirectory created by the pipeline has a lot of large output files; this is convenient for rendering on GitHub Pages (see below) but is a lot to track via git.
-Therefore, you may want to initially include `docs` in the `.gitignore` and only remove it when you have the pipeline close to final and want to render the results on GitHub Pages.
 
 Finally, you need to create a `conda` environment that minimally includes the packages needed to run the pipeline, which are a recent version of [snakemake](https://snakemake.readthedocs.io/) and [pandas](https://pandas.pydata.org/).
 You can either create your own environment containing these, or simply build and use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. So if you are using that environment, you can simply run the pipeline with:
@@ -111,12 +111,6 @@ Location of the `seqneut-pipeline` relative to the top-level repo.
 This will almost always be a subdirectory of the same name, so this key will be as shown below unless you have a good reason to do otherwise:
 
         seqneut-pipeline: seqneut-pipeline
-
-### docs
-Location where we create the `./docs/` subdirectory with HTMLs for rendering on GitHub pages.
-This will almost always be `docs`, so this key will be as shown below unless you have a good reason to do otherwise:
-
-        docs: docs
 
 ### description
 Description of pipeline, used in the HTML docs rendering.
@@ -517,7 +511,7 @@ The set of full created outputs are as follows (note only some will be tracked d
 
   - Outputs related to processing each plate:
     - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
-    - `./results/plates/{plate}/process_{plate}.html`: HTML of marimo notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
+    - `./results/plates/{plate}/process_{plate}.html`: HTML of marimo notebook processing counts for a plate. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/plates/{plate}/qc_drops.yml`: details on data (barcodes, wells, etc) dropped for failing QC when processing this plate.
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
@@ -526,37 +520,49 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/sera/groups_sera_by_plate.csv` summarizes which plate(s) each group/serum was run on.
     - `./results/sera/{group}_{serum}/titers.csv`: titer for each virus against the group/serum, reported as the median across replicates, and only keeping those that pass QC. You should track this file in the repo.
     - `./results/sera/{group}_{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the group/serum. You should track this file in the repo.
-    - `./results/sera/{group}_{serum}/curves.pdf`: PDF rendering of the neutralization curves for the group/serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
+    - `./results/sera/{group}_{serum}/curves.pdf`: PDF rendering of the neutralization curves for the group/serum. You do not need to track this as a HTML version is rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/sera/{group}_{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this group/serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of marimo notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of marimo notebook that aggregates titers for a group/serum across all plates. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/sera/{group}_{serum}/qc_drops.yml`: virus-group/serum titers dropped due to QC when processing this serum's titers.
 
   - Results related to aggregated titers across all sera in a group after applying all quality control:
     - `./results/aggregated_titers/titers_{group}.csv`: titers for all sera / virus in a group (median of replicates). You should track this file as it has the final processed results.
     - `./results/aggregated_titers/curvefits_{group}.pickle`: pickle file with the `neutcurve.CurveFits` object holding all final curves for a group. You do not need to track this in the repo, but if you have further code that makes specific plots you may want to use this.
-    - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this in the repo as it is rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
 
   - Results summarizing data dropped due to QC:
     - `./results/qc_drops/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-plate. You should track this in repo.
     - `./results/qc_drops/barcode_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-barcode. You should track this in repo.
     - `./results/qc_drops/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
-    - `./results/qc_drops/aggregate_qc_drops.html`: HTML of marimo notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
+    - `./results/qc_drops/aggregate_qc_drops.html`: HTML of marimo notebook summarizing the QC drops. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+      
+  - HTML documentation of results is placed in `./results/docs`. This subdirectory does not need to be tracked in the GitHub repo, but can be display via GitHub Pages as described below.
 
 ## Examining the output and setting appropriate QC values in the configuration
-When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML documentation summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.
+When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML documentation summarizing the processing of each plate and sera are placed in `./results/docs` (see below for how to render this on GitHub Pages), alongside a summary of all QC across all plates / sera.
 YAML summaries of the QC are also created.
 
 While the QC is designed to hopefully make reasonable default choices, you should **always** carefully look through this documentation after adding new data, and potentially adjust the QC in the configuration and re-run.
 
-## Rendering HTML plots and notebooks in docs
-If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, per-plate analyses and overall QC summary in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).
-This HTML documentation can be rendered via [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) from the `./docs/` directory.
+## Rendering on GitHub Pages the documentation of the results
+If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, per-plate analyses and overall QC summary in a subdirectory called `./results/docs`.
 
-Looking at this documentation is a good way to QC the data and understand the results.
+This HTML documentation can be rendered via [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) using the following steps.
+These steps are designed to render this HTML documentation without tracking it on the main GitHub branch so that the main repository branch and history is not cluttered with a bunch of large HTML files.
 
-Note however that the outputs in `./docs/` can be quite large, so you may want to put `docs` in your `.gitignore` until your analysis is mostly complete and you want to render final results on GitHub Pages.
+To render this documentation, use the following steps:
 
-The documentation for the test example for this pipeline is at [https://jbloomlab.github.io/seqneut-pipeline/](https://jbloomlab.github.io/seqneut-pipeline/).
+ 1. Run the pipeline to completion so that your documentation is in `./results/docs` (which is not tracked in the GitHub repo as it should be excluded by your `.gitignore`).
+    
+ 2. Run the bash script [publish_docs_gh-pages.sh](publish_docs_gh-pages.sh) that is included as part of `seqneut-pipeline` with
+    ```
+    ./seqneut-pipeline/publish_docs_gh-pages.sh
+    ```
+    That script commits the files in `./results/docs` to a *gh-pages* branch on GitHub, which is **not** versioned (so it only contains the latest version, thereby avoiding making a huge `git` history).
+     
+  3. Setup GitHub Pages (which is found under *Pages* in *Settings*) to serve from the *gh-pages* branch and the `/root` folder.
+
+  4. The documentation will then be at a site named `https://<username>.github.io/<repo>`; for instance the documentation for the test example for this pipeline is at [https://jbloomlab.github.io/seqneut-pipeline/](https://jbloomlab.github.io/seqneut-pipeline/).
 
 If you want to add additional HTML files to the docs, specify a dict in the top-level `Snakefile` with the name `add_htmls_to_docs` like this:
 ```
