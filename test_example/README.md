@@ -16,6 +16,11 @@ To run the example, build the `seqneut-pipeline` `conda` environment in [../envi
 
 This will create the results in [./results/](results).
 
-The HTML documentation for the example is rendered on GitHub pages at [https://jbloomlab.github.io/seqneut-pipeline](https://jbloomlab.github.io/seqneut-pipeline).
+If you then run:
+    
+    ../publish_docs_gh-pages.sh
+
+Then the HTML docs in `./results/docs` will be pushed to a *gh-pages* branch; if you set GitHub Pages to serve from *gh-pages* and `/root` then
+the HTML documentation for the example is rendered on GitHub pages at [https://jbloomlab.github.io/seqneut-pipeline](https://jbloomlab.github.io/seqneut-pipeline).
 
 The files [expected_titers_for_test.csv](expected_titers_for_test.csv) and [test_titers_as_expected.py](test_titers_as_expected.py) are files for testing the pipeline.

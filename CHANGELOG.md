@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## version 6.0.0
+Change how docs summarizing the output are tracked on GitHub Pages.
+This change is designed to solve the issue where the main repository is bloated by committing of the docs, which both makes the repo very large and makes it hard to see code changes vi git diffs.
+The following changes were made:
+  - Docs are no longer written to `./docs` that is tracked via git; instead they are written to `./results/docs` which is not tracked via git.
+  - Anytime you want to commit the current docs, you run the script [publish_docs_gh-pages.sh](publish_docs_gh-pages.sh) which commits the current contents of `./results/docs` to a *gh-pages* branch with no history; you then set GitHub Pages to serve from the *gh-pages* branch and the `/root` directory on GitHub.
+
+So to migrate an existing repository, do the following:
+  1. Remove any existing `./docs/` directory (`rm -rf docs`).
+  2. Remove any lines in you `.gitignore` that involves `docs` (such as `docs/*` or `!docs/*.html`).
+  3. Remove the *docs* key from your `config.yml`, it is no longer needed.
+  4. (If you are migrating from version 4 or earlier) Set the *curve_display_method* in `config.yml` to a valid value (suggestion is *svg*); create this option if it does not already exist.
+  5. Anytime you want to commit the current docs, run `./seqneut-pipeline/publish_docs_gh-pages.sh`.
+  6. On your GitHub Repository, go to *Settings* then *Pages* on the left toolbar and set GitHub Pages to serve from the *gh-pages* branch and the `/root` directory.
+
 ## version 5.0.0
 Migrated to use `marimo` notebooks rather than Jupyter notebooks. Main changes:
   - all notebooks are now `marimo`, not Jupyter; these notebooks are now run by a driver script from a context pickle.
