@@ -2,6 +2,8 @@
 
 Designed to be included in another ``Snakefile`` that specifies the config.
 
+Note: This file relies on imports from seqneut-pipeline.smk (pandas as pd, re).
+
 """
 
 import copy

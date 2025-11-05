@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## version 5.0.0
+Migrated to use `marimo` notebooks rather than Jupyter notebooks. Main changes:
+  - all notebooks are now `marimo`, not Jupyter; these notebooks are now run by a driver script from a context pickle.
+  - in the docs, the notebooks render much better, including hiding code by default (you can click on an option in upper left to show code).
+  - the `conda` environment is updated to newer package versions and to add `marimo` and drop `jupyterlab`.
+  - the *curve_display_method* in `config.yaml` is now required, and has possible values of *svg*, *pdf*, *png8*, and *inline* (see repo README for details on each).
+  - project now has a single consolidated `pyproject.toml` that includes version number.
+
 #### version 4.0.2
 Provide a better error message when there are duplicated samples.
 

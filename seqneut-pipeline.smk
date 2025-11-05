@@ -5,6 +5,7 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 """
 
 import pandas as pd
+import re
 
 
 snakemake.utils.min_version("9.0")
@@ -70,11 +71,6 @@ if "miscellaneous_plates" in config:
 else:
     miscellaneous_plates = {}
 
-if "curve_display_method" in config:
-    curve_display_method = config["curve_display_method"]
-else:
-    curve_display_method = "png8"
-
 # define `add_htmls_to_docs` if not already defined.
 try:
     add_htmls_to_docs
@@ -109,7 +105,7 @@ if plates:
                 samples[wc.sample]["plate"]
             ]["illumina_barcode_parser_params"],
         conda:
-            "envs/count_barcodes.yml"
+            "environment.yml"
         log:
             "results/logs/count_barcodes_{sample}.txt",
         script:
@@ -118,6 +114,7 @@ if plates:
     rule process_plate:
         """Process a plate to QC and convert counts to fraction infectivity."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/process_plate.py"),
             count_csvs=lambda wc: expand(
                 rules.count_barcodes.output.counts,
                 sample=plates[wc.plate]["samples"]["sample"],
@@ -126,14 +123,15 @@ if plates:
                 rules.count_barcodes.output.fates,
                 sample=plates[wc.plate]["samples"]["sample"],
             ),
-            notebook_funcs=workflow.source_path("notebook_funcs.py"),
         output:
+            marimo_html="results/plates/{plate}/process_{plate}.html",
+            context_pickle="results/plates/{plate}/process_{plate}_context.pickle",
             qc_drops="results/plates/{plate}/qc_drops.yml",
             frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
             fits_csv="results/plates/{plate}/curvefits.csv",
             fits_pickle="results/plates/{plate}/curvefits.pickle",
         log:
-            notebook="results/plates/{plate}/process_{plate}.ipynb",
+            "results/logs/process_{plate}.txt",
         params:
             # pass DataFrames/Series as dict/list for snakemake params rerun triggers
             viral_barcodes=lambda wc: (
@@ -155,11 +153,11 @@ if plates:
                 param: (val if param != "samples" else val.to_dict())
                 for (param, val) in plates[wc.plate].items()
             },
-            curve_display_method=curve_display_method,
+            curve_display_method=config["curve_display_method"],
         conda:
             "environment.yml"
-        notebook:
-            "notebooks/process_plate.py.ipynb"
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     checkpoint groups_sera_by_plate:
         """Get list of all groups/sera and plates they are on."""
@@ -179,12 +177,14 @@ if plates:
     rule group_serum_titers:
         """Aggregate and analyze titers for a group / serum."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/group_serum_titers.py"),
             pickles=lambda wc: [
                 rules.process_plate.output.fits_pickle.format(plate=plate)
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
             ],
-            notebook_funcs=workflow.source_path("notebook_funcs.py"),
         output:
+            marimo_html="results/sera/{group}_{serum}/{group}_{serum}_titers.html",
+            context_pickle="results/sera/{group}_{serum}/{group}_{serum}_titers_context.pickle",
             per_rep_titers="results/sera/{group}_{serum}/titers_per_replicate.csv",
             titers="results/sera/{group}_{serum}/titers.csv",
             curves_pdf="results/sera/{group}_{serum}/curves.pdf",
@@ -192,6 +192,7 @@ if plates:
             qc_drops="results/sera/{group}_{serum}/qc_drops.yml",
         params:
             viral_strain_plot_order=viral_strain_plot_order,
+            curve_display_method=config["curve_display_method"],
             serum_titer_as=lambda wc: (
                 config["sera_override_defaults"][wc.group][wc.serum]["titer_as"]
                 if (
@@ -216,17 +217,17 @@ if plates:
                 )
                 else config["default_serum_qc_thresholds"]
             ),
-            curve_display_method=curve_display_method,
         log:
-            notebook="results/sera/{group}_{serum}/{group}_{serum}_titers.ipynb",
+            "results/logs/group_serum_titers_{group}_{serum}.txt",
         conda:
             "environment.yml"
-        notebook:
-            "notebooks/group_serum_titers.py.ipynb"
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     rule aggregate_titers:
         """Aggregate all serum titers."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_titers.py"),
             pickles=lambda wc: [
                 rules.group_serum_titers.output.pickle.format(group=group, serum=serum)
                 for (group, serum) in groups_sera_plates()
@@ -236,6 +237,8 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
+            marimo_html="results/aggregated_titers/aggregate_titers.html",
+            context_pickle="results/aggregated_titers/aggregate_titers_context.pickle",
             pickles=[
                 f"results/aggregated_titers/curvefits_{group}.pickle"
                 for group in groups
@@ -249,13 +252,14 @@ if plates:
         conda:
             "environment.yml"
         log:
-            notebook="results/aggregated_titers/aggregate_titers.ipynb",
-        notebook:
-            "notebooks/aggregate_titers.py.ipynb"
+            "results/logs/aggregate_titers.txt",
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     rule aggregate_qc_drops:
         """Aggregate all QC drops."""
         input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_qc_drops.py"),
             plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
             groups_sera_qc_drops=lambda wc: [
                 rules.group_serum_titers.output.qc_drops.format(
@@ -264,6 +268,8 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
+            marimo_html="results/qc_drops/aggregate_qc_drops.html",
+            context_pickle="results/qc_drops/aggregate_qc_drops_context.pickle",
             plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
             barcode_qc_drops="results/qc_drops/barcode_qc_drops.yml",
             groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
@@ -273,22 +279,9 @@ if plates:
         conda:
             "environment.yml"
         log:
-            notebook="results/qc_drops/aggregate_qc_drops.ipynb",
-        notebook:
-            "notebooks/aggregate_qc_drops.py.ipynb"
-
-    rule notebook_to_html:
-        """Convert Jupyter notebook to HTML"""
-        input:
-            notebook="{notebook}.ipynb",
-        output:
-            html="{notebook}.html",
-        log:
-            "results/logs/notebook_to_html_{notebook}.txt",
-        conda:
-            "environment.yml"
-        shell:
-            "jupyter nbconvert --to html {input.notebook} &> {log}"
+            "results/logs/aggregate_qc_drops.txt",
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
 
     rule build_docs:
         """Build the HTML documentation."""
@@ -345,7 +338,7 @@ rule miscellaneous_plate_count_barcodes:
             "illumina_barcode_parser_params"
         ],
     conda:
-        "envs/count_barcodes.yml"
+        "environment.yml"
     log:
         "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
     script:

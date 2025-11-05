@@ -6,20 +6,19 @@ channels:
 
 dependencies:
   - altair=5.5
-  - black-jupyter
-  - jupyterlab
+  - black
   - mamba
-  - markdown=3.8
-  - pandas=2.3
-  - papermill=2.6
-  - pillow=11.3
+  - marimo=0.17.6
+  - markdown=3.9
+  - pandas=2.3.3
+  - pillow=12.0
   - pip
   - pyarrow
   - python=3.13
-  - ruamel.yaml=0.18.14
+  - ruamel.yaml=0.18.15
   - snakefmt
-  - snakemake=9.9
+  - snakemake=9.13.2
   - ruff
   - pip:
     - dms_variants==1.6.0
-    - neutcurve==2.2.0
+    - neutcurve==2.3.0

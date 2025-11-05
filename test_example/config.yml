@@ -28,7 +28,7 @@ viral_libraries:
 
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 
-curve_display_method: png8  # options are inline, png8, no_display
+curve_display_method: svg  # {svg, pdf, png8, inline}; svg best resolution, png8 smallest
 
 neut_standard_sets:
   loes2023: data/neut_standard_sets/loes2023_neut_standards.csv

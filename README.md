@@ -10,10 +10,12 @@
 ---
 
 This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://jbloomlab.org).
-See [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) for a description of these assays.
-
-
 Please cite [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) if you use this pipeline for your scientific study.
+Here are some other studies using this pipeline:
+  - [Kikawa et al (2025), Virus Evolution](https://doi.org/10.1093/ve/veaf086)
+  - [Kikawa et al (2025), eLife](https://doi.org/10.7554/eLife.106811)
+
+For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025).
 
 See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a list of the contributors to this pipeline.
 
@@ -85,6 +87,8 @@ In addition, you need to create the configuration file `config.yml` and ensure i
 
 To track the correct files in the created results, we suggest you copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
 This will track key results files, but not an excessive number of non-essential files.
+Note that the `docs` subdirectory created by the pipeline has a lot of large output files; this is convenient for rendering on GitHub Pages (see below) but is a lot to track via git.
+Therefore, you may want to initially include `docs` in the `.gitignore` and only remove it when you have the pipeline close to final and want to render the results on GitHub Pages.
 
 Finally, you need to create a `conda` environment that minimally includes the packages needed to run the pipeline, which are a recent version of [snakemake](https://snakemake.readthedocs.io/) and [pandas](https://pandas.pydata.org/).
 You can either create your own environment containing these, or simply build and use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. So if you are using that environment, you can simply run the pipeline with:
@@ -92,8 +96,6 @@ You can either create your own environment containing these, or simply build and
 conda activate seqneut-pipeline
 snakemake -j <n_jobs> --software-deployment-method conda
 ```
-
-Note also that a few rules have rule-specific `conda` environments in [./envs/](envs).
 
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
@@ -167,15 +169,18 @@ A/Michigan/45/2015
 ```
 
 ### curve_display_method
-How large panesl of neutralizatioin curves are displayed in the notebooks created by pipeline an drendered in the documentation.
+How large panels of neutralization curves are displayed in notebooks created by pipeline and rendered in the documentation.
 Set such as:
 ```
-curve_display_method: png8
+curve_display_method: svg
 ```
+
 Options are:
- - *inline*: display inline at matplotlib objects, best resolution leads to very large files
- - *png8*: show a `*.png8` files: lower resolution but leads to smaller files
- - *no_display*: do not show curves at all in notebooks; smallest files but then you cannot see curves
+  - *svg*: high-resolution SVGs, but large file sizes
+  - *pdf*: high-resolution PDFs, file size is smaller than *svg* however these may not render in some browsers (eg, Chrome)
+  - *png8*: lower-resolution PNG8 but much smaller file sizes
+  - *inline*: display as inline `matplotlib` plots, usually inferior to other options as both the largest file size and relatively poor resolution.
+
 
 ### neut_standard_sets
 A dictionary (mapping) of neutralization-standard set names to CSV files holding the barcodes for the neutralization standard set.
@@ -512,8 +517,7 @@ The set of full created outputs are as follows (note only some will be tracked d
 
   - Outputs related to processing each plate:
     - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
-    - `./results/plates/{plate}/process_{plate}.ipynb`: Jupyter notebook processing counts for a plate. You do not need to track this as an HTML version will be rendered in `./docs/` when pipeline runs successfully.
-    - `./results/plates/{plate}/process_{plate}.html`: HTML of Jupyter notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
+    - `./results/plates/{plate}/process_{plate}.html`: HTML of marimo notebook processing counts for a plate. You do not need to track this as it will be rendered in `./docs/` when pipeline runs successfully.
     - `./results/plates/{plate}/qc_drops.yml`: details on data (barcodes, wells, etc) dropped for failing QC when processing this plate.
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
@@ -524,34 +528,33 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/sera/{group}_{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the group/serum. You should track this file in the repo.
     - `./results/sera/{group}_{serum}/curves.pdf`: PDF rendering of the neutralization curves for the group/serum. You do not need to track this in the repo as a HTML version of a notebook containing the plots is tracked in `./docs/`.
     - `./results/sera/{group}_{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this group/serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.ipynb`: Jupyter notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as a HTML version of the notebook is tracked in `./docs/`.
-    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of the Jupyter notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
+    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of marimo notebook that aggregates titers for a group/serum across all plates. You do not need to track this in the repo as it will be rendered in `./docs/` when the pipeline runs successfully.
     - `./results/sera/{group}_{serum}/qc_drops.yml`: virus-group/serum titers dropped due to QC when processing this serum's titers.
 
   - Results related to aggregated titers across all sera in a group after applying all quality control:
     - `./results/aggregated_titers/titers_{group}.csv`: titers for all sera / virus in a group (median of replicates). You should track this file as it has the final processed results.
     - `./results/aggregated_titers/curvefits_{group}.pickle`: pickle file with the `neutcurve.CurveFits` object holding all final curves for a group. You do not need to track this in the repo, but if you have further code that makes specific plots you may want to use this.
     - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this in the repo as it is rendered in `./docs/` when the pipeline runs successfully.
-    - `./results/aggregated_titers/aggregate_titers.ipynb`: Jupyter notebook that aggregates all the titers. You do not need to track this in the repo.
 
   - Results summarizing data dropped due to QC:
     - `./results/qc_drops/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-plate. You should track this in repo.
     - `./results/qc_drops/barcode_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-barcode. You should track this in repo.
     - `./results/qc_drops/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
-    - `./results/qc_drops/aggregate_qc_drops.ipynb`: Jupypter notebook summarizing the QC drops. You do not need to track as an HTML version is rendered in `./docs/`
-    - `./results/qc_drops/aggregate_qc_drops.html`: HTML version Jupypter notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
+    - `./results/qc_drops/aggregate_qc_drops.html`: HTML of marimo notebook summarizing the QC drops. You do not need to track as it is rendered in `./docs/`
 
 ## Examining the output and setting appropriate QC values in the configuration
-When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML notebooks summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.
+When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML documentation summarizing the processing of each plate and sera are rendered in `./docs`, alongside a summary of all QC across all plates / sera.
 YAML summaries of the QC are also created.
 
-While the QC is designed to hopefully make reasonable default choices, you should **always** carefully look through these notebooks after adding new data, and potentially adjust the QC in the configuration and re-run.
+While the QC is designed to hopefully make reasonable default choices, you should **always** carefully look through this documentation after adding new data, and potentially adjust the QC in the configuration and re-run.
 
 ## Rendering HTML plots and notebooks in docs
 If the pipeline runs to completion, it will create HTML documentation with plots of the overall titers, per-serum titer analyses, per-plate analyses and overall QC summary in a docs subdirectory, which will typically named be `./docs/` (if you use suggested key in configuration YAML).
 This HTML documentation can be rendered via [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) from the `./docs/` directory.
 
 Looking at this documentation is a good way to QC the data and understand the results.
+
+Note however that the outputs in `./docs/` can be quite large, so you may want to put `docs` in your `.gitignore` until your analysis is mostly complete and you want to render final results on GitHub Pages.
 
 The documentation for the test example for this pipeline is at [https://jbloomlab.github.io/seqneut-pipeline/](https://jbloomlab.github.io/seqneut-pipeline/).
 
@@ -569,4 +572,20 @@ add_htmls_to_docs = {
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
 
-The code is tested by running this example, as well as formatted with [black](https://github.com/psf/black) and [snakefmt](https://github.com/snakemake/snakefmt) and linted with [ruff](https://github.com/astral-sh/ruff) and [snakemake --lint](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html) via the GitHub Action specified in [.github/workflows/test.yaml](.github/workflows/test.yaml).
+The code is tested by running this example, as well as formatted with [black](https://github.com/psf/black) and [snakefmt](https://github.com/snakemake/snakefmt) and linted with [ruff](https://github.com/astral-sh/ruff), [marimo check](https://docs.marimo.io/guides/editor_features/linting_and_formatting.html), and [snakemake --lint](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html) via the GitHub Action specified in [.github/workflows/test.yaml](.github/workflows/test.yaml).
+
+To manually run formatting and linting:
+```bash
+# Format code
+black .
+snakefmt .
+
+# Lint code
+ruff check .
+marimo check --ignore-scripts .
+cd test_example && snakemake --lint && cd ..
+```
+
+## Further developing the pipeline
+Please raise [GitHub issues](https://github.com/jbloomlab/seqneut-pipeline/issues) or [make a pull request](https://github.com/jbloomlab/seqneut-pipeline/pulls) to improve the pipeline.
+Do note that any updates should be described in the [CHANGELOG](CHANGELOG.md), and versions updated in [pyproject.toml](pyproject.toml).
