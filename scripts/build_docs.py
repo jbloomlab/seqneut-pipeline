@@ -1,6 +1,7 @@
 """Implements ``snakemake`` rule to translate gene sequence."""
 
 import os
+import time
 import shutil
 import sys
 
@@ -33,6 +34,8 @@ assert len(group_order) == len(set(group_order))
 
 md_text = [
     snakemake.params.description,
+    "",
+    f"Documentation of results rendered as of {time.asctime()}",
     "",
     # table of contents: https://python-markdown.github.io/extensions/toc/
     "[TOC]",
