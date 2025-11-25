@@ -265,6 +265,8 @@ def _(
         bind="legend",
         toggle="true",
         empty=False,
+        on="mouseover",
+        clear="mouseout",
     )
 
     group_selection = alt.selection_point(
