@@ -16,7 +16,7 @@ Please cite [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) if you use
 Here is a list of studies using this pipeline:
   - [Kikawa et al (2025), Virus Evolution](https://doi.org/10.1093/ve/veaf086)
   - [Kikawa et al (2025), eLife](https://doi.org/10.7554/eLife.106811)
-  - [Loes et al (2024), Virus Evolution](https://doi.org/10.1128/jvi.00689-24)
+  - [Loes et al (2024), Journal of Virology](https://doi.org/10.1128/jvi.00689-24)
 
 For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025).
 
