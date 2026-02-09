@@ -575,6 +575,8 @@ add_htmls_to_docs = {
 }
 ```
 
+You can have one level of nesting in these docs to allow subheadings.
+
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
 

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### version 6.2.0
+Allow one level of nesting in `add_htmls_to_docs`.
+
 ### version 6.1.0
 Add more information to the invalid barcodes CSV produced by *count_barcodes*, specifying the closest valid barcode, the Hamming distance to the closest valid barcode, and the counts of the closest valid barcode. Also for valid and invalid barcodes report fraction of all barcode reads (valid and invalid) that map to that barcode. Addresses [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/81).
 

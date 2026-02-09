@@ -73,8 +73,15 @@ md_text += [
 
 for heading, heading_d in snakemake.params.add_htmls_to_docs.items():
     md_text += ["", f"## {heading}"]
-    for name, fname in heading_d.items():
-        md_text.append(f"- [{name}]({os.path.basename(copied_files[fname])})")
+    for name, value in heading_d.items():
+        if isinstance(value, dict):
+            md_text += ["", f"### {name}"]
+            for sub_name, sub_fname in value.items():
+                md_text.append(
+                    f"- [{sub_name}]({os.path.basename(copied_files[sub_fname])})"
+                )
+        else:
+            md_text.append(f"- [{name}]({os.path.basename(copied_files[value])})")
 
 md_text = "\n".join(md_text)
 
