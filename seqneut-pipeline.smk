@@ -286,7 +286,12 @@ if plates:
     rule build_docs:
         """Build the HTML documentation."""
         input:
-            lambda wc: [f for d in add_htmls_to_docs.values() for f in d.values()],
+            lambda wc: [
+                f
+                for d in add_htmls_to_docs.values()
+                for v in d.values()
+                for f in (v.values() if isinstance(v, dict) else [v])
+            ],
             titers_chart=rules.aggregate_titers.output.titers_chart,
             serum_titers_htmls=lambda wc: [
                 f"results/sera/{group}_{serum}/{group}_{serum}_titers.html"
@@ -304,7 +309,14 @@ if plates:
             groups_sera=lambda wc: list(groups_sera_plates()),
             plates={plate: plates[plate]["group"] for plate in plates},
             add_htmls_to_docs=lambda wc: {
-                key: {key2: str(val2) for (key2, val2) in val.items()}
+                key: {
+                    key2: (
+                        {k3: str(v3) for k3, v3 in val2.items()}
+                        if isinstance(val2, dict)
+                        else str(val2)
+                    )
+                    for (key2, val2) in val.items()
+                }
                 for (key, val) in add_htmls_to_docs.items()
             },
         conda:
