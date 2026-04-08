@@ -7,7 +7,6 @@ Designed to be included in another ``Snakefile`` that specifies the config.
 import pandas as pd
 import re
 
-
 snakemake.utils.min_version("9.0")
 
 
@@ -90,6 +89,10 @@ if plates:
             counts="results/barcode_counts/{sample}.csv",
             invalid="results/barcode_invalid/{sample}.csv",
             fates="results/barcode_fates/{sample}.csv",
+        log:
+            "results/logs/count_barcodes_{sample}.txt",
+        conda:
+            "environment.yml"
         params:
             viral_barcodes=lambda wc: sorted(
                 viral_libraries[plates[samples[wc.sample]["plate"]]["viral_library"]][
@@ -104,10 +107,6 @@ if plates:
             illumina_barcode_parser_params=lambda wc: plates[
                 samples[wc.sample]["plate"]
             ]["illumina_barcode_parser_params"],
-        conda:
-            "environment.yml"
-        log:
-            "results/logs/count_barcodes_{sample}.txt",
         script:
             "scripts/count_barcodes.py"
 
@@ -132,6 +131,8 @@ if plates:
             fits_pickle="results/plates/{plate}/curvefits.pickle",
         log:
             "results/logs/process_{plate}.txt",
+        conda:
+            "environment.yml"
         params:
             # pass DataFrames/Series as dict/list for snakemake params rerun triggers
             viral_barcodes=lambda wc: (
@@ -154,8 +155,6 @@ if plates:
                 for (param, val) in plates[wc.plate].items()
             },
             curve_display_method=config["curve_display_method"],
-        conda:
-            "environment.yml"
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
@@ -165,12 +164,12 @@ if plates:
             csvs=expand(rules.process_plate.output.fits_csv, plate=plates),
         output:
             csv="results/sera/groups_sera_by_plate.csv",
-        params:
-            plates=list(plates),
         log:
             "results/logs/groups_sera_by_plate.txt",
         conda:
             "environment.yml"
+        params:
+            plates=list(plates),
         script:
             "scripts/groups_sera_by_plate.py"
 
@@ -190,6 +189,10 @@ if plates:
             curves_pdf="results/sera/{group}_{serum}/curves.pdf",
             pickle="results/sera/{group}_{serum}/curvefits.pickle",
             qc_drops="results/sera/{group}_{serum}/qc_drops.yml",
+        log:
+            "results/logs/group_serum_titers_{group}_{serum}.txt",
+        conda:
+            "environment.yml"
         params:
             viral_strain_plot_order=viral_strain_plot_order,
             curve_display_method=config["curve_display_method"],
@@ -217,10 +220,6 @@ if plates:
                 )
                 else config["default_serum_qc_thresholds"]
             ),
-        log:
-            "results/logs/group_serum_titers_{group}_{serum}.txt",
-        conda:
-            "environment.yml"
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
@@ -245,14 +244,14 @@ if plates:
             ],
             titers=[f"results/aggregated_titers/titers_{group}.csv" for group in groups],
             titers_chart="results/aggregated_titers/titers.html",
+        log:
+            "results/logs/aggregate_titers.txt",
+        conda:
+            "environment.yml"
         params:
             viral_strain_plot_order=viral_strain_plot_order,
             groups_sera=lambda wc: list(groups_sera_plates()),
             groups=groups,
-        conda:
-            "environment.yml"
-        log:
-            "results/logs/aggregate_titers.txt",
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
@@ -273,13 +272,13 @@ if plates:
             plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
             barcode_qc_drops="results/qc_drops/barcode_qc_drops.yml",
             groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
+        log:
+            "results/logs/aggregate_qc_drops.txt",
+        conda:
+            "environment.yml"
         params:
             plates=list(plates),
             groups_sera=lambda wc: list(groups_sera_plates()),
-        conda:
-            "environment.yml"
-        log:
-            "results/logs/aggregate_qc_drops.txt",
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
@@ -304,6 +303,10 @@ if plates:
             qc_drops_html="results/qc_drops/aggregate_qc_drops.html",
         output:
             docs=directory("results/docs"),
+        log:
+            "results/logs/build_docs.txt",
+        conda:
+            "environment.yml"
         params:
             description=config["description"],
             groups_sera=lambda wc: list(groups_sera_plates()),
@@ -319,10 +322,6 @@ if plates:
                 }
                 for (key, val) in add_htmls_to_docs.items()
             },
-        conda:
-            "environment.yml"
-        log:
-            "results/logs/build_docs.txt",
         script:
             "scripts/build_docs.py"
 
@@ -335,6 +334,10 @@ rule miscellaneous_plate_count_barcodes:
         counts="results/miscellaneous_plates/{misc_plate}/{well}_counts.csv",
         invalid="results/miscellaneous_plates/{misc_plate}/{well}_invalid.csv",
         fates="results/miscellaneous_plates/{misc_plate}/{well}_fates.csv",
+    log:
+        "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
+    conda:
+        "environment.yml"
     params:
         viral_barcodes=lambda wc: sorted(
             viral_libraries[miscellaneous_plates[wc.misc_plate]["viral_library"]][
@@ -349,10 +352,6 @@ rule miscellaneous_plate_count_barcodes:
         illumina_barcode_parser_params=lambda wc: miscellaneous_plates[wc.misc_plate][
             "illumina_barcode_parser_params"
         ],
-    conda:
-        "environment.yml"
-    log:
-        "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
     script:
         "scripts/count_barcodes.py"
 

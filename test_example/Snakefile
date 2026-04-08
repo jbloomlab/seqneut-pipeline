@@ -23,18 +23,14 @@ rule make_extra_html_for_docs:
         "results/logs/make_extra_html_for_docs.txt",
     run:
         with open(output.html, "w") as f:
-            f.write(
-                textwrap.dedent(
-                    """\
+            f.write(textwrap.dedent("""\
                     <!DOCTYPE html>
                     <html lang="en">
                       <body>
                         Example HTML file
                       </body>
                     </html>
-                    """
-                )
-            )
+                    """))
 
 
 # add extra HTML to docs
