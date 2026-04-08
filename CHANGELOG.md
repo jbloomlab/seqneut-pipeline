@@ -1,5 +1,8 @@
 # CHANGELOG
 
+#### version 6.2.1
+- Set target version for `black` to Python 3.13 in `pyproject.toml`.
+
 ### version 6.2.0
 Allow one level of nesting in `add_htmls_to_docs`.
 
