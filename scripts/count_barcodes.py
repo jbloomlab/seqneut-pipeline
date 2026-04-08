@@ -62,14 +62,14 @@ valid_barcodes_df = (
 # write valid barcode counts including a 0 count for missing ones
 (
     valid_barcodes_df.sort_values(["count", "barcode"], ascending=[False, True])
-    .assign(fraction_all_valid_and_invalid_counts=lambda x: x["count"] / total_counts)
+    .assign(fraction_all_valid_and_invalid_counts=lambda x: x["count"] / total_counts if total_counts > 0 else 0)
     .to_csv(snakemake.output.counts, index=False, float_format="%.3g")
 )
 
 # process invalid barcodes and find closest valid barcode for each
 invalid_barcodes_df = (
     counts.query("barcode not in @valid_barcodes")
-    .assign(fraction_all_valid_and_invalid_counts=lambda x: x["count"] / total_counts)
+    .assign(fraction_all_valid_and_invalid_counts=lambda x: x["count"] / total_counts if total_counts > 0 else 0)
     .copy()
 )
 
