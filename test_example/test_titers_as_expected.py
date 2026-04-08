@@ -6,7 +6,6 @@ import numpy
 
 import pandas as pd
 
-
 expected_titers = (
     pd.read_csv("expected_titers_for_test.csv")
     .assign(log10_titer=lambda x: numpy.log10(x["titer"]))[

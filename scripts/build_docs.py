@@ -8,7 +8,6 @@ import sys
 import markdown
 import markdown.extensions.toc
 
-
 sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
 
 copied_files = {
