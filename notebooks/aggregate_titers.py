@@ -128,12 +128,10 @@ def _(context, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Aggregate titers across all sera
     Aggregate the titers across all sera.
-    """
-    )
+    """)
     return
 
 
@@ -174,12 +172,10 @@ def _(groups, groups_sera):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Write merged titers for each group
     Get the merged titers and merged `CurveFits` object:
-    """
-    )
+    """)
     return
 
 
@@ -228,11 +224,9 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Plot all the titers
-    """
-    )
+    """)
     return
 
 

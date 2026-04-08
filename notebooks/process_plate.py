@@ -12,14 +12,12 @@ app = marimo.App(width="full")
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Process plate counts to get fraction infectivities and fit curves
     This notebook analyzes a plate of sequencing-based neutralization assays.
 
     The plots are interactive, so you can mouseover points for details, use the mouse-scroll to zoom and pan, and use interactive dropdowns at the bottom of the plots.
-    """
-    )
+    """)
     return
 
 
@@ -265,8 +263,7 @@ def _(manual_drops):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Statistics on barcode-parsing for each sample
     Make interactive chart of the "fates" of the sequencing reads parsed for each sample on the plate.
 
@@ -281,8 +278,7 @@ def _(mo):
      - *failed chastity filter*: reads that failed the Illumina chastity filter, if these are reported in the FASTQ (they may not be).
 
     Also, if the number of reads per sample is very uneven, that could indicate that you did not do a good job of balancing the different samples in the Illumina sequencing.
-    """
-    )
+    """)
     return
 
 
@@ -353,12 +349,10 @@ def _(alt, fate_csvs, pd, plate, samples, samples_df):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Read barcode counts and apply manually specified drops
     Read the counts per barcode, then apply any manually specified drops.
-    """
-    )
+    """)
     return
 
 
@@ -458,22 +452,18 @@ def _(counts, manual_drops, mo, qc_drops):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Average counts per barcode in each well
-    """
-    )
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Plot average counts per barcode.
     If a sample has inadequate barcode counts, it may not have good enough statistics for accurate analysis, and a QC-threshold is applied:
-    """
-    )
+    """)
     return
 
 
@@ -562,12 +552,10 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Fraction of counts from neutralization standard
     Determine the fraction of counts from the neutralization standard in each sample, and make sure this fraction passess the QC threshold.
-    """
-    )
+    """)
     return
 
 
@@ -668,8 +656,7 @@ def _(counts_qc_2, mo, neut_standard_fracs, qc_drops, qc_thresholds):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Consistency and minimum fractions for barcodes
     We examine the fraction of counts attributable to each barcode. We do this splitting the data two ways:
 
@@ -683,8 +670,7 @@ def _(mo):
     We plot these fractions in interactive plots (you can mouseover points and zoom) so you can identify barcodes that fail the expected consistency QC thresholds.
 
     We also make sure the barcodes meet specified QC minimum thresholds for all samples, and flag any that do not.
-    """
-    )
+    """)
     return
 
 
@@ -831,8 +817,7 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Compute fraction infectivity
 
     The fraction infectivity for viral barcode $v_b$ in sample $s$ is computed as:
@@ -848,8 +833,7 @@ def _(mo):
 
     First, compute the total neutralization-standard counts for each sample (well).
     Plot these, and drop any wells that do not meet the QC threshold.
-    """
-    )
+    """)
     return
 
 
@@ -947,11 +931,9 @@ def _(counts_qc_4, mo, neut_standard_counts, qc_drops, qc_thresholds):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Compute and plot the no-serum sample viral barcode counts and check if they pass the QC filters.
-    """
-    )
+    """)
     return
 
 
@@ -1066,12 +1048,10 @@ def _(counts_qc_5, mo, no_serum_counts, qc_drops, qc_thresholds):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Compute and plot the median ratio of viral barcode count to neut standard counts across no-serum samples.
     If library composition is equal, all of these values should be similar:
-    """
-    )
+    """)
     return
 
 
@@ -1137,12 +1117,10 @@ def _(alt, no_serum_counts_1, pd, plate):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Compute and plot the actual fraction infectivities.
     We compute both the raw fraction infectivities and the ones with the ceiling applied:
-    """
-    )
+    """)
     return
 
 
@@ -1374,11 +1352,9 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Check how many dilutions we have per barcode / serum-replicate:
-    """
-    )
+    """)
     return
 
 
@@ -1481,13 +1457,11 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Fit neutralization curves without applying QC to curves
     First fit curves to all serum replicates, then we will apply QC on the curve fits.
     Note that the fitting is done to the fraction infectivities **with** the ceiling.
-    """
-    )
+    """)
     return
 
 
@@ -1514,12 +1488,10 @@ def _(curvefit_params, frac_infectivity_2, neutcurve):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Determine which fits fail the curve fitting QC, and plot them.
     Note the plot indicates as failing QC any barcode / serum-replicate that fails, even if we are also specified to ignore the QC for that one (so it will not be removed later):
-    """
-    )
+    """)
     return
 
 
@@ -1618,12 +1590,10 @@ def _(alt, barcode_selection, curvefit_qc, fit_params_noqc, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Now plot curves for all virus vs serum-replicates that have a barcode that fails any of the QC.
     In these plots, the suffix on the barcode name in the color key indicates if it passed or failed QC:
-    """
-    )
+    """)
     return
 
 
@@ -1741,12 +1711,10 @@ def _(curvefit_qc, fit_params_noqc, frac_infectivity_2, mo, qc_drops):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Fit neutralization curves after applying QC
     No we re-fit and plot curves after applying all the QC.
-    """
-    )
+    """)
     return
 
 
@@ -1798,11 +1766,9 @@ def _(curve_display_method, display_fig_marimo, fits_qc, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Save results to files
-    """
-    )
+    """)
     return
 
 

@@ -4,7 +4,6 @@ import sys
 
 import pandas as pd
 
-
 sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
 
 plates = snakemake.params.plates

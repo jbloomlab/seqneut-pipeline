@@ -12,12 +12,10 @@ app = marimo.App(width="full")
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Titers for a serum in a group
     Analyze titers for a serum assigned to a group, aggregating replicates which may be across multiple plates.
-    """
-    )
+    """)
     return
 
 
@@ -187,12 +185,10 @@ def _(context, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Get all titers for this plate
     Combine all the pickled `neutcurve.CurveFits` from plates for this serum into a single `neutcurve.CurveFits`:
-    """
-    )
+    """)
     return
 
 
@@ -213,11 +209,9 @@ def _(group, mo, neutcurve, pickle, pickle_fits, serum):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Indicate how we are calculating the titer:
-    """
-    )
+    """)
     return
 
 
@@ -230,12 +224,10 @@ def _(mo, serum_titer_as):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Get all the per-replicate fit params with the titers.
     We also convert the IC50 to NT50, and take inverse of midpoint to get it on same scale as NT50s:
-    """
-    )
+    """)
     return
 
 
@@ -295,15 +287,13 @@ def _(fits_noqc, group, mo, serum, serum_titer_as, viral_strain_plot_order):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Correlate NT50s with midpoints of curves
     Plot the correlation of the NT50s with the midpoint (this is an interactive plot, mouse over points for details).
     This plot can help you determine if you made the correct choice of `serum_titer_as` when choosing to use the midpoint or NT50 for the titer.
     For titers where they are well correlated it should not matter which you chose.
     But if there are titers far from the correlation line, you should look at those measurements and curves to make sure you made the correct choice of calculating the titer as the NT50 versus midpoint:
-    """
-    )
+    """)
     return
 
 
@@ -339,11 +329,9 @@ def _(alt, group, mo, per_rep_titers, serum):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Write the individual per-replicate titers to a file, this is before any QC has been applied:
-    """
-    )
+    """)
     return
 
 
@@ -360,13 +348,11 @@ def _(mo, per_rep_titers, per_rep_titers_csv):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Plot median titers and determine if they pass QC
     Get the median titers for each virus across replicates, then add these median titers to the per-replicate titers and calculate the fold-change in titer between each replicate and its median.
     Finally, for each virus indicate whether it passes the QC:
-    """
-    )
+    """)
     return
 
 
@@ -465,12 +451,10 @@ def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Now plot the per-replicate and median titers, indicating any viruses that failed QC.
     Note that potentially some of these titers may still be retained if the viruses in question are specified in `viruses_ignore_qc` of `qc_thresholds`.
-    """
-    )
+    """)
     return
 
 
@@ -550,13 +534,11 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Plot individual curves for any viruses failing QC
     Plot individual curves for viruses failing QC.
     Note that potentially some of these titers may still be retained if the viruses in question are specified in `viruses_ignore_qc` of `qc_thresholds`.
-    """
-    )
+    """)
     return
 
 
@@ -606,12 +588,10 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Get the viruses to drop for QC failures
     Drop any viruses that fail QC and are not specified in `viruses_ignore_qc` of `qc_thresholds`.
-    """
-    )
+    """)
     return
 
 
@@ -646,12 +626,10 @@ def _(io, mo, qc_drops_file, qc_thresholds, viruses_failing_qc, yaml):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Get and plot the neutralization curves for all retained viruses
     First, get the `CurveFits` for just those retained viruses (dropping ones that fail QC), and plot:
-    """
-    )
+    """)
     return
 
 
@@ -703,11 +681,9 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Save the `CurveFits` to a pickle file:
-    """
-    )
+    """)
     return
 
 
@@ -722,11 +698,9 @@ def _(fits_qc, mo, output_pickle, pickle):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Write the titers (excluding QC dropped viruses) to a CSV:
-    """
-    )
+    """)
     return
 
 

@@ -126,11 +126,9 @@ def _(context, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     # Aggregate and analyze the drops from QC-ing the plates and sera
-    """
-    )
+    """)
     return
 
 
@@ -150,13 +148,11 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Analyze plate QC drops
     Read QC drops for individual plates into a merged dictionary, write it to YAML, and also convert to a DataFrame.
     If you really want to look into the details of what is being dropped, you will want to look at that merged YAML file.
-    """
-    )
+    """)
     return
 
 
@@ -200,12 +196,10 @@ def _(pd, plate_qc_drops_df):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Now plot the number of drops for each plate.
     You should be worried (maybe re-do or discard) any plates with a very large number of drops:
-    """
-    )
+    """)
     return
 
 
@@ -262,14 +256,12 @@ def _(alt, plate_qc_drop_counts, plates):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Analyze barcode QC drops
     If a barcode is dropped especially often across plates, that could indicate something problematic with that barcode such that it should be removed altogether from the library analysis.
 
     First, write a YAML with this information:
-    """
-    )
+    """)
     return
 
 
@@ -315,11 +307,9 @@ def _(mo, output_barcode_qc_drops, plate_qc_drops, yaml):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Now make a plot showing how often each barcode is dropped for each reason:
-    """
-    )
+    """)
     return
 
 
@@ -385,15 +375,13 @@ def _(alt, barcode_drops):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ## Analyze the groups/sera QC
     Analyze the QC performed on the groups/sera, which involves completely dropping titers for certain virus-sera pairs.
 
     Read the QC for different groups/sera into a merged dictionary, write it to YAML, and also convert to a DataFrame.
     If you really want to look into the details of what is being dropped, you will want to look at that merged YAML file.
-    """
-    )
+    """)
     return
 
 
@@ -438,12 +426,10 @@ def _(
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Plot the number of viruses dropped for each group/serum.
     If a group/serum has many missed viruses, then you will lack a lot of titers and so it may be worth reviewing the cause of the drops.
-    """
-    )
+    """)
     return
 
 
@@ -481,12 +467,10 @@ def _(alt, groups_sera_qc_drops_df, pd):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     Plot the number of sera for which each virus is dropped during serum QC.
     If a virus is dropped for many sera, that may indicate some issue with that virus in assays:
-    """
-    )
+    """)
     return
 
 
