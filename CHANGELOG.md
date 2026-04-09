@@ -2,6 +2,7 @@
 
 #### version 6.2.1
 - Set target version for `black` to Python 3.13 in `pyproject.toml`.
+- Fix divide by zero error if no barcode counts ([this pull request](https://github.com/jbloomlab/seqneut-pipeline/pull/85/changes) addressing [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/83)).
 
 ### version 6.2.0
 Allow one level of nesting in `add_htmls_to_docs`.
