@@ -1,6 +1,6 @@
 [project]
 name = "seqneut-pipeline"
-version = "6.2.1"
+version = "6.3.0"
 description = "Modular analysis pipeline for high-throughput sequencing-based neutralization assays"
 readme = "README.md"
 license = {text = "MIT"}
