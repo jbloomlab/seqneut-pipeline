@@ -1,5 +1,13 @@
 # CHANGELOG
 
+### version 6.3.0
+- Update package versions (helps fix `snakemake` error when using `nextstrain-prot-titers-tree` by matching versions):
+  + marimo: 0.17.6 -> 0.23
+  + markdown: 3.9 -> 3.10
+  + pillow: 12.0 -> 12.2
+  + ruamel.yaml: 0.18.15 -> 0.19
+  + snakemake: 9.13.2 -> 9.19
+
 #### version 6.2.1
 - Set target version for `black` to Python 3.13 in `pyproject.toml`.
 - Fix divide by zero error if no barcode counts ([this pull request](https://github.com/jbloomlab/seqneut-pipeline/pull/85/changes) addressing [this issue](https://github.com/jbloomlab/seqneut-pipeline/issues/83)).
