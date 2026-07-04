@@ -148,6 +148,10 @@ def _(context, mo):
     serum_titer_as = context["params"]["serum_titer_as"]
     qc_thresholds = context["params"]["qc_thresholds"]
     curve_display_method = context["params"]["curve_display_method"]
+    dilution_factor_or_concentration = context["params"][
+        "dilution_factor_or_concentration"
+    ]
+    concentration_units = context["params"]["concentration_units"]
     serum = context["wildcards"]["serum"]
     group = context["wildcards"]["group"]
 
@@ -168,8 +172,10 @@ def _(context, mo):
 
     mo.output.append(mo.md(f"Processing `{group=}`, `{serum=}`"))
     return (
+        concentration_units,
         curve_display_method,
         curves_pdf,
+        dilution_factor_or_concentration,
         group,
         output_pickle,
         per_rep_titers_csv,
@@ -216,9 +222,12 @@ def _(mo):
 
 
 @app.cell
-def _(mo, serum_titer_as):
+def _(dilution_factor_or_concentration, mo, serum_titer_as):
     mo.output.append(mo.md(f"Calculating with `serum_titer_as={serum_titer_as!r}`"))
-    assert serum_titer_as in {"nt50", "midpoint"}
+    if dilution_factor_or_concentration == "dilution_factor":
+        assert serum_titer_as in {"nt50", "midpoint"}, serum_titer_as
+    else:
+        assert serum_titer_as in {"ic50", "midpoint"}, serum_titer_as
     return
 
 
@@ -232,41 +241,95 @@ def _(mo):
 
 
 @app.cell
-def _(fits_noqc, group, mo, serum, serum_titer_as, viral_strain_plot_order):
-    per_rep_titers = fits_noqc.fitParams(average_only=False, no_average=True).assign(
+def _(
+    concentration_units,
+    dilution_factor_or_concentration,
+    fits_noqc,
+    group,
+    mo,
+    serum,
+    serum_titer_as,
+    viral_strain_plot_order,
+):
+    _fit_params = fits_noqc.fitParams(average_only=False, no_average=True).assign(
         group=group,
-        nt50=lambda x: 1 / x["ic50"],
-        midpoint=lambda x: 1 / x["midpoint_bound"],
-        titer=lambda x: x["midpoint"] if serum_titer_as == "midpoint" else x["nt50"],
-        titer_bound=lambda x: (
-            x["midpoint_bound_type"]
-            if serum_titer_as == "midpoint"
-            else x["ic50_bound"]
-        ).map({"lower": "upper", "upper": "lower", "interpolated": "interpolated"}),
-        titer_as=serum_titer_as,
-    )[
-        [
-            "group",
-            "serum",
-            "virus",
-            "replicate",
-            "titer",
-            "titer_bound",
-            "titer_as",
-            "nt50",
-            "midpoint",
-            "top",
-            "bottom",
-            "slope",
+    )
+    if dilution_factor_or_concentration == "dilution_factor":
+        # titer is a reciprocal serum dilution: convert IC50 to NT50 and take the
+        # inverse of the midpoint to put it on the same scale. Taking the reciprocal
+        # flips the direction of a bound, so map lower <-> upper.
+        per_rep_titers = _fit_params.assign(
+            nt50=lambda x: 1 / x["ic50"],
+            midpoint=lambda x: 1 / x["midpoint_bound"],
+            titer=lambda x: (
+                x["midpoint"] if serum_titer_as == "midpoint" else x["nt50"]
+            ),
+            titer_bound=lambda x: (
+                x["midpoint_bound_type"]
+                if serum_titer_as == "midpoint"
+                else x["ic50_bound"]
+            ).map({"lower": "upper", "upper": "lower", "interpolated": "interpolated"}),
+            titer_as=serum_titer_as,
+            titer_units="reciprocal_dilution",
+        )[
+            [
+                "group",
+                "serum",
+                "virus",
+                "replicate",
+                "titer",
+                "titer_bound",
+                "titer_as",
+                "titer_units",
+                "nt50",
+                "midpoint",
+                "top",
+                "bottom",
+                "slope",
+            ]
         ]
-    ]
+    else:
+        # titer is the fitted concentration directly (e.g. IC50 in `concentration_units`);
+        # no reciprocal is taken, so bounds are reported as-is (no lower <-> upper swap).
+        per_rep_titers = _fit_params.assign(
+            midpoint=lambda x: x["midpoint_bound"],
+            titer=lambda x: (
+                x["midpoint"] if serum_titer_as == "midpoint" else x["ic50"]
+            ),
+            titer_bound=lambda x: (
+                x["midpoint_bound_type"]
+                if serum_titer_as == "midpoint"
+                else x["ic50_bound"]
+            ),
+            titer_as=serum_titer_as,
+            titer_units=concentration_units,
+        )[
+            [
+                "group",
+                "serum",
+                "virus",
+                "replicate",
+                "titer",
+                "titer_bound",
+                "titer_as",
+                "titer_units",
+                "ic50",
+                "midpoint",
+                "top",
+                "bottom",
+                "slope",
+            ]
+        ]
     assert per_rep_titers.notnull().all().all()
 
     if len(
-        invalid_titer_as := per_rep_titers.query("(titer_as == 'nt50') and top <= 0.5")
+        invalid_titer_as := per_rep_titers.query(
+            "(titer_as in ['nt50', 'ic50']) and top <= 0.5"
+        )
     ):
         raise ValueError(
-            f"There are titers computed as nt50 when curve top <= 0.5:\n{invalid_titer_as}"
+            "There are titers computed as nt50/ic50 when curve top <= 0.5:\n"
+            f"{invalid_titer_as}"
         )
     assert len(per_rep_titers) == per_rep_titers["replicate"].nunique()
 
@@ -298,15 +361,19 @@ def _(mo):
 
 
 @app.cell
-def _(alt, group, mo, per_rep_titers, serum):
+def _(alt, dilution_factor_or_concentration, group, mo, per_rep_titers, serum):
     _virus_selection_1 = alt.selection_point(
         fields=["virus"], on="mouseover", empty=False
+    )
+    # the per-replicate potency column is 'nt50' (dilution) or 'ic50' (concentration)
+    _potency_col = (
+        "nt50" if dilution_factor_or_concentration == "dilution_factor" else "ic50"
     )
     midpoint_vs_nt50_chart = (
         alt.Chart(per_rep_titers)
         .add_params(_virus_selection_1)
         .encode(
-            alt.X("nt50", scale=alt.Scale(type="log", nice=False, padding=8)),
+            alt.X(_potency_col, scale=alt.Scale(type="log", nice=False, padding=8)),
             alt.Y("midpoint", scale=alt.Scale(type="log", nice=False, padding=8)),
             alt.Color("titer_bound"),
             strokeWidth=alt.condition(_virus_selection_1, alt.value(3), alt.value(0)),
@@ -319,7 +386,9 @@ def _(alt, group, mo, per_rep_titers, serum):
         )
         .mark_circle(stroke="black", fillOpacity=0.45, color="black")
         .properties(
-            width=350, height=350, title=f"NT50 versus midpoint for {group} {serum}"
+            width=350,
+            height=350,
+            title=f"{_potency_col.upper()} versus midpoint for {group} {serum}",
         )
         .configure_axis(grid=False)
     )
@@ -377,7 +446,7 @@ def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
 
     median_titers_noqc = (
         per_rep_titers.sort_values("titer")  # for getting median bound
-        .groupby(["group", "serum", "virus", "titer_as"], as_index=False)
+        .groupby(["group", "serum", "virus", "titer_as", "titer_units"], as_index=False)
         .aggregate(
             titer=pd.NamedAgg("titer", "median"),
             n_replicates=pd.NamedAgg("replicate", "count"),
@@ -461,6 +530,8 @@ def _(mo):
 @app.cell
 def _(
     alt,
+    concentration_units,
+    dilution_factor_or_concentration,
     group,
     median_titers_noqc,
     mo,
@@ -472,10 +543,19 @@ def _(
     _virus_selection_2 = alt.selection_point(
         fields=["virus"], on="mouseover", empty=False
     )
+    _titer_axis_title = (
+        "titer"
+        if dilution_factor_or_concentration == "dilution_factor"
+        else f"titer ({concentration_units})"
+    )
     per_rep_chart = (
         alt.Chart(per_rep_titers_w_fc)
         .encode(
-            alt.X("titer", scale=alt.Scale(nice=False, padding=5, type="log")),
+            alt.X(
+                "titer",
+                title=_titer_axis_title,
+                scale=alt.Scale(nice=False, padding=5, type="log"),
+            ),
             alt.Y("virus", sort=viruses),
             alt.Fill(
                 "fails_qc",
@@ -500,7 +580,11 @@ def _(
     median_chart = (
         alt.Chart(median_titers_noqc)
         .encode(
-            alt.X("titer", scale=alt.Scale(nice=False, padding=5, type="log")),
+            alt.X(
+                "titer",
+                title=_titer_axis_title,
+                scale=alt.Scale(nice=False, padding=5, type="log"),
+            ),
             alt.Y("virus", sort=viruses),
             alt.Fill("fails_qc"),
             alt.Shape("titer_bound"),
@@ -719,6 +803,7 @@ def _(median_titers_noqc, mo, titers_csv):
                 "titer_sem",
                 "n_replicates",
                 "titer_as",
+                "titer_units",
             ]
         ].to_csv(titers_csv, index=False, float_format="%.4g")
     )

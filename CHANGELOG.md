@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## version 7.0.0
+Add support for titrating a `concentration` (e.g. an antibody at some µg/ml) as an alternative to a serum `dilution_factor`.
+A plate can now set `dilution_factor_or_concentration: concentration` (default is `dilution_factor`, so existing configs are unchanged) together with a `concentration_units` value (e.g. `ug/ml`).
+Such a plate's `samples_csv` must have a `concentration` column instead of `dilution_factor`.
+For a concentration, the value is used directly as the curve-fitting concentration (rather than taking the reciprocal), and the reported titer is the fitted IC50 (or midpoint) in the given units, with `serum_titer_as` accepting `ic50` or `midpoint`.
+All plates in a group must share the same `dilution_factor_or_concentration` and `concentration_units`.
+
+This is a major version bump because of two output changes that affect **all** projects (not just those using concentrations):
+  - The aggregated interactive titers plot is now written as **one plot per group** at `results/aggregated_titers/titers_{group}.html`, replacing the previous single combined `results/aggregated_titers/titers.html`. The GitHub Pages docs now link to one titers plot per group. (Besides being cleaner, this avoids plotting incomparable titers, such as reciprocal dilutions vs. concentrations, on a shared axis.)
+  - Every titers CSV now has a `titer_units` column (`reciprocal_dilution` in dilution-factor mode, or the plate's `concentration_units` in concentration mode).
+
 ### version 6.3.0
 - Update package versions (helps fix `snakemake` error when using `nextstrain-prot-titers-tree` by matching versions):
   + marimo: 0.17.6 -> 0.23

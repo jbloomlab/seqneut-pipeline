@@ -84,9 +84,44 @@ def process_plate(plate, plate_params):
             plate_params["illumina_barcode_parser_params"]
         )
 
-    # Process samples_csv to create the sample data frame
-    req_sample_cols = ["well", "serum", "dilution_factor", "replicate", "fastq"]
+    # determine whether this plate uses 'dilution_factor' or 'concentration'
+    dilution_factor_or_concentration = plate_params.get(
+        "dilution_factor_or_concentration", "dilution_factor"
+    )
+    if dilution_factor_or_concentration not in {"dilution_factor", "concentration"}:
+        raise ValueError(
+            f"{plate=} has invalid {dilution_factor_or_concentration=}; must be "
+            "'dilution_factor' or 'concentration'"
+        )
+    concentration_units = plate_params.get("concentration_units")
+    if dilution_factor_or_concentration == "concentration":
+        if not concentration_units:
+            raise ValueError(
+                f"{plate=} uses 'concentration' but lacks a 'concentration_units' value"
+            )
+    elif concentration_units is not None:
+        raise ValueError(
+            f"{plate=} specifies 'concentration_units' but is not using 'concentration' "
+            "(set 'dilution_factor_or_concentration: concentration' to use it)"
+        )
+    plate_d["dilution_factor_or_concentration"] = dilution_factor_or_concentration
+    plate_d["concentration_units"] = concentration_units
+
+    # Process samples_csv to create the sample data frame; the value of
+    # 'dilution_factor_or_concentration' is also the name of the samples_csv column
+    req_sample_cols = [
+        "well",
+        "serum",
+        dilution_factor_or_concentration,
+        "replicate",
+        "fastq",
+    ]
     samples_df = pd.read_csv(plate_params["samples_csv"], comment="#")
+    if {"dilution_factor", "concentration"}.issubset(samples_df.columns):
+        raise ValueError(
+            f"{plate=} 'samples_csv' has both 'dilution_factor' and 'concentration' "
+            "columns; include only the one matching 'dilution_factor_or_concentration'"
+        )
     if not set(req_sample_cols).issubset(samples_df.columns):
         raise ValueError(f"{plate=} {samples_df.columns=} lacks {req_sample_cols=}")
 
@@ -94,7 +129,11 @@ def process_plate(plate, plate_params):
         raise ValueError(f"{plate=} 'samples_csv' has null values in 'serum' column")
 
     # try to turn columns of ints and NAs into Int64 to avoid ints appearing as flaots
-    for col in ["replicate", "dilution_factor"]:
+    # (only cosmetic; concentrations stay float and are not coerced)
+    coerce_int_cols = ["replicate"]
+    if dilution_factor_or_concentration == "dilution_factor":
+        coerce_int_cols.append("dilution_factor")
+    for col in coerce_int_cols:
         try:
             samples_df[col] = samples_df[col].astype("Int64")
         except TypeError:
@@ -123,8 +162,8 @@ def process_plate(plate, plate_params):
                     row["serum_replicate"]
                     + (
                         ""
-                        if pd.isnull(row["dilution_factor"])
-                        else f"_{row['dilution_factor']}"
+                        if pd.isnull(row[dilution_factor_or_concentration])
+                        else f"_{row[dilution_factor_or_concentration]}"
                     )
                 ),
                 axis=1,
@@ -146,13 +185,14 @@ def process_plate(plate, plate_params):
     if len(duplicated_samples):
         raise ValueError(f"Duplicated samples for {plate=}:\n{duplicated_samples}")
 
-    # make sure serum_replicate and dilution_factor are unique
+    # make sure serum_replicate and dilution_factor / concentration are unique
     dup_rows = (
         samples_df.assign(
             duplicates=lambda x: (
-                x.groupby(["serum_replicate", "dilution_factor"], dropna=False)[
-                    "sample"
-                ].transform("count")
+                x.groupby(
+                    ["serum_replicate", dilution_factor_or_concentration],
+                    dropna=False,
+                )["sample"].transform("count")
             ),
         )
         .query("duplicates > 1")
@@ -161,11 +201,26 @@ def process_plate(plate, plate_params):
     if len(dup_rows):
         raise ValueError(f"{plate=} has duplicated serum / replicates:\n{dup_rows}")
 
-    # make sure dilution_factor is valid
-    if not (
-        (samples_df["dilution_factor"] >= 1) | (samples_df["serum"] == "none")
-    ).all():
-        raise ValueError(f"{plate=} has dilution factors not >= 1 for non-none serum")
+    # make sure dilution_factor / concentration is valid; no-serum wells must be
+    # specified via serum == "none" (blank value), NOT by setting the value to 0
+    if dilution_factor_or_concentration == "dilution_factor":
+        if not (
+            (samples_df["dilution_factor"] >= 1) | (samples_df["serum"] == "none")
+        ).all():
+            raise ValueError(
+                f"{plate=} has dilution factors not >= 1 for non-'none' serum. "
+                "Specify no-serum wells by setting 'serum' to 'none' (leaving "
+                "'dilution_factor' blank), not by setting 'dilution_factor' to 0."
+            )
+    else:
+        if not (
+            (samples_df["concentration"] > 0) | (samples_df["serum"] == "none")
+        ).all():
+            raise ValueError(
+                f"{plate=} has concentrations not > 0 for non-'none' serum. "
+                "Specify no-serum wells by setting 'serum' to 'none' (leaving "
+                "'concentration' blank), not by setting 'concentration' to 0."
+            )
 
     # make sure there is at least one "none" sample
     if "none" not in set(samples_df["serum"]):

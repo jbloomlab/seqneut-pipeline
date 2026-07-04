@@ -11,7 +11,7 @@ expected_titers = (
     .assign(log10_titer=lambda x: numpy.log10(x["titer"]))[
         ["group", "serum", "virus", "log10_titer", "n_replicates", "titer_bound"]
     ]
-    .sort_values(["serum", "virus"])
+    .sort_values(["group", "serum", "virus"])
     .reset_index(drop=True)
 )
 
@@ -22,7 +22,7 @@ actual_titers = (
     .assign(log10_titer=lambda x: numpy.log10(x["titer"]))[
         ["group", "serum", "virus", "log10_titer", "n_replicates", "titer_bound"]
     ]
-    .sort_values(["serum", "virus"])
+    .sort_values(["group", "serum", "virus"])
     .reset_index(drop=True)
 )
 
@@ -40,3 +40,48 @@ pd.testing.assert_frame_equal(
 )
 
 print("Titers are sufficiently similar.")
+
+# The `abconc` group holds the same data as the `pilot` group but titrated as a
+# `concentration` set to 1 / dilution_factor rather than as a `dilution_factor`.
+# The fits are therefore identical, and the concentration-mode titer (the IC50
+# reported directly, with no reciprocal) must equal the reciprocal of the
+# corresponding dilution-mode `pilot` titer. This is checked at the per-replicate
+# (per-barcode) level, where the relationship is exact -- it does not hold for
+# medians because the median of reciprocals is not the reciprocal of the median.
+
+
+def _read_per_rep(group):
+    dfs = [
+        pd.read_csv(f)
+        for f in glob.glob(f"results/sera/{group}_*/titers_per_replicate.csv")
+    ]
+    assert dfs, f"no per-replicate titers found for group {group!r}"
+    return pd.concat(dfs, ignore_index=True).assign(
+        barcode=lambda x: x["replicate"].str.rsplit("-", n=1).str[-1]
+    )
+
+
+pilot_rep = _read_per_rep("pilot")
+abconc_rep = _read_per_rep("abconc")
+
+# units are reported per the mode
+assert (pilot_rep["titer_units"] == "reciprocal_dilution").all()
+assert (abconc_rep["titer_units"] == "ug/ml").all()
+
+reciprocal_check = pilot_rep.merge(
+    abconc_rep,
+    on=["serum", "virus", "barcode"],
+    suffixes=("_pilot", "_abconc"),
+    validate="one_to_one",
+)
+assert len(reciprocal_check) == len(pilot_rep) == len(abconc_rep), (
+    f"barcode mismatch: {len(pilot_rep)=}, {len(abconc_rep)=}, "
+    f"{len(reciprocal_check)=}"
+)
+numpy.testing.assert_allclose(
+    reciprocal_check["titer_pilot"] * reciprocal_check["titer_abconc"],
+    1.0,
+    rtol=0.02,
+)
+
+print("Concentration-mode titers are reciprocals of dilution-mode titers.")

@@ -45,6 +45,25 @@ groups_cannot_contain = ["|", "_"]  # wildcard problems if group contains these
 if any(s in group for s in groups_cannot_contain for group in groups):
     raise ValueError(f"found {groups_cannot_contain=} character in {groups=}")
 
+# all plates in a group must share 'dilution_factor_or_concentration' and
+# 'concentration_units'; build per-group maps of these values (fail fast otherwise)
+group_dilution_factor_or_concentration = {}
+group_concentration_units = {}
+for plate_d in plates.values():
+    plate_group = plate_d["group"]
+    plate_dfc = plate_d["dilution_factor_or_concentration"]
+    plate_units = plate_d["concentration_units"]
+    if plate_group not in group_dilution_factor_or_concentration:
+        group_dilution_factor_or_concentration[plate_group] = plate_dfc
+        group_concentration_units[plate_group] = plate_units
+    elif (group_dilution_factor_or_concentration[plate_group] != plate_dfc) or (
+        group_concentration_units[plate_group] != plate_units
+    ):
+        raise ValueError(
+            f"plates in group {plate_group!r} do not all share the same "
+            "'dilution_factor_or_concentration' and 'concentration_units'"
+        )
+
 
 wildcard_constraints:
     group="|".join(groups),
@@ -196,6 +215,10 @@ if plates:
         params:
             viral_strain_plot_order=viral_strain_plot_order,
             curve_display_method=config["curve_display_method"],
+            dilution_factor_or_concentration=lambda wc: (
+                group_dilution_factor_or_concentration[wc.group]
+            ),
+            concentration_units=lambda wc: group_concentration_units[wc.group],
             serum_titer_as=lambda wc: (
                 config["sera_override_defaults"][wc.group][wc.serum]["titer_as"]
                 if (
@@ -243,7 +266,9 @@ if plates:
                 for group in groups
             ],
             titers=[f"results/aggregated_titers/titers_{group}.csv" for group in groups],
-            titers_chart="results/aggregated_titers/titers.html",
+            titers_charts=[
+                f"results/aggregated_titers/titers_{group}.html" for group in groups
+            ],
         log:
             "results/logs/aggregate_titers.txt",
         conda:
@@ -252,6 +277,8 @@ if plates:
             viral_strain_plot_order=viral_strain_plot_order,
             groups_sera=lambda wc: list(groups_sera_plates()),
             groups=groups,
+            groups_dilution_factor_or_concentration=group_dilution_factor_or_concentration,
+            groups_concentration_units=group_concentration_units,
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
@@ -291,7 +318,7 @@ if plates:
                 for v in d.values()
                 for f in (v.values() if isinstance(v, dict) else [v])
             ],
-            titers_chart=rules.aggregate_titers.output.titers_chart,
+            titers_charts=rules.aggregate_titers.output.titers_charts,
             serum_titers_htmls=lambda wc: [
                 f"results/sera/{group}_{serum}/{group}_{serum}_titers.html"
                 for (group, serum) in groups_sera_plates()

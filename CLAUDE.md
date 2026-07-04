@@ -101,11 +101,13 @@ Each plate under `plates:` has:
 - **`qc_thresholds`**: QC filters for plate processing (see QC section below)
 - **`curvefit_params`**: Parameters for curve fitting (fixtop, fixbottom, fixslope, frac_infectivity_ceiling)
 - **`curvefit_qc`**: QC for curve fits (max_frac_infectivity_at_least, goodness_of_fit)
+- **`dilution_factor_or_concentration`** (optional): `dilution_factor` (default) or `concentration`. If `concentration`, the `samples_csv` must have a `concentration` column (not `dilution_factor`; error if both), the value is used directly as the fitting concentration (no reciprocal), titers are the fitted IC50/midpoint in `concentration_units`, and `serum_titer_as` must be `ic50` or `midpoint`. All plates in a group must share this setting and `concentration_units`.
+- **`concentration_units`** (required iff `concentration` mode; error otherwise): e.g. `ug/ml`; reported in the `titer_units` column and on plot axes.
 - **`illumina_barcode_parser_params`** (optional): Plate-specific overrides
 
 ### Serum Titer Configuration
 
-- **`default_serum_titer_as`**: How to compute titers (`midpoint` or `nt50`)
+- **`default_serum_titer_as`**: How to compute titers (`midpoint` or `nt50`; use `midpoint` or `ic50` for `concentration`-mode groups)
 - **`default_serum_qc_thresholds`**: QC for serum-virus pairs (min_replicates, max_fold_change_from_median)
 - **`sera_override_defaults`**: Per-serum/group overrides for titer calculation or QC
 
