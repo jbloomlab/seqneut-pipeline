@@ -31,6 +31,13 @@ group_order = [
 ]
 assert len(group_order) == len(set(group_order))
 
+# map each per-group titers chart (named titers_{group}.html) to its group
+titers_charts_by_group = {}
+for f in snakemake.input.titers_charts:
+    base = os.path.basename(f)
+    assert base.startswith("titers_") and base.endswith(".html"), base
+    titers_charts_by_group[base[len("titers_") : -len(".html")]] = f
+
 md_text = [
     snakemake.params.description,
     "",
@@ -40,7 +47,13 @@ md_text = [
     "[TOC]",
     "",
     "## Titers for all sera",
-    f"[Interactive chart of titers]({os.path.basename(copied_files[snakemake.input.titers_chart])})",
+]
+for group in group_order:
+    md_text.append(
+        f"- [Interactive chart of titers (`{group}`)]"
+        f"({os.path.basename(copied_files[titers_charts_by_group[group]])})"
+    )
+md_text += [
     "",
     "## Per-serum neutralization titers",
 ]

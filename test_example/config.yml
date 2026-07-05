@@ -120,6 +120,27 @@ plates:
     curvefit_qc:
       <<: *default_process_plate_curvefit_qc
 
+  # Same data as `H3N2_plate` but titrated as a `concentration` (set to the
+  # reciprocal of the dilution factor) rather than a `dilution_factor`. Because
+  # concentration == 1 / dilution_factor, the fits are identical to `H3N2_plate`
+  # and the reported IC50 titers are the reciprocal of the `pilot` NT50/midpoint
+  # titers (verified in `test_titers_as_expected.py`).
+  H3N2_conc_plate:
+    group: abconc
+    date: 2024-03-04
+    dilution_factor_or_concentration: concentration
+    concentration_units: ug/ml
+    viral_library: H3N2_lib2023_Kikawa
+    neut_standard_set: loes2023
+    samples_csv: data/plates/H3N2_conc_samples.csv
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
+
 default_serum_titer_as: midpoint  # can be "midpoint" or "nt50"
 
 default_serum_qc_thresholds: &default_serum_qc_thresholds

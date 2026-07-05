@@ -192,6 +192,19 @@ def _(context, io, mo, pd, yaml):
                 for w in curvefit_qc["barcode_serum_replicates_ignore_curvefit_qc"]
             ]
 
+        # whether this plate titrates a 'dilution_factor' or a 'concentration'; the
+        # value is also the name of the corresponding column in samples_df
+        dilution_factor_or_concentration = plate_params[
+            "dilution_factor_or_concentration"
+        ]
+        assert dilution_factor_or_concentration in {"dilution_factor", "concentration"}
+        concentration_units = plate_params["concentration_units"]
+        x_label = (
+            "dilution factor"
+            if dilution_factor_or_concentration == "dilution_factor"
+            else f"concentration ({concentration_units})"
+        )
+
         mo.output.append(mo.md(f"Processing `{plate}`"))
 
         samples_df = pd.DataFrame(plate_params["samples"])
@@ -201,7 +214,7 @@ def _(context, io, mo, pd, yaml):
             for c in ["well", "sample", "sample_noplate"]
         )
         assert len(samples_df) == len(
-            samples_df.groupby(["serum_replicate", "dilution_factor"])
+            samples_df.groupby(["serum_replicate", dilution_factor_or_concentration])
         )
         assert len(samples) == len(count_csvs) == len(fate_csvs) == len(samples_df)
 
@@ -223,11 +236,14 @@ def _(context, io, mo, pd, yaml):
         curvefit_params = {}
         curvefit_qc = {}
         samples_df = pd.DataFrame()
+        dilution_factor_or_concentration = "dilution_factor"
+        x_label = "dilution factor"
     return (
         count_csvs,
         curve_display_method,
         curvefit_params,
         curvefit_qc,
+        dilution_factor_or_concentration,
         fate_csvs,
         fits_csv,
         fits_pickle,
@@ -241,6 +257,7 @@ def _(context, io, mo, pd, yaml):
         samples,
         samples_df,
         viral_barcodes,
+        x_label,
     )
 
 
@@ -283,7 +300,7 @@ def _(mo):
 
 
 @app.cell
-def _(alt, fate_csvs, pd, plate, samples, samples_df):
+def _(alt, dilution_factor_or_concentration, fate_csvs, pd, plate, samples, samples_df):
     fates = (
         pd.concat([pd.read_csv(f).assign(sample=s) for f, s in zip(fate_csvs, samples)])
         .merge(samples_df, validate="many_to_one", on="sample")
@@ -298,7 +315,7 @@ def _(alt, fate_csvs, pd, plate, samples, samples_df):
                 "well",
                 "serum_replicate",
                 "sample_well",
-                "dilution_factor",
+                dilution_factor_or_concentration,
             ]
         ]
     )
@@ -307,7 +324,9 @@ def _(alt, fate_csvs, pd, plate, samples, samples_df):
 
     serum_replicates = sorted(fates["serum_replicate"].unique())
     sample_wells = list(
-        fates.sort_values(["serum_replicate", "dilution_factor"])["sample_well"]
+        fates.sort_values(["serum_replicate", dilution_factor_or_concentration])[
+            "sample_well"
+        ]
     )
 
     serum_selection = alt.selection_point(
@@ -841,6 +860,7 @@ def _(mo):
 def _(
     alt,
     counts_qc_4,
+    dilution_factor_or_concentration,
     pd,
     plate,
     qc_thresholds,
@@ -851,7 +871,12 @@ def _(
     neut_standard_counts = (
         counts_qc_4.query("neut_standard")
         .groupby(
-            ["well", "serum_replicate", "sample_well", "dilution_factor"],
+            [
+                "well",
+                "serum_replicate",
+                "sample_well",
+                dilution_factor_or_concentration,
+            ],
             dropna=False,
             as_index=False,
         )
@@ -1128,6 +1153,7 @@ def _(mo):
 def _(
     counts_qc_6,
     curvefit_params,
+    dilution_factor_or_concentration,
     median_no_serum_ratio,
     neut_standard_counts_1,
 ):
@@ -1145,7 +1171,13 @@ def _(
                     upper=curvefit_params["frac_infectivity_ceiling"]
                 )
             ),
-            concentration=lambda x: 1 / x["dilution_factor"],
+            # concentration used for curve fitting: reciprocal of the dilution factor,
+            # or the specified concentration used directly
+            concentration=lambda x: (
+                1 / x["dilution_factor"]
+                if dilution_factor_or_concentration == "dilution_factor"
+                else x["concentration"]
+            ),
             plate_barcode=lambda x: x["plate_replicate"] + "-" + x["barcode"],
         )[
             [
@@ -1155,24 +1187,33 @@ def _(
                 "strain",
                 "serum",
                 "serum_replicate",
-                "dilution_factor",
-                "concentration",
+            ]
+            + (
+                ["dilution_factor", "concentration"]
+                if dilution_factor_or_concentration == "dilution_factor"
+                else ["concentration"]
+            )
+            + [
                 "frac_infectivity_raw",
                 "frac_infectivity_ceiling",
             ]
         ]
     )
     assert len(
-        frac_infectivity.groupby(["serum", "plate_barcode", "dilution_factor"])
+        frac_infectivity.groupby(
+            ["serum", "plate_barcode", dilution_factor_or_concentration]
+        )
     ) == len(frac_infectivity)
-    assert frac_infectivity["dilution_factor"].notnull().all()
+    assert frac_infectivity[dilution_factor_or_concentration].notnull().all()
     assert frac_infectivity["frac_infectivity_raw"].notnull().all()
     assert frac_infectivity["frac_infectivity_ceiling"].notnull().all()
     return (frac_infectivity,)
 
 
 @app.cell
-def _(curvefit_params, frac_infectivity, qc_thresholds):
+def _(
+    curvefit_params, dilution_factor_or_concentration, frac_infectivity, qc_thresholds
+):
     frac_infectivity_cols = {
         "frac_infectivity_raw": "raw fraction infectivity",
         "frac_infectivity_ceiling": f"fraction infectivity with ceiling at {curvefit_params['frac_infectivity_ceiling']}",
@@ -1189,7 +1230,7 @@ def _(curvefit_params, frac_infectivity, qc_thresholds):
             "strain",
             "well",
             "serum_replicate",
-            "dilution_factor",
+            dilution_factor_or_concentration,
             "fails_qc",
             *list(frac_infectivity_cols),
         ]
@@ -1202,12 +1243,12 @@ def _(curvefit_params, frac_infectivity, qc_thresholds):
     barcode_lookup_df = frac_infectivity[["barcode", "strain"]].drop_duplicates()
     assert len(barcode_lookup_df) == barcode_lookup_df["barcode"].nunique()
     well_lookup_df = frac_infectivity[
-        ["well", "serum_replicate", "dilution_factor"]
+        ["well", "serum_replicate", dilution_factor_or_concentration]
     ].drop_duplicates()
     assert len(well_lookup_df) == well_lookup_df["well"].nunique()
 
     frac_infectivity_chart_df = frac_infectivity_chart_df.drop(
-        columns=["strain", "serum_replicate", "dilution_factor"]
+        columns=["strain", "serum_replicate", dilution_factor_or_concentration]
     )
     return (
         barcode_lookup_df,
@@ -1222,6 +1263,7 @@ def _(
     alt,
     barcode_lookup_df,
     barcode_selection,
+    dilution_factor_or_concentration,
     frac_infectivity_chart_df,
     frac_infectivity_cols,
     mo,
@@ -1229,6 +1271,7 @@ def _(
     qc_thresholds,
     strain_selection_dropdown,
     well_lookup_df,
+    x_label,
 ):
     frac_infectivity_chart = (
         alt.Chart(frac_infectivity_chart_df)
@@ -1241,7 +1284,7 @@ def _(
             from_=alt.LookupData(
                 well_lookup_df,
                 key="well",
-                fields=["serum_replicate", "dilution_factor"],
+                fields=["serum_replicate", dilution_factor_or_concentration],
             ),
         )
         .transform_fold(
@@ -1251,8 +1294,8 @@ def _(
         .transform_filter(strain_selection_dropdown)
         .encode(
             alt.X(
-                "dilution_factor:Q",
-                title="dilution factor",
+                f"{dilution_factor_or_concentration}:Q",
+                title=x_label,
                 scale=alt.Scale(nice=False, padding=5, type="log"),
             ),
             alt.Y(
@@ -1296,7 +1339,7 @@ def _(
             + [
                 alt.Tooltip("strain:N"),
                 alt.Tooltip("serum_replicate:N"),
-                alt.Tooltip("dilution_factor:Q"),
+                alt.Tooltip(f"{dilution_factor_or_concentration}:Q", title=x_label),
             ],
         )
         .mark_line(point=True)
@@ -1362,19 +1405,26 @@ def _(mo):
 def _(
     alt,
     barcode_selection,
+    dilution_factor_or_concentration,
     frac_infectivity_1,
     mo,
     pd,
     qc_drops,
     qc_thresholds,
 ):
-    # Count number of dilutions per barcode/serum-replicate
+    # Count number of dilutions (or concentrations) per barcode/serum-replicate
     n_dilutions = (
         frac_infectivity_1.groupby(
             ["serum_replicate", "strain", "barcode"],
             as_index=False,
         )
-        .aggregate(**{"number of dilutions": pd.NamedAgg("dilution_factor", "nunique")})
+        .aggregate(
+            **{
+                "number of dilutions": pd.NamedAgg(
+                    dilution_factor_or_concentration, "nunique"
+                )
+            }
+        )
         .assign(
             fails_qc=lambda x: (
                 x["number of dilutions"]
@@ -1471,10 +1521,9 @@ def _(curvefit_params, frac_infectivity_2, neutcurve):
         frac_infectivity_2.rename(
             columns={
                 "frac_infectivity_ceiling": "fraction infectivity",
-                "concentration": "serum concentration",
             }
         ),
-        conc_col="serum concentration",
+        conc_col="concentration",
         fracinf_col="fraction infectivity",
         virus_col="strain",
         serum_col="serum_replicate",
@@ -1724,10 +1773,9 @@ def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve):
         frac_infectivity_3.rename(
             columns={
                 "frac_infectivity_ceiling": "fraction infectivity",
-                "concentration": "serum concentration",
             }
         ),
-        conc_col="serum concentration",
+        conc_col="concentration",
         fracinf_col="fraction infectivity",
         virus_col="strain",
         serum_col="serum",
@@ -1774,6 +1822,7 @@ def _(mo):
 
 @app.cell
 def _(
+    dilution_factor_or_concentration,
     fit_params_qc,
     fits_csv,
     fits_pickle,
@@ -1796,12 +1845,12 @@ def _(
                 "serum",
                 "strain",
                 "plate_barcode",
-                "dilution_factor",
+                dilution_factor_or_concentration,
                 "frac_infectivity_raw",
                 "frac_infectivity_ceiling",
             ]
         ]
-        .sort_values(["serum", "plate_barcode", "dilution_factor"])
+        .sort_values(["serum", "plate_barcode", dilution_factor_or_concentration])
         .to_csv(frac_infectivity_csv, index=False, float_format="%.4g")
     )
     mo.output.append(mo.md(f"Writing fit parameters to `{fits_csv}`"))

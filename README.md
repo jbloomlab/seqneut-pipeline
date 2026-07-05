@@ -19,7 +19,7 @@ Here is a list of studies using this pipeline:
   - [Kikawa et al (2025), eLife](https://doi.org/10.7554/eLife.106811)
   - [Loes et al (2024), Journal of Virology](https://doi.org/10.1128/jvi.00689-24)
 
-For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025](https://github.com/jbloomlab/flu-seqneut-2025).
+For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025to2026](https://github.com/jbloomlab/flu-seqneut-2025to2026).
 
 See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a list of the contributors to this pipeline.
 
@@ -254,14 +254,31 @@ The `viral_library` key gives the name of a key in `viral_libraries` that specif
 #### neut_standard_set
 The `neut_standard_set` key gives the name of a key in `neut_standard_sets` that specifies the neutralization-standard set barcodes used for this plate.
 
+#### dilution_factor_or_concentration and concentration_units (optional)
+By default each plate titrates a serum *dilution_factor*, and titers are reported as reciprocal serum dilutions.
+Alternatively, a plate can titrate a *concentration* directly (for instance, the concentration of a monoclonal antibody) by setting:
+```
+    dilution_factor_or_concentration: concentration
+    concentration_units: ug/ml
+```
+`dilution_factor_or_concentration` may be either `dilution_factor` (the default when the key is absent, so existing configs are unchanged) or `concentration`.
+When it is `concentration`:
+ - the `samples_csv` must have a *concentration* column instead of a *dilution_factor* column (it is an error to include both),
+ - the concentration is used directly as the concentration for curve fitting (rather than taking the reciprocal of the dilution factor),
+ - the reported titer is the fitted IC50 (or midpoint) directly in the specified units, so `serum_titer_as` must be `ic50` or `midpoint` (not `nt50`), and
+ - `concentration_units` (a required string such as `ug/ml`) is reported in the `titer_units` column of the titers CSVs and on the plot axis labels.
+
+`concentration_units` may only be set when `dilution_factor_or_concentration` is `concentration` (it is an error otherwise).
+All plates assigned to the same `group` must share the same `dilution_factor_or_concentration` and `concentration_units`.
+
 #### samples_csv
 The `samples_csv` key gives the name of a CSV file specifying the samples for that plate.
 The recommended way to organize these sample CSVs is to put them in `./data/plates/` subdirectory.
 The CSV file must have the following columns:
  - *well*: well in plate in which sample was run, typically names like "A1", "B1", etc.
  - *serum*: name of the serum in this well, or "none" if it is a no-serum sample.
- - *dilution_factor*: dilution factor of the serum (should be a number > 1), leave blank for the no-serum samples (*serum* of "none")
- - *replicate*: the replicate of this serum, which you only need to specify if there are multiple different samples with the same *serum* and *dilution_factor* in the plate.
+ - *dilution_factor*: dilution factor of the serum (should be a number > 1), leave blank for the no-serum samples (*serum* of "none"). If the plate sets `dilution_factor_or_concentration: concentration`, then include a *concentration* column (a number > 0, blank for no-serum samples) instead of *dilution_factor*.
+ - *replicate*: the replicate of this serum, which you only need to specify if there are multiple different samples with the same *serum* and *dilution_factor* (or *concentration*) in the plate.
  - *fastq*: path to the FASTQ file, can be gzipped
  - other columns (e.g., *notes*, etc) are allowed but are ignored by the pipeline
 
@@ -424,6 +441,8 @@ default_serum_titer_as: nt50
 ```
 The difference only becomes relevant if some your curves have plateaus substantially different than zero and one.
 
+For groups whose plates set `dilution_factor_or_concentration: concentration`, use `ic50` (rather than `nt50`) or `midpoint`; the titer is then the fitted concentration reported directly in `concentration_units` (see [dilution_factor_or_concentration and concentration_units](#dilution_factor_or_concentration-and-concentration_units-optional)).
+
 If you want to handle specific sera different, see `sera_override_defaults`.
 
 ### default_serum_qc_thresholds
@@ -529,7 +548,7 @@ The set of full created outputs are as follows (note only some will be tracked d
   - Results related to aggregated titers across all sera in a group after applying all quality control:
     - `./results/aggregated_titers/titers_{group}.csv`: titers for all sera / virus in a group (median of replicates). You should track this file as it has the final processed results.
     - `./results/aggregated_titers/curvefits_{group}.pickle`: pickle file with the `neutcurve.CurveFits` object holding all final curves for a group. You do not need to track this in the repo, but if you have further code that makes specific plots you may want to use this.
-    - `./results/aggregated_titers/titers.html`: interactive plot of titers for all sera. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+    - `./results/aggregated_titers/titers_{group}.html`: interactive plot of the titers for all sera in a group (one plot per group). You do not need to track these as they can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
 
   - Results summarizing data dropped due to QC:
     - `./results/qc_drops/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-plate. You should track this in repo.
