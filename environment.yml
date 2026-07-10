@@ -5,13 +5,13 @@ channels:
   - bioconda
 
 dependencies:
-  - altair=5.5
+  - altair=6.2
   - black
   - mamba
   - marimo=0.23
   - markdown=3.10
   - pandas=2.3.3
-  - pillow=12.2
+  - pillow=12.3
   - pip
   - pyarrow
   - python=3.13
@@ -21,4 +21,4 @@ dependencies:
   - ruff
   - pip:
     - dms_variants==1.6.0
-    - neutcurve==2.3.0
+    - neutcurve==2.3.1
