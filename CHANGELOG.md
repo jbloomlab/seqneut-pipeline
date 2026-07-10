@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### version 7.1.0
+Update software versions (reason is to update `neutcurve` to fix bug causing scrunched panels in curve plots):
+ - `altair`: 5.5 -> 6.2
+ - `pillow`: 12.2 -> 12.3
+ - `neutcurve`: 2.3.0 -> 2.3.1
+
 ## version 7.0.0
 Add support for titrating a `concentration` (e.g. an antibody at some µg/ml) as an alternative to a serum `dilution_factor`.
 A plate can now set `dilution_factor_or_concentration: concentration` (default is `dilution_factor`, so existing configs are unchanged) together with a `concentration_units` value (e.g. `ug/ml`).
