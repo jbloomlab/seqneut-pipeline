@@ -9,6 +9,12 @@
   + In `pyproject.toml`, set `requires-python` to `>=3.13` (was `>=3.9`) and add `py314` to the `black` target versions.
   + Update the `snakemake` version badge in the README to `>=9`.
 
+- Update the GitHub Actions used for testing in `.github/workflows/test.yaml` to their latest versions:
+  + `actions/checkout`: v5 -> v7
+  + `conda-incubator/setup-miniconda`: v3 -> v4, and rename the now-deprecated `auto-activate-base` input to `auto-activate`
+  + `actions/upload-artifact`: v4 -> v7
+  + Also drop the `rm -rf docs` from the test-example step, as it is a leftover from version 6.0.0 when the docs moved from `./docs` to `./results/docs`.
+
 ### version 7.1.0
 Update software versions (reason is to update `neutcurve` to fix bug causing scrunched panels in curve plots):
  - `altair`: 5.5 -> 6.2
