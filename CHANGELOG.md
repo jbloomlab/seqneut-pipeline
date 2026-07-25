@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## version 8.0.0
+## version 8.0.0 (unreleased)
 - Update software versions, most notably `python` to 3.14:
   + `python`: 3.13 -> 3.14
   + `snakemake`: 9.19 -> 9.23

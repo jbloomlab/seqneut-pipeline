@@ -121,3 +121,10 @@ These raise errors, and are not all stated in the README:
  - Describe changes in `CHANGELOG.md` at a high level, including the rationale for
    anything surprising, but leave per-file and per-rule detail to the commit message.
    Bump the version in `pyproject.toml`, which is the single source of truth for it.
+ - A version accumulates changes over several pull requests before it is released, so
+   its `CHANGELOG.md` heading carries an `(unreleased)` marker while it is in progress.
+   Add new entries under that heading rather than starting a new version, and do not
+   record the release state anywhere else: not in commit messages, which would go stale
+   if the version were renumbered, and not in `pyproject.toml`, whose version is already
+   the one being worked toward. Releasing means removing the `(unreleased)` marker and
+   tagging the version; the tag is what actually marks a version as released.
