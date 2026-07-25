@@ -19,6 +19,8 @@
 
 - Adopt the much broader default rule selection of `ruff` 0.16, and fix or explicitly ignore everything it newly reports in the notebooks and scripts. In `pyproject.toml`, `B018` and `PLR1711` are ignored for `notebooks/*.py`, as they fire only on the file format that `marimo` writes rather than on anything actually wrong: `PLR1711` flags the `return` that `marimo` generates at the end of every cell, and `B018` flags a cell's trailing bare expression, which is what that cell renders.
 
+- Simplify [./test_example/.gitignore](test_example/.gitignore), which the README recommends copying into your own repo, using `results/**` plus `!results/**/` to ignore all of `results` while still allowing the key results to be re-included. This removes the need to re-include each subdirectory before ignoring its contents. Which files are tracked is unchanged (verified over all files in the test example's `results`), so you do not need to update your own copy.
+
 ### version 7.1.0
 Update software versions (reason is to update `neutcurve` to fix bug causing scrunched panels in curve plots):
  - `altair`: 5.5 -> 6.2
