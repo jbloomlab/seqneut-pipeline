@@ -3,7 +3,6 @@
 import sys
 
 import dms_variants.illuminabarcodeparser
-
 import pandas as pd
 
 
@@ -28,7 +27,8 @@ def find_closest_valid_barcode(invalid_bc, valid_barcodes_df):
     return closest["barcode"], closest["hamming_distance"], closest["count"]
 
 
-sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
+# `noqa: SIM115` as this log file must stay open for the life of the script
+sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")  # noqa: SIM115
 
 viral_barcodes = snakemake.params.viral_barcodes
 neut_standard_barcodes = snakemake.params.neut_standard_barcodes

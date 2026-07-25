@@ -15,6 +15,8 @@
   + `actions/upload-artifact`: v4 -> v7
   + Also drop the `rm -rf docs` from the test-example step, as it is a leftover from version 6.0.0 when the docs moved from `./docs` to `./results/docs`.
 
+- Adopt the much broader default rule selection of `ruff` 0.16, and fix or explicitly ignore everything it newly reports in the notebooks and scripts. In `pyproject.toml`, `B018` and `PLR1711` are ignored for `notebooks/*.py`, as they fire only on the file format that `marimo` writes rather than on anything actually wrong: `PLR1711` flags the `return` that `marimo` generates at the end of every cell, and `B018` flags a cell's trailing bare expression, which is what that cell renders.
+
 ### version 7.1.0
 Update software versions (reason is to update `neutcurve` to fix bug causing scrunched panels in curve plots):
  - `altair`: 5.5 -> 6.2

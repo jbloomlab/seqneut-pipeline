@@ -26,20 +26,14 @@ def _():
     import sys
 
     import altair as alt
-
+    import marimo as mo
     import matplotlib
     import matplotlib.pyplot as plt
-
     import neutcurve
-    from neutcurve.marimo_utils import display_fig_marimo
-
     import numpy
-
     import pandas as pd
-
-    import ruamel.yaml as yaml
-
-    import marimo as mo
+    from neutcurve.marimo_utils import display_fig_marimo
+    from ruamel import yaml
 
     _ = alt.data_transformers.disable_max_rows()
 
@@ -440,7 +434,7 @@ def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
             if len(set(bounds)) == 1:
                 return bounds[0]
             elif "interpolated" in bounds:
-                return [b for b in bounds if b != "interpolated"][0]
+                return next(b for b in bounds if b != "interpolated")
             else:
                 return "inconsistent"
 

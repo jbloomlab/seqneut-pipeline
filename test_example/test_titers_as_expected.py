@@ -3,7 +3,6 @@
 import glob
 
 import numpy
-
 import pandas as pd
 
 expected_titers = (

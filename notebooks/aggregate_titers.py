@@ -146,9 +146,7 @@ def _():
     # Setup and read data
 
     import altair as alt
-
     import neutcurve
-
     import pandas as pd
 
     _ = alt.data_transformers.disable_max_rows()
@@ -334,8 +332,10 @@ def _(
                     subtitle=[
                         "Median titers are at left; per-serum titers are at right.",
                         "Mouseover points for details.",
-                        "Click points on serum legend at right to select sera to bold "
-                        "on per-serum chart.",
+                        (
+                            "Click points on serum legend at right to select sera "
+                            "to bold on per-serum chart."
+                        ),
                     ],
                     fontSize=15,
                     dx=100,

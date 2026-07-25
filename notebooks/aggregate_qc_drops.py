@@ -135,9 +135,7 @@ def _(mo):
 @app.cell
 def _():
     import altair as alt
-
     import pandas as pd
-
     from ruamel.yaml import YAML
 
     yaml = YAML(typ="rt")
@@ -298,7 +296,7 @@ def _(mo, output_barcode_qc_drops, plate_qc_drops, yaml):
     barcode_qc_drops = sort_nested(barcode_qc_drops)
 
     mo.output.append(
-        mo.md((f"Writing merged barcode drops to {output_barcode_qc_drops}"))
+        mo.md(f"Writing merged barcode drops to {output_barcode_qc_drops}")
     )
     with open(output_barcode_qc_drops, "w") as _f:
         yaml.dump(barcode_qc_drops, stream=_f)

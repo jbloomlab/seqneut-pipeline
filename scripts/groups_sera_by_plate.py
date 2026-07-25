@@ -4,7 +4,8 @@ import sys
 
 import pandas as pd
 
-sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
+# `noqa: SIM115` as this log file must stay open for the life of the script
+sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")  # noqa: SIM115
 
 plates = snakemake.params.plates
 curvefit_csvs = snakemake.input.csvs
