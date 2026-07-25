@@ -202,6 +202,10 @@ if plates:
                 rules.process_plate.output.fits_pickle.format(plate=plate)
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
             ],
+            fits_csvs=lambda wc: [
+                rules.process_plate.output.fits_csv.format(plate=plate)
+                for plate in groups_sera_plates()[(wc.group, wc.serum)]
+            ],
         output:
             marimo_html="results/sera/{group}_{serum}/{group}_{serum}_titers.html",
             context_pickle="results/sera/{group}_{serum}/{group}_{serum}_titers_context.pickle",

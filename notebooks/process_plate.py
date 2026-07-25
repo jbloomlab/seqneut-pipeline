@@ -1764,7 +1764,7 @@ def _(mo):
 
 
 @app.cell
-def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve):
+def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve, plate):
     fits_qc = neutcurve.CurveFits(
         frac_infectivity_3.rename(
             columns={
@@ -1786,6 +1786,10 @@ def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve):
     )
     mo.output.append(mo.md(f"Assigning fits for this plate to `{group}`"))
     fit_params_qc.insert(0, "group", group)
+    # record the plate so downstream analyses do not have to parse it out of the
+    # replicate name (which is a `plate_barcode`), where one plate name being a prefix
+    # of another would make the parse ambiguous
+    fit_params_qc.insert(1, "plate", plate)
     return fit_params_qc, fits_qc
 
 
