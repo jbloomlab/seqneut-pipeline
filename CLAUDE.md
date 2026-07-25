@@ -49,6 +49,27 @@ for `notebooks/*.py`:
  - A cell's trailing bare expression is what that cell renders, which trips `B018`.
    Deleting them would remove plots from the docs.
 
+## Keeping Altair plots small
+
+`altair` embeds the whole data frame as inline JSON in the chart spec, so the size of the
+notebook HTML scales as rows x columns, with every string value repeated on every row.
+The plots here are large enough that this matters, so keep the plotted data frame narrow
+and let `vega-lite` reconstruct the rest client-side:
+
+ - Any column that is functionally determined by a key already in the data frame belongs
+   in a small lookup table, not in the plotted frame. Drop it and re-join it with
+   `.transform_lookup(lookup=key, from_=alt.LookupData(lookup_df, key=key, fields=[...]))`.
+   Assert that the key is unique in the lookup table so the join is 1:1 and lossless.
+ - Ship columns wide and fold them with `.transform_fold()` rather than melting in
+   `pandas`, which would multiply the row count of the embedded data.
+
+`notebooks/process_plate.py` (~lines 1237-1285) is the worked example: `strain` is
+determined by `barcode`, and `serum_replicate` and the dilution factor / concentration
+are determined by `well`, so all three are dropped in favor of a barcode lookup and a
+well lookup. Note that tooltips do not follow automatically; a looked-up field has no
+`pandas` dtype for `altair` to infer from, so it must be listed explicitly with its type
+suffix (`alt.Tooltip("strain:N")`).
+
 ## Naming conventions
 
 Built in `funcs.smk` (~lines 155-195) and relied on throughout the notebooks:
