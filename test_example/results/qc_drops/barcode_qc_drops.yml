@@ -118,6 +118,7 @@ CATACAGAGTTTGTTG:
   barcodes:
     plate11: min_neut_standard_frac_per_well
     plate2: min_neut_standard_frac_per_well
+    plate2_exact_dup: min_neut_standard_frac_per_well
 CCAATCCCAGCCTTTA:
   barcodes:
     H3N2_conc_plate: min_neut_standard_frac_per_well

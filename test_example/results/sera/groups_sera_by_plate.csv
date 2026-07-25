@@ -1,7 +1,7 @@
 group,serum,plates
 abconc,A23038d0_r32_75K,H3N2_conc_plate
 pilot,A23038d0_r32_75K,H3N2_plate
-serum,M099d0,plate11;plate2
-serum,M099d30,plate11;plate2
+serum,M099d0,plate11;plate2;plate2_exact_dup
+serum,M099d30,plate11;plate2;plate2_exact_dup
 serum,Y044d30,plate11
-serum,Y154d182,plate2
+serum,Y154d182,plate2;plate2_exact_dup
