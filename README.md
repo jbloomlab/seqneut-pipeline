@@ -13,10 +13,11 @@ This is a modular analysis pipeline for analyzing high-throughput sequencing-bas
 
 Please cite [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) if you use this pipeline for your scientific study.
 
-Here is a list of studies using this pipeline:
+Here are some key studies using this pipeline:
+  - [Loes et al (2026), Journal of Virology](https://doi.org/10.1128/jvi.00317-26)
   - [Kikawa et al (2026), bioRxiv](https://doi.org/10.64898/2026.02.18.706711)
   - [Kikawa et al (2025), Virus Evolution](https://doi.org/10.1093/ve/veaf086)
-  - [Kikawa et al (2025), eLife](https://doi.org/10.7554/eLife.106811)
+  - [Kikawa et al (2026), eLife](https://doi.org/10.7554/eLife.106811)
   - [Loes et al (2024), Journal of Virology](https://doi.org/10.1128/jvi.00689-24)
 
 For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025to2026](https://github.com/jbloomlab/flu-seqneut-2025to2026).
