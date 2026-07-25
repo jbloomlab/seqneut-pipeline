@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## version 8.0.0
+- Update software versions, most notably `python` to 3.14:
+  + `python`: 3.13 -> 3.14
+  + `snakemake`: 9.19 -> 9.23
+  + `pandas`: pin loosened from 2.3.3 to 2.3 for consistency with the other pins (still resolves to 2.3.3). Note that `pandas` cannot yet be updated to 3.0 because the `bioconda` `snakemake` package pins `pandas <3`.
+  + Drop `mamba` from `environment.yml`, as `snakemake` has deprecated the `mamba` conda frontend and now relies on `conda` (>24.7.1) for conda-environment deployment.
+  + In `pyproject.toml`, set `requires-python` to `>=3.13` (was `>=3.9`) and add `py314` to the `black` target versions.
+  + Update the `snakemake` version badge in the README to `>=9`.
+
 ### version 7.1.0
 Update software versions (reason is to update `neutcurve` to fix bug causing scrunched panels in curve plots):
  - `altair`: 5.5 -> 6.2

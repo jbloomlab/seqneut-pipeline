@@ -1,16 +1,16 @@
 [project]
 name = "seqneut-pipeline"
-version = "7.1.0"
+version = "8.0.0"
 description = "Modular analysis pipeline for high-throughput sequencing-based neutralization assays"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
     {name = "Bloom Lab", email = "jbloom@fredhutch.org"}
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 
 [tool.black]
-target-version = ["py313"]
+target-version = ["py313", "py314"]
 
 [project.urls]
 Homepage = "https://github.com/jbloomlab/seqneut-pipeline"
