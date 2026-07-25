@@ -15,6 +15,8 @@
   + `actions/upload-artifact`: v4 -> v7
   + Also drop the `rm -rf docs` from the test-example step, as it is a leftover from version 6.0.0 when the docs moved from `./docs` to `./results/docs`.
 
+- Convert the `date` of each plate in the config to a string (in the new `stringify_plate_dates` in `funcs.smk`). YAML parses unquoted dates such as `2023-08-01` into `datetime.date` objects, and the updated `snakemake` hashes the config with `json.dumps` at startup, which fails on those objects with `TypeError: Object of type date is not JSON serializable`. Previously the dates were only converted to strings on a copy of the config, and not at all for `miscellaneous_plates`.
+
 - Adopt the much broader default rule selection of `ruff` 0.16, and fix or explicitly ignore everything it newly reports in the notebooks and scripts. In `pyproject.toml`, `B018` and `PLR1711` are ignored for `notebooks/*.py`, as they fire only on the file format that `marimo` writes rather than on anything actually wrong: `PLR1711` flags the `return` that `marimo` generates at the end of every cell, and `B018` flags a cell's trailing bare expression, which is what that cell renders.
 
 ### version 7.1.0

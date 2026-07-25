@@ -11,6 +11,19 @@ import functools
 import os
 
 
+def stringify_plate_dates(config):
+    """Convert the ``date`` of each plate in ``config`` to a string.
+
+    YAML parses unquoted dates (e.g. ``2023-08-01``) into ``datetime.date`` objects,
+    which ``snakemake`` cannot JSON serialize when it hashes the config at startup.
+
+    """
+    for config_key in ["plates", "miscellaneous_plates"]:
+        for plate_d in config.get(config_key, {}).values():
+            if "date" in plate_d:
+                plate_d["date"] = str(plate_d["date"])
+
+
 def process_miscellaneous_plates(misc_plates_d):
     """Process the dictionary of miscellaneous_plates."""
     misc_plates = {}

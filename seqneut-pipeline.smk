@@ -35,6 +35,8 @@ neut_standard_sets = {
     s: pd.read_csv(f) for (s, f) in config["neut_standard_sets"].items()
 }
 
+stringify_plate_dates(config)  # so `snakemake` can JSON serialize the config
+
 plates = {
     str(plate): process_plate(str(plate), plate_params)
     for (plate, plate_params) in config["plates"].items()
