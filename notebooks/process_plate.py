@@ -31,20 +31,14 @@ def _():
     import warnings
 
     import altair as alt
-
-    import matplotlib.style
-
-    import neutcurve
-    from neutcurve.colorschemes import CBPALETTE, CBMARKERS
-    from neutcurve.marimo_utils import display_fig_marimo
-
-    import numpy
-
-    import pandas as pd
-
-    import ruamel.yaml as yaml
-
     import marimo as mo
+    import matplotlib.style
+    import neutcurve
+    import numpy
+    import pandas as pd
+    from neutcurve.colorschemes import CBMARKERS, CBPALETTE
+    from neutcurve.marimo_utils import display_fig_marimo
+    from ruamel import yaml
 
     _ = alt.data_transformers.disable_max_rows()
 
@@ -754,16 +748,18 @@ def _(
         qc = qc_thresholds[qc_name]
         mo.output.append(mo.md(f"Apply QC `{qc_name}`: `{qc}`"))
 
+        # the lambdas below take `qc` as a keyword argument so that they bind the
+        # current loop iteration's `qc` rather than closing over the loop variable
         fails_qc = (
             df.assign(
-                fails_qc=lambda x: ~(
+                fails_qc=lambda x, qc=qc: ~(
                     (x["count_frac"] >= qc["min_frac"])
                     & (x["fold_change_from_median"] <= qc["max_fold_change"])
                 )
             )
             .groupby("barcode", as_index=False)
             .aggregate(n_wells_fail_qc=pd.NamedAgg("fails_qc", "sum"))
-            .assign(fails_qc=lambda x: x["n_wells_fail_qc"] >= qc["max_wells"])[
+            .assign(fails_qc=lambda x, qc=qc: x["n_wells_fail_qc"] >= qc["max_wells"])[
                 ["barcode", "fails_qc"]
             ]
         )
@@ -1768,7 +1764,7 @@ def _(mo):
 
 
 @app.cell
-def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve):
+def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve, plate):
     fits_qc = neutcurve.CurveFits(
         frac_infectivity_3.rename(
             columns={
@@ -1790,6 +1786,10 @@ def _(curvefit_params, fits_noqc, frac_infectivity_3, group, mo, neutcurve):
     )
     mo.output.append(mo.md(f"Assigning fits for this plate to `{group}`"))
     fit_params_qc.insert(0, "group", group)
+    # record the plate so downstream analyses do not have to parse it out of the
+    # replicate name (which is a `plate_barcode`), where one plate name being a prefix
+    # of another would make the parse ambiguous
+    fit_params_qc.insert(1, "plate", plate)
     return fit_params_qc, fits_qc
 
 

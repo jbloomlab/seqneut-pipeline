@@ -1,14 +1,15 @@
 """Implements ``snakemake`` rule to translate gene sequence."""
 
 import os
-import time
 import shutil
 import sys
+import time
 
 import markdown
 import markdown.extensions.toc
 
-sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")
+# `noqa: SIM115` as this log file must stay open for the life of the script
+sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")  # noqa: SIM115
 
 copied_files = {
     f: os.path.join(snakemake.output.docs, os.path.basename(f)) for f in snakemake.input

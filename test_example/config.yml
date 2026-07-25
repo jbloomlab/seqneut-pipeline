@@ -85,6 +85,28 @@ plates:
       upstream2: GCTACA
       upstream2_mismatch: 1
 
+  # An exact duplicate of `plate2` (same samples and FASTQs under a different plate
+  # name). This gives the sera on `plate2` a third plate, which tests the multi-panel
+  # plate-to-plate correlation plots. Because it is an exact duplicate, its titers must
+  # correlate perfectly with those from `plate2`, and its correlation with `plate11` must
+  # be identical to that of `plate2` with `plate11`.
+  plate2_exact_dup:
+    group: serum
+    date: 2023-08-01
+    viral_library: pdmH1N1_lib2023_loes
+    neut_standard_set: loes2023
+    samples_csv: data/plates/plate2_samples.csv
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
+
   plate11:
     group: serum
     date: 2023-09-26

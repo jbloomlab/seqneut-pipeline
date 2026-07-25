@@ -22,24 +22,19 @@ def _(mo):
 @app.cell
 def _():
     import io
+    import itertools
     import pickle
     import sys
 
     import altair as alt
-
+    import marimo as mo
     import matplotlib
     import matplotlib.pyplot as plt
-
     import neutcurve
-    from neutcurve.marimo_utils import display_fig_marimo
-
     import numpy
-
     import pandas as pd
-
-    import ruamel.yaml as yaml
-
-    import marimo as mo
+    from neutcurve.marimo_utils import display_fig_marimo
+    from ruamel import yaml
 
     _ = alt.data_transformers.disable_max_rows()
 
@@ -49,6 +44,7 @@ def _():
         alt,
         display_fig_marimo,
         io,
+        itertools,
         mo,
         neutcurve,
         numpy,
@@ -139,6 +135,7 @@ def _(pickle, sys):
 def _(context, mo):
     # Extract variables from context - raises KeyError if required keys missing
     pickle_fits = context["input"]["pickles"]
+    fits_csvs = context["input"]["fits_csvs"]
     per_rep_titers_csv = context["output"]["per_rep_titers"]
     titers_csv = context["output"]["titers"]
     curves_pdf = context["output"]["curves_pdf"]
@@ -176,6 +173,7 @@ def _(context, mo):
         curve_display_method,
         curves_pdf,
         dilution_factor_or_concentration,
+        fits_csvs,
         group,
         output_pickle,
         per_rep_titers_csv,
@@ -216,6 +214,35 @@ def _(group, mo, neutcurve, pickle, pickle_fits, serum):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    Get the plate that each replicate was measured on.
+    Each plate records this in its `curvefits.csv`, so it does not have to be parsed out
+    of the replicate name (a `plate_barcode`), which would be ambiguous when one plate
+    name is a prefix of another:
+    """)
+    return
+
+
+@app.cell
+def _(fits_csvs, mo, pd, serum):
+    _plate_reps = pd.concat(
+        [pd.read_csv(f)[["plate", "replicate"]] for f in fits_csvs], ignore_index=True
+    ).drop_duplicates()
+    assert (
+        len(_plate_reps) == _plate_reps["replicate"].nunique()
+    ), f"a replicate is assigned to more than one plate:\n{_plate_reps}"
+    plate_of_replicate = _plate_reps.set_index("replicate")["plate"].to_dict()
+
+    # plates in the order they are listed for this serum, used to order the plate pairs
+    serum_plates = list(dict.fromkeys(_plate_reps["plate"]))
+    mo.output.append(
+        mo.md(f"`{serum}` was measured on {len(serum_plates)} plate(s): {serum_plates}")
+    )
+    return plate_of_replicate, serum_plates
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     Indicate how we are calculating the titer:
     """)
     return
@@ -247,12 +274,18 @@ def _(
     fits_noqc,
     group,
     mo,
+    plate_of_replicate,
     serum,
     serum_titer_as,
     viral_strain_plot_order,
 ):
     _fit_params = fits_noqc.fitParams(average_only=False, no_average=True).assign(
         group=group,
+        plate=lambda x: x["replicate"].map(plate_of_replicate),
+    )
+    assert _fit_params["plate"].notnull().all(), (
+        "could not assign a plate to every replicate:\n"
+        f"{_fit_params[_fit_params['plate'].isnull()]}"
     )
     if dilution_factor_or_concentration == "dilution_factor":
         # titer is a reciprocal serum dilution: convert IC50 to NT50 and take the
@@ -276,6 +309,7 @@ def _(
                 "group",
                 "serum",
                 "virus",
+                "plate",
                 "replicate",
                 "titer",
                 "titer_bound",
@@ -308,6 +342,7 @@ def _(
                 "group",
                 "serum",
                 "virus",
+                "plate",
                 "replicate",
                 "titer",
                 "titer_bound",
@@ -399,25 +434,6 @@ def _(alt, dilution_factor_or_concentration, group, mo, per_rep_titers, serum):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Write the individual per-replicate titers to a file, this is before any QC has been applied:
-    """)
-    return
-
-
-@app.cell
-def _(mo, per_rep_titers, per_rep_titers_csv):
-    mo.output.append(
-        mo.md(
-            f"Writing per-replicate titers (without QC filtering) to `{per_rep_titers_csv}`"
-        )
-    )
-    per_rep_titers.to_csv(per_rep_titers_csv, index=False, float_format="%.4g")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     ## Plot median titers and determine if they pass QC
     Get the median titers for each virus across replicates, then add these median titers to the per-replicate titers and calculate the fold-change in titer between each replicate and its median.
     Finally, for each virus indicate whether it passes the QC:
@@ -426,9 +442,7 @@ def _(mo):
 
 
 @app.cell
-def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
-    mo.output.append(mo.md(f"Using the following `qc_thresholds={qc_thresholds!r}`"))
-
+def _():
     def get_median_bound(s):
         """Get the bound on titer when taking median."""
         s = list(s)
@@ -440,9 +454,16 @@ def _(mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
             if len(set(bounds)) == 1:
                 return bounds[0]
             elif "interpolated" in bounds:
-                return [b for b in bounds if b != "interpolated"][0]
+                return next(b for b in bounds if b != "interpolated")
             else:
                 return "inconsistent"
+
+    return (get_median_bound,)
+
+
+@app.cell
+def _(get_median_bound, mo, numpy, pd, per_rep_titers, qc_thresholds, viruses):
+    mo.output.append(mo.md(f"Using the following `qc_thresholds={qc_thresholds!r}`"))
 
     median_titers_noqc = (
         per_rep_titers.sort_values("titer")  # for getting median bound
@@ -706,6 +727,418 @@ def _(io, mo, qc_drops_file, qc_thresholds, viruses_failing_qc, yaml):
     with open(qc_drops_file, "w") as f_qc_drops:
         yaml.YAML(typ="rt").dump(viruses_to_drop, f_qc_drops)
     return (viruses_to_drop,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Write the individual per-replicate titers to a file.
+    These are all of the replicates that passed the QC applied when their plate was
+    processed, and so are not filtered by the per-serum QC just applied above.
+    Instead, the `dropped_by_qc` column indicates whether a replicate's virus was dropped
+    by that per-serum QC, making this file a superset of the titers written below.
+    Note that the per-serum QC drops a virus rather than an individual replicate, so this
+    column has the same value for all replicates of a virus:
+    """)
+    return
+
+
+@app.cell
+def _(mo, per_rep_titers, per_rep_titers_csv, viruses_to_drop):
+    mo.output.append(
+        mo.md(f"Writing per-replicate titers to `{per_rep_titers_csv}`"),
+    )
+    per_rep_titers.assign(
+        dropped_by_qc=lambda x: x["virus"].isin(set(viruses_to_drop))
+    ).to_csv(per_rep_titers_csv, index=False, float_format="%.4g")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Plate-to-plate correlation of titers
+    If this serum was measured on more than one plate, compare the titers between each
+    pair of plates to assess plate-to-plate reproducibility.
+    The titer for a strain on a plate is the median over all of that plate's barcodes,
+    all of which have already passed the per-plate QC applied when the plate was
+    processed.
+
+    All strains are shown, colored by whether they are retained in the final titers or
+    were dropped just above by the per-serum QC on replicate-to-replicate variation.
+    **Use the `show strains` dropdown at the bottom of the plots to show only the retained
+    or only the dropped strains**, and set it back to `all` to show all of them.
+    Note that a strain listed in `viruses_ignore_qc` of `qc_thresholds` is colored as
+    retained even if it fails the QC, because it is kept in the final titers; mouse over
+    a point for the details.
+    The Pearson correlation is reported both over all strains and over just the retained
+    strains, and the dashed line is `y = x`.
+    """)
+    return
+
+
+@app.cell
+def _(
+    get_median_bound,
+    itertools,
+    mo,
+    numpy,
+    pd,
+    per_rep_titers,
+    serum,
+    serum_plates,
+    viruses,
+    viruses_failing_qc,
+    viruses_to_drop,
+):
+    # the titer for a strain on a plate is the median over that plate's barcodes
+    plate_titers = (
+        per_rep_titers.sort_values("titer")  # for getting median bound
+        .groupby(["virus", "plate"], as_index=False)
+        .aggregate(
+            titer=pd.NamedAgg("titer", "median"),
+            n_barcodes=pd.NamedAgg("replicate", "count"),
+            titer_bound=pd.NamedAgg("titer_bound", get_median_bound),
+        )
+    )
+
+    def _pearson_r(df):
+        """Pearson R of the log-transformed titers, or `None` if too few strains."""
+        if len(df) < 3:
+            return None
+        return numpy.corrcoef(numpy.log10(df["titer_x"]), numpy.log10(df["titer_y"]))[
+            0, 1
+        ]
+
+    _dropped = set(viruses_to_drop)
+    _pair_dfs = []
+    plate_pair_info = []
+    for _plate_x, _plate_y in itertools.combinations(serum_plates, 2):
+        _pair_df = (
+            plate_titers[plate_titers["plate"] == _plate_x]
+            .drop(columns="plate")
+            .merge(
+                plate_titers[plate_titers["plate"] == _plate_y].drop(columns="plate"),
+                on="virus",
+                suffixes=("_x", "_y"),
+                validate="one_to_one",
+            )
+            .assign(
+                pair=f"{_plate_x} vs {_plate_y}",
+                censored=lambda x: (x["titer_bound_x"] != "interpolated")
+                | (x["titer_bound_y"] != "interpolated"),
+            )
+        )
+        if not len(_pair_df):
+            continue
+        _kept_df = _pair_df[~_pair_df["virus"].isin(_dropped)]
+        # both axes get the same domain so that the y = x line is a true diagonal. The
+        # domain is the range of the titers on either plate, padded by a fraction of that
+        # range on a log scale so that points do not sit on the plot edge. The padding is
+        # proportional rather than a fixed factor so that it does not swamp a pair whose
+        # titers span a narrow range, and the floor keeps a pair with almost no spread
+        # (such as a plate compared with an exact duplicate of itself) from collapsing.
+        _lo = min(_pair_df["titer_x"].min(), _pair_df["titer_y"].min())
+        _hi = max(_pair_df["titer_x"].max(), _pair_df["titer_y"].max())
+        _pad = max(0.05 * (numpy.log10(_hi) - numpy.log10(_lo)), numpy.log10(1.1))
+        plate_pair_info.append(
+            {
+                "pair": f"{_plate_x} vs {_plate_y}",
+                "plate_x": _plate_x,
+                "plate_y": _plate_y,
+                "n": len(_pair_df),
+                "r": _pearson_r(_pair_df),
+                "n_kept": len(_kept_df),
+                "r_kept": _pearson_r(_kept_df),
+                "domain": [
+                    float(10 ** (numpy.log10(_lo) - _pad)),
+                    float(10 ** (numpy.log10(_hi) + _pad)),
+                ],
+            }
+        )
+        _pair_dfs.append(_pair_df)
+
+    if plate_pair_info:
+        # keep the plotted data frame narrow: the plate names are put into each subplot's
+        # axis titles and tooltips rather than repeated on every row, and the QC status of
+        # a strain is determined by `virus` so it goes in the `virus_qc_lookup` below
+        plate_pair_titers = pd.concat(_pair_dfs, ignore_index=True)[
+            [
+                "pair",
+                "virus",
+                "titer_x",
+                "titer_y",
+                "n_barcodes_x",
+                "n_barcodes_y",
+                "censored",
+            ]
+        ]
+
+        def _qc_reason(v):
+            """Explain the QC status of a strain."""
+            if v in viruses_to_drop:
+                return f"fails {viruses_to_drop[v]}"
+            elif v in viruses_failing_qc:
+                return f"fails {viruses_failing_qc[v]} but retained via `viruses_ignore_qc`"
+            else:
+                return "passes QC"
+
+        virus_qc_lookup = pd.DataFrame(
+            {"virus": [v for v in viruses if v in set(plate_pair_titers["virus"])]}
+        ).assign(
+            qc_status=lambda x: numpy.where(
+                x["virus"].isin(_dropped),
+                "dropped by per-serum QC",
+                "retained in final titers",
+            ),
+            qc_reason=lambda x: x["virus"].map(_qc_reason),
+        )
+        assert len(virus_qc_lookup) == virus_qc_lookup["virus"].nunique()
+
+        # end points of each subplot's y = x line, which are the ends of its axes rather
+        # than of its data, so that the line spans the whole subplot
+        plate_pair_diagonal = pd.DataFrame(
+            [
+                {"pair": info["pair"], "titer": titer}
+                for info in plate_pair_info
+                for titer in info["domain"]
+            ]
+        )
+        mo.output.append(
+            mo.md(
+                f"Comparing titers between {len(plate_pair_info)} pair(s) of plates for "
+                f"`{serum}`"
+            )
+        )
+    else:
+        plate_pair_titers = None
+        virus_qc_lookup = None
+        plate_pair_diagonal = None
+        if len(serum_plates) < 2:
+            mo.output.append(
+                mo.md(
+                    f"`{serum}` was measured on only one plate "
+                    f"(`{serum_plates[0]}`), so there is no plate-to-plate correlation "
+                    "to show."
+                )
+            )
+        else:
+            mo.output.append(
+                mo.md(
+                    "No pair of plates has any strain measured on both plates, so there "
+                    "is no plate-to-plate correlation to show."
+                )
+            )
+    return (
+        plate_pair_diagonal,
+        plate_pair_info,
+        plate_pair_titers,
+        virus_qc_lookup,
+    )
+
+
+@app.cell
+def _(
+    alt,
+    concentration_units,
+    dilution_factor_or_concentration,
+    group,
+    mo,
+    plate_pair_diagonal,
+    plate_pair_info,
+    plate_pair_titers,
+    serum,
+    virus_qc_lookup,
+):
+    if plate_pair_info:
+        _titer_label = (
+            "titer"
+            if dilution_factor_or_concentration == "dilution_factor"
+            else f"titer ({concentration_units})"
+        )
+
+        # A dropdown is used to select which strains to show rather than binding the
+        # selection to the QC-status legend. Binding to the legend does not work here: the
+        # legend of a concatenated chart belongs to whichever subplot draws it, so the
+        # binding never reaches the other subplots. An input binding does work, because the
+        # param is declared on the concatenated chart itself (see `add_params` below) and
+        # so is in scope for every subplot. Selecting "all" shows every strain.
+        _qc_statuses = ["retained in final titers", "dropped by per-serum QC"]
+        _qc_selection = alt.selection_point(
+            fields=["qc_status"],
+            bind=alt.binding_select(
+                options=[None, *_qc_statuses],
+                labels=["all", *_qc_statuses],
+                name="show strains",
+            ),
+            name="qc_status_selection",
+        )
+
+        # mousing over a strain highlights it on every subplot, not just the one being
+        # moused over, because this param is also declared on the concatenated chart
+        _virus_hover = alt.selection_point(
+            fields=["virus"], on="mouseover", empty=False, name="virus_hover"
+        )
+
+        def _scale(info):
+            """Log scale shared by both axes of a subplot."""
+            return alt.Scale(type="log", nice=False, domain=info["domain"])
+
+        def _axis():
+            """Axis that drops tick labels rather than letting them overlap."""
+            return alt.Axis(labelOverlap=True)
+
+        def _fmt_r(r):
+            """Format a Pearson R that is `None` when there were too few strains."""
+            return "not computed (< 3 strains)" if r is None else f"{r:.2f}"
+
+        _charts = []
+        for _i, _info in enumerate(plate_pair_info):
+            _base = (
+                alt.Chart(plate_pair_titers)
+                .transform_filter(alt.datum.pair == _info["pair"])
+                .transform_lookup(
+                    lookup="virus",
+                    from_=alt.LookupData(
+                        virus_qc_lookup,
+                        key="virus",
+                        fields=["qc_status", "qc_reason"],
+                    ),
+                )
+            )
+            _x_title = f"{_titer_label} on {_info['plate_x']}"
+            _y_title = f"{_titer_label} on {_info['plate_y']}"
+            _points = (
+                _base.transform_filter(_qc_selection)
+                .encode(
+                    alt.X(
+                        "titer_x:Q",
+                        title=_x_title,
+                        scale=_scale(_info),
+                        axis=_axis(),
+                    ),
+                    alt.Y(
+                        "titer_y:Q",
+                        title=_y_title,
+                        scale=_scale(_info),
+                        axis=_axis(),
+                    ),
+                    alt.Color(
+                        "qc_status:N",
+                        scale=alt.Scale(
+                            domain=_qc_statuses,
+                            range=["MediumBlue", "OrangeRed"],
+                        ),
+                        legend=(
+                            alt.Legend(
+                                title=[
+                                    "strain QC status",
+                                    "(use the 'show strains'",
+                                    "dropdown below the plots",
+                                    "to show only one of these)",
+                                ],
+                                titleLimit=400,
+                                symbolLimit=0,
+                            )
+                            if _i == 0
+                            else None
+                        ),
+                    ),
+                    alt.Shape(
+                        "censored:N",
+                        title=["is either median titer", "censored at a bound?"],
+                        legend=alt.Legend(titleLimit=400) if _i == 0 else None,
+                    ),
+                    tooltip=[
+                        alt.Tooltip("virus:N", title="strain"),
+                        alt.Tooltip(
+                            "titer_x:Q",
+                            title=f"{_titer_label} on {_info['plate_x']}",
+                            format=".3g",
+                        ),
+                        alt.Tooltip(
+                            "titer_y:Q",
+                            title=f"{_titer_label} on {_info['plate_y']}",
+                            format=".3g",
+                        ),
+                        alt.Tooltip(
+                            "n_barcodes_x:Q", title=f"barcodes on {_info['plate_x']}"
+                        ),
+                        alt.Tooltip(
+                            "n_barcodes_y:Q", title=f"barcodes on {_info['plate_y']}"
+                        ),
+                        alt.Tooltip("qc_status:N", title="QC status"),
+                        alt.Tooltip("qc_reason:N", title="QC detail"),
+                    ],
+                    # the moused-over strain gets a larger point with a thick red stroke
+                    size=alt.condition(_virus_hover, alt.value(180), alt.value(60)),
+                    stroke=alt.condition(
+                        _virus_hover, alt.value("red"), alt.value("black")
+                    ),
+                    strokeWidth=alt.condition(
+                        _virus_hover, alt.value(3), alt.value(0.5)
+                    ),
+                    fillOpacity=alt.condition(
+                        _virus_hover, alt.value(1), alt.value(0.5)
+                    ),
+                )
+                .mark_point(filled=True, strokeOpacity=1)
+            )
+            # y = x, drawn from the ends of the axes rather than from the titers so that
+            # the line spans the whole subplot. This layer repeats the axis titles of the
+            # points layer rather than leaving them unset, because the layers share their
+            # axes and a title of `None` here blanks the shared title.
+            _diagonal = (
+                alt.Chart(plate_pair_diagonal)
+                .transform_filter(alt.datum.pair == _info["pair"])
+                .encode(
+                    alt.X("titer:Q", title=_x_title, scale=_scale(_info), axis=_axis()),
+                    alt.Y("titer:Q", title=_y_title, scale=_scale(_info), axis=_axis()),
+                )
+                .mark_line(color="gray", strokeDash=[4, 4], strokeWidth=1)
+            )
+            _charts.append(
+                (_diagonal + _points).properties(
+                    width=200,
+                    height=200,
+                    title=alt.Title(
+                        _info["pair"],
+                        subtitle=[
+                            (
+                                f"Pearson R = {_fmt_r(_info['r'])} "
+                                f"(all {_info['n']} strains)"
+                            ),
+                            (
+                                f"Pearson R = {_fmt_r(_info['r_kept'])} "
+                                f"({_info['n_kept']} retained strains)"
+                            ),
+                        ],
+                        fontSize=14,
+                        subtitleFontSize=10,
+                    ),
+                )
+            )
+        plate_correlation_chart = (
+            alt.concat(*_charts, columns=min(4, len(_charts)))
+            # both params are declared here rather than on the subplots so that they are
+            # in scope for all of them
+            .add_params(_qc_selection, _virus_hover).properties(
+                title=alt.Title(
+                    f"plate-to-plate correlation for {group} {serum}",
+                    subtitle=(
+                        "each point is a viral strain; titers are medians over each "
+                        "plate's barcodes"
+                    ),
+                    fontSize=15,
+                    anchor="middle",
+                )
+            )
+            # `titleFontWeight` is set because axis titles are bold by default, and here
+            # only the overall and subplot titles should be bold
+            .configure_axis(grid=False, titleFontSize=13, titleFontWeight="normal")
+        )
+        mo.output.append(plate_correlation_chart)
+    return
 
 
 @app.cell(hide_code=True)

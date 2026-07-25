@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Snakemake](https://img.shields.io/badge/snakemake-≥9.9-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥9-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
 
 ---
 
@@ -13,10 +13,11 @@ This is a modular analysis pipeline for analyzing high-throughput sequencing-bas
 
 Please cite [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) if you use this pipeline for your scientific study.
 
-Here is a list of studies using this pipeline:
+Here are some key studies using this pipeline:
+  - [Loes et al (2026), Journal of Virology](https://doi.org/10.1128/jvi.00317-26)
   - [Kikawa et al (2026), bioRxiv](https://doi.org/10.64898/2026.02.18.706711)
   - [Kikawa et al (2025), Virus Evolution](https://doi.org/10.1093/ve/veaf086)
-  - [Kikawa et al (2025), eLife](https://doi.org/10.7554/eLife.106811)
+  - [Kikawa et al (2026), eLife](https://doi.org/10.7554/eLife.106811)
   - [Loes et al (2024), Journal of Virology](https://doi.org/10.1128/jvi.00689-24)
 
 For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025to2026](https://github.com/jbloomlab/flu-seqneut-2025to2026).
@@ -539,10 +540,10 @@ The set of full created outputs are as follows (note only some will be tracked d
   - Output related to per-serum titers (aggregated across replicates potentially run on different plates); note that serum are organized per-group as specified in the plates:
     - `./results/sera/groups_sera_by_plate.csv` summarizes which plate(s) each group/serum was run on.
     - `./results/sera/{group}_{serum}/titers.csv`: titer for each virus against the group/serum, reported as the median across replicates, and only keeping those that pass QC. You should track this file in the repo.
-    - `./results/sera/{group}_{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the group/serum. You should track this file in the repo.
+    - `./results/sera/{group}_{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the group/serum. This contains every replicate that passed the QC applied when its plate was processed, and is not filtered by the per-serum QC on replicate-to-replicate variation; instead the `dropped_by_qc` column indicates whether the virus was dropped by that QC, so this file is a superset of `titers.csv`. Because the per-serum QC drops a virus rather than an individual replicate, that column has the same value for all replicates of a virus. You should track this file in the repo.
     - `./results/sera/{group}_{serum}/curves.pdf`: PDF rendering of the neutralization curves for the group/serum. You do not need to track this as a HTML version is rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/sera/{group}_{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this group/serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of marimo notebook that aggregates titers for a group/serum across all plates. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of marimo notebook that aggregates titers for a group/serum across all plates. If the serum was measured on more than one plate, this includes a scatter plot of the titers for each pair of plates to show the plate-to-plate correlation. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/sera/{group}_{serum}/qc_drops.yml`: virus-group/serum titers dropped due to QC when processing this serum's titers.
 
   - Results related to aggregated titers across all sera in a group after applying all quality control:

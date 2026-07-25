@@ -5,6 +5,13 @@ plate2:
   barcode_wells: {}
   barcode_serum_replicates: {}
   serum_replicates: {}
+plate2_exact_dup:
+  wells: {}
+  barcodes:
+    CATACAGAGTTTGTTG: min_neut_standard_frac_per_well
+  barcode_wells: {}
+  barcode_serum_replicates: {}
+  serum_replicates: {}
 plate11:
   wells:
     D6: avg_barcode_counts_per_well

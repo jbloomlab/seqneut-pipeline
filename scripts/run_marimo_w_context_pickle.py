@@ -6,7 +6,8 @@ import subprocess
 import sys
 
 # Redirect stderr and stdout to log
-log_file = open(snakemake.log[0], "w")
+# `noqa: SIM115` as this log file must stay open for the life of the script
+log_file = open(snakemake.log[0], "w")  # noqa: SIM115
 sys.stderr = sys.stdout = log_file
 
 # Build context dictionary from snakemake object
@@ -27,9 +28,9 @@ context_pickle = snakemake.output.context_pickle
 print(f"Running marimo notebook: {marimo_nb=}")
 print(f"Using context pickle: {context_pickle=}")
 print(f"Context keys: {list(context.keys())=}")
-for key in context:
-    if context[key]:
-        print(f"  For {key}, context is: {context[key]}")
+for key, val in context.items():
+    if val:
+        print(f"  For {key}, context is: {val}")
 print(f"Output HTML: {marimo_html=}")
 
 # Write context to pickle file

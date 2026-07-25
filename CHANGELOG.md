@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## version 8.0.0 (unreleased)
+- Update software versions, most notably `python` to 3.14:
+  + `python`: 3.13 -> 3.14
+  + `snakemake`: 9.19 -> 9.23
+  + `pandas`: pin loosened from 2.3.3 to 2.3 for consistency with the other pins (still resolves to 2.3.3). Note that `pandas` cannot yet be updated to 3.0 because the `bioconda` `snakemake` package pins `pandas <3`.
+  + Drop `mamba` from `environment.yml`, as `snakemake` has deprecated the `mamba` conda frontend and now relies on `conda` (>24.7.1) for conda-environment deployment.
+  + In `pyproject.toml`, set `requires-python` to `>=3.13` (was `>=3.9`) and add `py314` to the `black` target versions.
+  + Update the `snakemake` version badge in the README to `>=9`.
+
+- Update the GitHub Actions used for testing in `.github/workflows/test.yaml` to their latest versions:
+  + `actions/checkout`: v5 -> v7
+  + `conda-incubator/setup-miniconda`: v3 -> v4, and rename the now-deprecated `auto-activate-base` input to `auto-activate`
+  + `actions/upload-artifact`: v4 -> v7
+  + Also drop the `rm -rf docs` from the test-example step, as it is a leftover from version 6.0.0 when the docs moved from `./docs` to `./results/docs`.
+
+- Convert the `date` of each plate in the config to a string (in the new `stringify_plate_dates` in `funcs.smk`). YAML parses unquoted dates such as `2023-08-01` into `datetime.date` objects, and the updated `snakemake` hashes the config with `json.dumps` at startup, which fails on those objects with `TypeError: Object of type date is not JSON serializable`. Previously the dates were only converted to strings on a copy of the config, and not at all for `miscellaneous_plates`.
+
+- Adopt the much broader default rule selection of `ruff` 0.16, and fix or explicitly ignore everything it newly reports in the notebooks and scripts. In `pyproject.toml`, `B018` and `PLR1711` are ignored for `notebooks/*.py`, as they fire only on the file format that `marimo` writes rather than on anything actually wrong: `PLR1711` flags the `return` that `marimo` generates at the end of every cell, and `B018` flags a cell's trailing bare expression, which is what that cell renders.
+
+- Add plate-to-plate correlations of titers to the per-serum notebook. For a serum measured on more than one plate, there is now a scatter plot for each pair of plates showing the titer of each viral strain on one plate versus the other, labeled with the Pearson correlation of the log titers and arranged in a grid of up to four columns when there are several pairs. The titer for a strain on a plate is the median over that plate's barcodes. All strains are shown colored by whether the per-serum QC on replicate-to-replicate variation retained or dropped them, and clicking an entry in that legend restricts the plot to just those strains; the Pearson correlation is reported both over all strains and over just the retained ones, so the effect of the QC is visible without a separate plot.
+
+- Add a `plate` column to `./results/plates/{plate}/curvefits.csv` and `./results/sera/{group}_{serum}/titers_per_replicate.csv`. The per-serum analysis needs to know which plate each replicate came from, and recording it upstream avoids parsing it out of the replicate name, which is ambiguous when one plate name is a prefix of another (as it now is in the test example).
+
+- Add a `dropped_by_qc` column to `./results/sera/{group}_{serum}/titers_per_replicate.csv` indicating whether the virus was dropped by the per-serum QC on replicate-to-replicate variation. That file remains unfiltered by this QC, so the column is what makes it possible to tell which of its titers made it into the final results. Note that the file is still filtered by the QC applied when each plate was processed, and that this QC drops a virus rather than an individual replicate, so the column has the same value for all replicates of a virus. Writing the file now happens after the per-serum QC is determined rather than before it.
+
+- Add a `plate2_exact_dup` plate to the test example, an exact duplicate of `plate2` that gives its sera a third plate so that the multi-panel correlation grid is tested. Being an exact duplicate also makes two of the three panels serve as checks: its titers must correlate perfectly with `plate2`, and its correlation with `plate11` must match that of `plate2` with `plate11`. This changes the number of replicates per titer for that group, and so also the expected titers in `expected_titers_for_test.csv`.
+
+- Simplify [./test_example/.gitignore](test_example/.gitignore), which the README recommends copying into your own repo, using `results/**` plus `!results/**/` to ignore all of `results` while still allowing the key results to be re-included. This removes the need to re-include each subdirectory before ignoring its contents. Which files are tracked is unchanged (verified over all files in the test example's `results`), so you do not need to update your own copy.
+
 ### version 7.1.0
 Update software versions (reason is to update `neutcurve` to fix bug causing scrunched panels in curve plots):
  - `altair`: 5.5 -> 6.2

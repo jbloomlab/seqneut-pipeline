@@ -35,6 +35,8 @@ neut_standard_sets = {
     s: pd.read_csv(f) for (s, f) in config["neut_standard_sets"].items()
 }
 
+stringify_plate_dates(config)  # so `snakemake` can JSON serialize the config
+
 plates = {
     str(plate): process_plate(str(plate), plate_params)
     for (plate, plate_params) in config["plates"].items()
@@ -198,6 +200,10 @@ if plates:
             marimo_nb=os.path.join(pipeline_subdir, "notebooks/group_serum_titers.py"),
             pickles=lambda wc: [
                 rules.process_plate.output.fits_pickle.format(plate=plate)
+                for plate in groups_sera_plates()[(wc.group, wc.serum)]
+            ],
+            fits_csvs=lambda wc: [
+                rules.process_plate.output.fits_csv.format(plate=plate)
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
             ],
         output:

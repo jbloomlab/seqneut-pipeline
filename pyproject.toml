@@ -1,16 +1,16 @@
 [project]
 name = "seqneut-pipeline"
-version = "7.1.0"
+version = "8.0.0"
 description = "Modular analysis pipeline for high-throughput sequencing-based neutralization assays"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
     {name = "Bloom Lab", email = "jbloom@fredhutch.org"}
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 
 [tool.black]
-target-version = ["py313"]
+target-version = ["py313", "py314"]
 
 [project.urls]
 Homepage = "https://github.com/jbloomlab/seqneut-pipeline"
@@ -20,4 +20,13 @@ Issues = "https://github.com/jbloomlab/seqneut-pipeline/issues"
 [tool.ruff]
 builtins = [
     "snakemake",  # may appear undefined as passed to scripts via `Snakefile`
+]
+
+# We lint with `ruff`'s default rule selection, which is much broader as of `ruff`
+# 0.16. The rules ignored below are triggered only by the file format that `marimo`
+# writes, not by anything actually wrong with the notebooks.
+[tool.ruff.lint.per-file-ignores]
+"notebooks/*.py" = [
+    "B018",  # a cell's trailing bare expression is what that cell renders
+    "PLR1711",  # `marimo` ends each cell with a `return` of the variables it exports
 ]
