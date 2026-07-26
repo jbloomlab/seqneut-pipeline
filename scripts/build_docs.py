@@ -39,6 +39,12 @@ for f in snakemake.input.titers_charts:
     assert base.startswith("titers_") and base.endswith(".html"), base
     titers_charts_by_group[base[len("titers_") : -len(".html")]] = f
 
+# map each plate to its plate-to-plate correlation notebook; only the plates sharing
+# sera with another plate of their group have one
+plate_corr_htmls_by_plate = dict(
+    zip(snakemake.params.corr_plates, snakemake.input.plate_corr_htmls, strict=True)
+)
+
 md_text = [
     snakemake.params.description,
     "",
@@ -77,6 +83,27 @@ for group in group_order:
             list(snakemake.params.plates).index(plate)
         ]
         md_text.append(f"- [{plate}]({os.path.basename(copied_files[f])})")
+
+if plate_corr_htmls_by_plate:
+    md_text += [
+        "",
+        (
+            "## Plate-to-plate correlations of titers "
+            "(only for plates that share sera with other plates)"
+        ),
+    ]
+    for group in group_order:
+        group_corr_plates = [
+            plate
+            for (plate, plate_group) in snakemake.params.corr_plates.items()
+            if plate_group == group
+        ]
+        if not group_corr_plates:
+            continue
+        md_text.append(f"\n### {group}")
+        for plate in group_corr_plates:
+            f = plate_corr_htmls_by_plate[plate]
+            md_text.append(f"- [{plate}]({os.path.basename(copied_files[f])})")
 
 md_text += [
     "",

@@ -23,6 +23,8 @@ results/**
 
 !results/aggregated_titers/titers*.csv
 
+!results/plate_to_plate_corrs/*.csv
+
 !results/qc_drops/*.yml
 
 !results/miscellaneous_plates/*/*counts.csv

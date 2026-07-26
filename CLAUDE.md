@@ -22,15 +22,16 @@ rather than in the rules.
 | `process_plate` | `notebooks/process_plate.py` | per plate: applies `qc_thresholds`, computes fraction infectivity, fits curves with `neutcurve` |
 | `groups_sera_by_plate` | `scripts/groups_sera_by_plate.py` | maps each group/serum to the plate(s) it ran on. A checkpoint because its input is the plates' `curvefits.csv`, so which group/serum jobs exist is only known once the plates have been processed and their QC applied |
 | `group_serum_titers` | `notebooks/group_serum_titers.py` | per group/serum: medians titers across replicates from all of its plates, applies the serum-level QC |
+| `plate_to_plate_corr` | `notebooks/plate_to_plate_corr.py` | per plate: correlates its titers with those on the other plates of its group, one panel per other plate |
 | `aggregate_titers` | `notebooks/aggregate_titers.py` | combines all sera in a group and builds the interactive titer plots |
 | `aggregate_qc_drops` | `notebooks/aggregate_qc_drops.py` | summarizes every QC drop across all plates and sera |
 | `build_docs` | `scripts/build_docs.py` | collects the notebook HTML into `results/docs` |
 | `miscellaneous_plate_count_barcodes` | `scripts/count_barcodes.py` | counting only, for `miscellaneous_plates` |
 
 `funcs.smk` holds the config-processing helpers that run while the rules are being
-defined (`process_plate`, `process_miscellaneous_plates`, `stringify_plate_dates`, and
-the sample-table validation). It relies on `pd` and `re` being imported by
-`seqneut-pipeline.smk`.
+defined (`process_plate`, `process_miscellaneous_plates`, `stringify_plate_dates`,
+`get_plate_comparators`, and the sample-table validation). It relies on `pd` and `re`
+being imported by `seqneut-pipeline.smk`.
 
 Two conventions of `seqneut_pipeline_outputs`, the list of final targets at the bottom of
 `seqneut-pipeline.smk`:
@@ -45,6 +46,15 @@ worth running. A rule that runs per group runs for every group, and its notebook
 that there is nothing to show when, say, the group has one plate; deriving the subset of
 groups in the `.smk` instead would add config-processing code for no gain. The same
 applies to adding a config key to turn an analysis off: do not add one unless asked.
+
+`plate_to_plate_corr` is the exception, and shows what justifies one: it runs per plate,
+and a project can have many plates that share no serum with any other, so running it for
+all of them would put a notebook per plate in the docs with nothing in it.
+`get_plate_comparators` therefore derives the plates worth running from the sample tables
+in the config, which works only because it is a superset — QC can only remove sera, so a
+plate excluded there could never have had anything to show. The notebook still handles the
+degenerate case, since QC can empty out a plate that was worth running. Precompute a job
+list only when it changes what appears in the docs like this, not merely to skip work.
 
 ## Marimo notebooks
 
@@ -113,10 +123,39 @@ them. Two consequences, both worked through in the plate-to-plate correlation pl
    hovered. `vega-lite` puts this on the predicate rather than the selection, so it
    appears in the emitted spec as `{"param": ..., "empty": false}` in each condition and
    not in the param definition.
+ - A number annotating a plot that must agree with what a selection is showing (such as a
+   correlation coefficient) has to be computed by transforms in the layer that draws it,
+   with the same `transform_filter` calls ahead of the aggregate, so `vega` recomputes it
+   whenever the selection changes. It cannot go in the title: a title is a fixed string
+   that can refer to a param but not to a value aggregated from the data. So it is drawn
+   as a `mark_text` layer positioned with `x=alt.value(...)`, `y=alt.value(...)`, one
+   layer per line of text, since a text mark draws one string and the aggregate of a layer
+   cannot be shared with another layer. `notebooks/plate_to_plate_corr.py` builds a shared
+   `_base` with the filters and then chains both the points and those layers onto it,
+   which is also how to keep the layers from disagreeing (`altair` copies a chart when a
+   method is chained onto it, so a shared base is safe).
 
 Since interaction cannot be exercised headlessly, verify it by parsing the emitted spec
-out of the exported HTML, checking that each param appears once with a `views` list
-covering every panel.
+out of the exported HTML and checking that each param appears exactly once, at the top
+level of the concatenated spec rather than repeated per panel, with a non-empty `views`
+list that grows with the number of panels. To get the spec, undo the JavaScript `\uXXXX`
+escapes in the HTML, then HTML-unescape the `data-data` attribute of the
+`marimo-mime-renderer` whose `data-mime` names `vegalite` *twice*, then `json.loads` it
+twice (it is a JSON string holding the JSON spec). Do not expect the `views` entries to
+match the panels one for one: `altair` names only some layers, and the point layers of a
+layered panel are typically left unnamed, so compare against a chart already known to
+work rather than against the panel count.
+
+A value computed by transforms can be checked further than that, because a `vega`
+expression is a subset of JavaScript and `node` is available. Pull the transform list and
+the dataset for a layer out of the spec, apply the selection by hand (a `{"param": ...}`
+filter needs `vega`'s selection machinery, so drop those and filter the rows yourself),
+run the remaining `calculate` / `joinaggregate` / `aggregate` transforms in `node` with the
+expressions taken verbatim from the spec, and compare the result with the same quantity
+computed in `pandas`. Shim only what the expressions use (`format` for a `.Nf` spec is
+`toFixed`; `sqrt`, `pow`, `log`, and `LN10` come from `Math`). This catches a bad
+expression, which no amount of reading the spec will, and it exercises selection states
+that the initial rendering does not.
 
 ## Naming conventions
 
@@ -147,6 +186,12 @@ column; the curve fits use the ceilinged values, while the raw values are also s
 These raise errors, and are not all stated in the README:
 
  - Groups cannot contain `_` or `|`, as both break wildcards (`seqneut-pipeline.smk`).
+   A plate can contain `_`, so a path with both wildcards (as in `plate_to_plate_corr`)
+   splits correctly only because the group is constrained to an alternation of the known
+   groups. That rule adds a `plate` constraint too. Note that `snakefmt` 2.0.3 wants a
+   rule's `wildcard_constraints` block after `log:`; put it anywhere else and `snakefmt`
+   silently reorders the rule into something it can no longer parse, moving the docstring
+   down with it.
  - Every plate needs at least one `serum: none` sample (`funcs.smk`). No-serum wells are
    designated by `serum: none` with a blank dilution factor or concentration, never by a
    value of 0.
@@ -179,6 +224,14 @@ These raise errors, and are not all stated in the README:
  - Describe changes in `CHANGELOG.md` at a high level, including the rationale for
    anything surprising, but leave per-file and per-rule detail to the commit message.
    Bump the version in `pyproject.toml`, which is the single source of truth for it.
+ - Keep `CHANGELOG.md` and README entries succinct, and mostly about what a change adds
+   or what a result shows rather than how it is implemented. State implementation only
+   where it is needed to understand or use the thing, and briefly: for the README, that
+   means what a file contains and whether to track it, not how a plot is laid out, and
+   for `CHANGELOG.md`, one entry describing what a version ends up with rather than the
+   steps taken to get there. Steps that never shipped are not changes and do not belong
+   in `CHANGELOG.md` at all, so rewrite an `(unreleased)` entry in place rather than
+   adding a second entry describing how the first one was revised.
  - A version accumulates changes over several pull requests before it is released, so
    its `CHANGELOG.md` heading carries an `(unreleased)` marker while it is in progress.
    Add new entries under that heading rather than starting a new version, and do not
