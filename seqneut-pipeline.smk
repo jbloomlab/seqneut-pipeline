@@ -67,6 +67,19 @@ for plate_d in plates.values():
         )
 
 
+# the plates each plate's titers can be correlated with, and the subset of plates that
+# have at least one such comparator and so get a plate-to-plate correlation notebook
+# (keyed to their group). Both are determined by the configuration rather than by the
+# QC, so the set of correlation notebooks is known without the `groups_sera_by_plate`
+# checkpoint even though the inputs to each of them are not.
+plate_comparators = get_plate_comparators(plates)
+corr_plates = {
+    plate: plates[plate]["group"]
+    for (plate, comparators) in plate_comparators.items()
+    if comparators
+}
+
+
 wildcard_constraints:
     group="|".join(groups),
 
@@ -252,6 +265,57 @@ if plates:
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
+    rule plate_to_plate_corr:
+        """Correlate the titers on a plate with those on the other plates of its group.
+
+        Only created for the plates in `corr_plates`, which are those sharing a serum
+        with another plate of their group. Each pair of plates is therefore compared
+        twice, once in each plate's notebook, which keeps a notebook from growing with
+        the square of the number of plates in the group.
+
+        The notebook handles the case where the QC has dropped every titer that this
+        plate shared with its comparators, by reporting that there is nothing to
+        correlate.
+
+        """
+        input:
+            marimo_nb=os.path.join(pipeline_subdir, "notebooks/plate_to_plate_corr.py"),
+            # The sera measured on this plate. Each of these files holds that serum's
+            # titers from every plate it was measured on, which is what the correlations
+            # need. All of the plate's sera are read rather than just those also measured
+            # elsewhere, so that the notebook can report the ones that are not compared.
+            per_rep_titers=lambda wc: [
+                rules.group_serum_titers.output.per_rep_titers.format(
+                    group=wc.group, serum=serum
+                )
+                for ((group, serum), serum_plates) in groups_sera_plates().items()
+                if (group == wc.group) and (wc.plate in serum_plates)
+            ],
+        output:
+            marimo_html="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.html",
+            context_pickle="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}_context.pickle",
+            corrs_csv="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.csv",
+        log:
+            "results/logs/plate_to_plate_corr_{group}_{plate}.txt",
+        wildcard_constraints:
+            # a group cannot contain '_' but a plate can, so without this the plate part
+            # of the path would be split at its first '_'
+            plate="|".join(re.escape(plate) for plate in plates),
+        conda:
+            "environment.yml"
+        params:
+            plate_date=lambda wc: plates[wc.plate]["date"],
+            # keyed by plate in config order, which orders the panels of the plots
+            comparator_dates=lambda wc: {
+                other: plates[other]["date"] for other in plate_comparators[wc.plate]
+            },
+            dilution_factor_or_concentration=lambda wc: (
+                group_dilution_factor_or_concentration[wc.group]
+            ),
+            concentration_units=lambda wc: group_concentration_units[wc.group],
+        script:
+            "scripts/run_marimo_w_context_pickle.py"
+
     rule aggregate_titers:
         """Aggregate all serum titers."""
         input:
@@ -333,6 +397,12 @@ if plates:
                 "results/plates/{plate}/process_{plate}.html",
                 plate=plates,
             ),
+            plate_corr_htmls=[
+                rules.plate_to_plate_corr.output.marimo_html.format(
+                    group=group, plate=plate
+                )
+                for (plate, group) in corr_plates.items()
+            ],
             qc_drops_html="results/qc_drops/aggregate_qc_drops.html",
         output:
             docs=directory("results/docs"),
@@ -344,6 +414,8 @@ if plates:
             description=config["description"],
             groups_sera=lambda wc: list(groups_sera_plates()),
             plates={plate: plates[plate]["group"] for plate in plates},
+            # keyed by plate in the same order as `plate_corr_htmls`
+            corr_plates=corr_plates,
             add_htmls_to_docs=lambda wc: {
                 key: {
                     key2: (
@@ -396,6 +468,11 @@ if plates:
         rules.aggregate_qc_drops.output.plate_qc_drops,
         rules.aggregate_qc_drops.output.barcode_qc_drops,
         rules.aggregate_qc_drops.output.groups_sera_qc_drops,
+        *[
+            rules.plate_to_plate_corr.output.corrs_csv.format(group=group, plate=plate)
+            for (plate, group) in corr_plates.items()
+        ],
+        # the notebook HTMLs are not listed here, as they are inputs to `build_docs`
         rules.build_docs.output.docs,
         *[
             f"results/miscellaneous_plates/{plate}/{well}_{suffix}"

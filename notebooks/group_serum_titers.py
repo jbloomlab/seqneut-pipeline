@@ -57,6 +57,32 @@ def _():
 
 
 @app.cell
+def _():
+    def narrow_for_altair(df, drop=()):
+        """Narrow a data frame that is about to be embedded in an `altair` chart.
+
+        `altair` embeds the whole frame as inline JSON, so anything superfluous is paid
+        for on every row. Drops `drop`, which should be the columns that are the same on
+        every row: put them back with `transform_calculate` if the chart needs them, so
+        that the value appears once in the chart rather than once per row. Also rounds
+        the floats to four significant figures, since the values from the curve fits and
+        from the medians of them otherwise run to 18 characters apiece, which is far
+        finer than a pixel and finer than the formats of the tooltips. The frames written
+        to the output CSVs are not passed through here, so this affects only the charts.
+        """
+        df = df.drop(columns=list(drop))
+        return df.assign(
+            **{
+                col: df[col].map(lambda x: float(f"{x:.4g}"))
+                for col in df.columns
+                if df[col].dtype == float
+            }
+        )
+
+    return (narrow_for_altair,)
+
+
+@app.cell
 def _(pickle, sys):
     # Load context from pickled file.
     #
@@ -396,7 +422,15 @@ def _(mo):
 
 
 @app.cell
-def _(alt, dilution_factor_or_concentration, group, mo, per_rep_titers, serum):
+def _(
+    alt,
+    dilution_factor_or_concentration,
+    group,
+    mo,
+    narrow_for_altair,
+    per_rep_titers,
+    serum,
+):
     _virus_selection_1 = alt.selection_point(
         fields=["virus"], on="mouseover", empty=False
     )
@@ -404,9 +438,18 @@ def _(alt, dilution_factor_or_concentration, group, mo, per_rep_titers, serum):
     _potency_col = (
         "nt50" if dilution_factor_or_concentration == "dilution_factor" else "ic50"
     )
+    # `group`, `serum`, and `titer_as` are dropped because they are not in the tooltips
+    # below, and `titer_units` because it is the same on every row and so is put back as a
+    # constant by the `transform_calculate`
+    _titer_units = per_rep_titers["titer_units"].unique()
+    assert len(_titer_units) == 1, _titer_units
+    _chart_df = narrow_for_altair(
+        per_rep_titers, drop=["group", "serum", "titer_as", "titer_units"]
+    )
     midpoint_vs_nt50_chart = (
-        alt.Chart(per_rep_titers)
+        alt.Chart(_chart_df)
         .add_params(_virus_selection_1)
+        .transform_calculate(titer_units=f"'{_titer_units[0]}'")
         .encode(
             alt.X(_potency_col, scale=alt.Scale(type="log", nice=False, padding=8)),
             alt.Y("midpoint", scale=alt.Scale(type="log", nice=False, padding=8)),
@@ -414,10 +457,11 @@ def _(alt, dilution_factor_or_concentration, group, mo, per_rep_titers, serum):
             strokeWidth=alt.condition(_virus_selection_1, alt.value(3), alt.value(0)),
             size=alt.condition(_virus_selection_1, alt.value(100), alt.value(60)),
             tooltip=[
-                alt.Tooltip(c, format=".2g") if per_rep_titers[c].dtype == float else c
-                for c in per_rep_titers.columns
-                if c not in {"group", "serum", "titer_as"}
-            ],
+                alt.Tooltip(c, format=".2g") if _chart_df[c].dtype == float else c
+                for c in _chart_df.columns
+            ]
+            # a calculated field has no `pandas` dtype, so its type is given explicitly
+            + [alt.Tooltip("titer_units:N")],
         )
         .mark_circle(stroke="black", fillOpacity=0.45, color="black")
         .properties(
@@ -556,6 +600,7 @@ def _(
     group,
     median_titers_noqc,
     mo,
+    narrow_for_altair,
     per_rep_titers_w_fc,
     qc_thresholds,
     serum,
@@ -569,8 +614,20 @@ def _(
         if dilution_factor_or_concentration == "dilution_factor"
         else f"titer ({concentration_units})"
     )
+    # the columns dropped here are the same on every row, and are put back as constants by
+    # the `transform_calculate` of each layer so that the tooltips still show them
+    _constants = {
+        "group": group,
+        "serum": serum,
+        "titer_as": median_titers_noqc["titer_as"].unique()[0],
+        "titer_units": median_titers_noqc["titer_units"].unique()[0],
+    }
+    _calculate = {col: f"'{val}'" for col, val in _constants.items()}
+    _per_rep_df = narrow_for_altair(per_rep_titers_w_fc, drop=["titer_units"])
+    _median_df = narrow_for_altair(median_titers_noqc, drop=list(_constants))
     per_rep_chart = (
-        alt.Chart(per_rep_titers_w_fc)
+        alt.Chart(_per_rep_df)
+        .transform_calculate(titer_units=_calculate["titer_units"])
         .encode(
             alt.X(
                 "titer",
@@ -586,20 +643,19 @@ def _(
             alt.Shape("titer_bound"),
             strokeWidth=alt.condition(_virus_selection_2, alt.value(2), alt.value(0)),
             tooltip=[
-                (
-                    alt.Tooltip(c, format=".3g")
-                    if per_rep_titers_w_fc[c].dtype == float
-                    else c
-                )
-                for c in per_rep_titers_w_fc
-            ],
+                (alt.Tooltip(c, format=".3g") if _per_rep_df[c].dtype == float else c)
+                for c in _per_rep_df
+            ]
+            # a calculated field has no `pandas` dtype, so its type is given explicitly
+            + [alt.Tooltip("titer_units:N")],
         )
         .mark_point(
             size=35, filled=True, fillOpacity=0.5, strokeOpacity=1, stroke="black"
         )
     )
     median_chart = (
-        alt.Chart(median_titers_noqc)
+        alt.Chart(_median_df)
+        .transform_calculate(**_calculate)
         .encode(
             alt.X(
                 "titer",
@@ -611,13 +667,10 @@ def _(
             alt.Shape("titer_bound"),
             strokeWidth=alt.condition(_virus_selection_2, alt.value(2), alt.value(0.5)),
             tooltip=[
-                (
-                    alt.Tooltip(c, format=".3g")
-                    if median_titers_noqc[c].dtype == float
-                    else c
-                )
-                for c in median_titers_noqc
-            ],
+                (alt.Tooltip(c, format=".3g") if _median_df[c].dtype == float else c)
+                for c in _median_df
+            ]
+            + [alt.Tooltip(f"{c}:N") for c in _calculate],
         )
         .mark_point(
             size=75, filled=True, fillOpacity=0.9, strokeOpacity=1, stroke="black"
@@ -782,6 +835,7 @@ def _(
     get_median_bound,
     itertools,
     mo,
+    narrow_for_altair,
     numpy,
     pd,
     per_rep_titers,
@@ -811,7 +865,7 @@ def _(
         ]
 
     _dropped = set(viruses_to_drop)
-    _pair_dfs = []
+    _pair_viruses = set()
     plate_pair_info = []
     for _plate_x, _plate_y in itertools.combinations(serum_plates, 2):
         _pair_df = (
@@ -824,7 +878,6 @@ def _(
                 validate="one_to_one",
             )
             .assign(
-                pair=f"{_plate_x} vs {_plate_y}",
                 censored=lambda x: (x["titer_bound_x"] != "interpolated")
                 | (x["titer_bound_y"] != "interpolated"),
             )
@@ -850,29 +903,40 @@ def _(
                 "r": _pearson_r(_pair_df),
                 "n_kept": len(_kept_df),
                 "r_kept": _pearson_r(_kept_df),
+                # rounded for the same reason as the titers in `narrow_for_altair`, and by
+                # so much less than the padding that it cannot bring a point to the edge
                 "domain": [
-                    float(10 ** (numpy.log10(_lo) - _pad)),
-                    float(10 ** (numpy.log10(_hi) + _pad)),
+                    float(f"{10 ** (numpy.log10(_lo) - _pad):.4g}"),
+                    float(f"{10 ** (numpy.log10(_hi) + _pad):.4g}"),
                 ],
+                # keep the plotted data frame narrow: each subplot gets just its own pair
+                # of plates, so no column names the pair. That costs no extra rows, since
+                # `altair` consolidates every frame into the chart's `datasets` and the
+                # rows are partitioned among the subplots either way. The plates are named
+                # in the subplot's axis titles and tooltips rather than in a column, and
+                # the QC status of a strain is determined by `virus` so it goes in the
+                # `virus_qc_lookup` below.
+                "titers": narrow_for_altair(
+                    _pair_df[
+                        [
+                            "virus",
+                            "titer_x",
+                            "titer_y",
+                            "n_barcodes_x",
+                            "n_barcodes_y",
+                            "censored",
+                        ]
+                    ].reset_index(drop=True)
+                ),
             }
         )
-        _pair_dfs.append(_pair_df)
+        _pair_viruses.update(_pair_df["virus"])
 
     if plate_pair_info:
-        # keep the plotted data frame narrow: the plate names are put into each subplot's
-        # axis titles and tooltips rather than repeated on every row, and the QC status of
-        # a strain is determined by `virus` so it goes in the `virus_qc_lookup` below
-        plate_pair_titers = pd.concat(_pair_dfs, ignore_index=True)[
-            [
-                "pair",
-                "virus",
-                "titer_x",
-                "titer_y",
-                "n_barcodes_x",
-                "n_barcodes_y",
-                "censored",
-            ]
-        ]
+        # end points of each subplot's y = x line, which are the ends of its axes rather
+        # than of its data, so that the line spans the whole subplot
+        for _info in plate_pair_info:
+            _info["diagonal"] = pd.DataFrame({"titer": _info["domain"]})
 
         def _qc_reason(v):
             """Explain the QC status of a strain."""
@@ -884,7 +948,7 @@ def _(
                 return "passes QC"
 
         virus_qc_lookup = pd.DataFrame(
-            {"virus": [v for v in viruses if v in set(plate_pair_titers["virus"])]}
+            {"virus": [v for v in viruses if v in _pair_viruses]}
         ).assign(
             qc_status=lambda x: numpy.where(
                 x["virus"].isin(_dropped),
@@ -895,15 +959,6 @@ def _(
         )
         assert len(virus_qc_lookup) == virus_qc_lookup["virus"].nunique()
 
-        # end points of each subplot's y = x line, which are the ends of its axes rather
-        # than of its data, so that the line spans the whole subplot
-        plate_pair_diagonal = pd.DataFrame(
-            [
-                {"pair": info["pair"], "titer": titer}
-                for info in plate_pair_info
-                for titer in info["domain"]
-            ]
-        )
         mo.output.append(
             mo.md(
                 f"Comparing titers between {len(plate_pair_info)} pair(s) of plates for "
@@ -911,9 +966,7 @@ def _(
             )
         )
     else:
-        plate_pair_titers = None
         virus_qc_lookup = None
-        plate_pair_diagonal = None
         if len(serum_plates) < 2:
             mo.output.append(
                 mo.md(
@@ -929,12 +982,7 @@ def _(
                     "is no plate-to-plate correlation to show."
                 )
             )
-    return (
-        plate_pair_diagonal,
-        plate_pair_info,
-        plate_pair_titers,
-        virus_qc_lookup,
-    )
+    return plate_pair_info, virus_qc_lookup
 
 
 @app.cell
@@ -944,9 +992,7 @@ def _(
     dilution_factor_or_concentration,
     group,
     mo,
-    plate_pair_diagonal,
     plate_pair_info,
-    plate_pair_titers,
     serum,
     virus_qc_lookup,
 ):
@@ -984,45 +1030,27 @@ def _(
             """Log scale shared by both axes of a subplot."""
             return alt.Scale(type="log", nice=False, domain=info["domain"])
 
-        def _axis():
-            """Axis that drops tick labels rather than letting them overlap."""
-            return alt.Axis(labelOverlap=True)
-
         def _fmt_r(r):
             """Format a Pearson R that is `None` when there were too few strains."""
             return "not computed (< 3 strains)" if r is None else f"{r:.2f}"
 
         _charts = []
         for _i, _info in enumerate(plate_pair_info):
-            _base = (
-                alt.Chart(plate_pair_titers)
-                .transform_filter(alt.datum.pair == _info["pair"])
-                .transform_lookup(
-                    lookup="virus",
-                    from_=alt.LookupData(
-                        virus_qc_lookup,
-                        key="virus",
-                        fields=["qc_status", "qc_reason"],
-                    ),
-                )
+            _base = alt.Chart(_info["titers"]).transform_lookup(
+                lookup="virus",
+                from_=alt.LookupData(
+                    virus_qc_lookup,
+                    key="virus",
+                    fields=["qc_status", "qc_reason"],
+                ),
             )
             _x_title = f"{_titer_label} on {_info['plate_x']}"
             _y_title = f"{_titer_label} on {_info['plate_y']}"
             _points = (
                 _base.transform_filter(_qc_selection)
                 .encode(
-                    alt.X(
-                        "titer_x:Q",
-                        title=_x_title,
-                        scale=_scale(_info),
-                        axis=_axis(),
-                    ),
-                    alt.Y(
-                        "titer_y:Q",
-                        title=_y_title,
-                        scale=_scale(_info),
-                        axis=_axis(),
-                    ),
+                    alt.X("titer_x:Q", title=_x_title, scale=_scale(_info)),
+                    alt.Y("titer_y:Q", title=_y_title, scale=_scale(_info)),
                     alt.Color(
                         "qc_status:N",
                         scale=alt.Scale(
@@ -1089,11 +1117,10 @@ def _(
             # points layer rather than leaving them unset, because the layers share their
             # axes and a title of `None` here blanks the shared title.
             _diagonal = (
-                alt.Chart(plate_pair_diagonal)
-                .transform_filter(alt.datum.pair == _info["pair"])
+                alt.Chart(_info["diagonal"])
                 .encode(
-                    alt.X("titer:Q", title=_x_title, scale=_scale(_info), axis=_axis()),
-                    alt.Y("titer:Q", title=_y_title, scale=_scale(_info), axis=_axis()),
+                    alt.X("titer:Q", title=_x_title, scale=_scale(_info)),
+                    alt.Y("titer:Q", title=_y_title, scale=_scale(_info)),
                 )
                 .mark_line(color="gray", strokeDash=[4, 4], strokeWidth=1)
             )
@@ -1104,12 +1131,9 @@ def _(
                     title=alt.Title(
                         _info["pair"],
                         subtitle=[
+                            f"R = {_fmt_r(_info['r'])} (all {_info['n']} strains)",
                             (
-                                f"Pearson R = {_fmt_r(_info['r'])} "
-                                f"(all {_info['n']} strains)"
-                            ),
-                            (
-                                f"Pearson R = {_fmt_r(_info['r_kept'])} "
+                                f"R = {_fmt_r(_info['r_kept'])} "
                                 f"({_info['n_kept']} retained strains)"
                             ),
                         ],
@@ -1134,8 +1158,19 @@ def _(
                 )
             )
             # `titleFontWeight` is set because axis titles are bold by default, and here
-            # only the overall and subplot titles should be bold
-            .configure_axis(grid=False, titleFontSize=13, titleFontWeight="normal")
+            # only the overall and subplot titles should be bold. `labelOverlap` drops
+            # tick labels rather than letting them overlap, and is set here rather than on
+            # each axis so that the chart spec carries it once instead of once per axis.
+            .configure_axis(
+                grid=False,
+                labelOverlap=True,
+                titleFontSize=13,
+                titleFontWeight="normal",
+            )
+            # `limit=0` means no limit, so that neither the titles nor the subtitles of the
+            # plot or its subplots are truncated. It is set in the chart's config rather
+            # than on each title so that the spec carries it once.
+            .configure_title(limit=0)
         )
         mo.output.append(plate_correlation_chart)
     return

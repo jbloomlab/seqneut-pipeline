@@ -255,6 +255,35 @@ def process_plate(plate, plate_params):
     return plate_d
 
 
+def get_plate_comparators(plates):
+    """Get dict keyed by plate with values the plates its titers can be correlated with.
+
+    A plate's titers can be correlated with those of another plate in the same group
+    that shares at least one serum with it. Titers are only correlated within a group,
+    as different groups can report titers in different units.
+
+    Computed from the sample tables in the configuration, and so before any QC. QC can
+    only remove sera, so a plate with no comparator here cannot gain one, while a plate
+    with comparators here can lose all of its shared titers to QC (which the plate's
+    notebook reports).
+
+    """
+    plate_sera = {
+        plate: set(plate_d["samples"]["serum"].astype(str)) - {"none"}
+        for (plate, plate_d) in plates.items()
+    }
+    return {
+        plate: [
+            other
+            for other in plates  # config order, which orders a plate's comparators
+            if (other != plate)
+            and (plates[other]["group"] == plate_d["group"])
+            and (plate_sera[plate] & plate_sera[other])
+        ]
+        for (plate, plate_d) in plates.items()
+    }
+
+
 @functools.lru_cache
 def groups_sera_plates():
     """Get dict keyed by /groupserum with values lists of plates with titers."""

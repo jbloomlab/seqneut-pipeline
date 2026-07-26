@@ -1,0 +1,5 @@
+plate,date,other_plate,other_date,serum,n_strains,pearson_r,n_strains_retained,pearson_r_retained
+plate11,2023-09-26,plate2,2023-08-01,M099d0,36,0.7423,33,0.7594
+plate11,2023-09-26,plate2,2023-08-01,M099d30,36,0.8232,35,0.8249
+plate11,2023-09-26,plate2_exact_dup,2023-08-01,M099d0,36,0.7423,33,0.7594
+plate11,2023-09-26,plate2_exact_dup,2023-08-01,M099d30,36,0.8232,35,0.8249
