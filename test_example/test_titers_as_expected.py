@@ -1,12 +1,25 @@
-"""Test script to test titers as expected."""
+"""Test script to test titers as expected.
+
+The expected titers are read from the CSV specified as the first command-line argument,
+which defaults to ``expected_titers_for_test.csv``. Pass
+``expected_titers_for_test_collapse_strain_barcodes.csv`` for a run that collapses the
+barcodes for each strain.
+
+"""
 
 import glob
+import sys
 
 import numpy
 import pandas as pd
 
+expected_titers_csv = (
+    sys.argv[1] if len(sys.argv) > 1 else "expected_titers_for_test.csv"
+)
+print(f"Reading expected titers from {expected_titers_csv}")
+
 expected_titers = (
-    pd.read_csv("expected_titers_for_test.csv")
+    pd.read_csv(expected_titers_csv)
     .assign(log10_titer=lambda x: numpy.log10(x["titer"]))[
         ["group", "serum", "virus", "log10_titer", "n_replicates", "titer_bound"]
     ]

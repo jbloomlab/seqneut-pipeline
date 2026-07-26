@@ -37,6 +37,10 @@ neut_standard_sets = {
 
 stringify_plate_dates(config)  # so `snakemake` can JSON serialize the config
 
+# whether to sum the counts of all barcodes for a strain before any curve fitting; read
+# before the plates are processed, as their validation depends on it
+collapse_strain_barcodes = get_collapse_strain_barcodes(config)
+
 plates = {
     str(plate): process_plate(str(plate), plate_params)
     for (plate, plate_params) in config["plates"].items()
@@ -189,6 +193,7 @@ if plates:
                 for (param, val) in plates[wc.plate].items()
             },
             curve_display_method=config["curve_display_method"],
+            collapse_strain_barcodes=collapse_strain_barcodes,
         script:
             "scripts/run_marimo_w_context_pickle.py"
 

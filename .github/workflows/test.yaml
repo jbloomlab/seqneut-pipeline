@@ -62,10 +62,25 @@ jobs:
         shell: bash -el {0}
         run: cd test_example && python test_titers_as_expected.py && cd ..
 
+      - name: run pipeline on test example collapsing strain barcodes
+        # in a copy of the test example so the results of the run above are kept
+        shell: bash -el {0}
+        run: >
+          cp -a test_example _test_example_collapsed
+          && cd _test_example_collapsed
+          && rm -rf results
+          && snakemake --software-deployment-method conda -j 2
+          --configfile config_collapse_strain_barcodes.yml
+          && python test_titers_as_expected.py
+          expected_titers_for_test_collapse_strain_barcodes.csv
+          && cd ..
+
       - name: upload results in case of error
         uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: results
-          path: test_example/results
+          path: |
+            test_example/results
+            _test_example_collapsed/results
           retention-days: 7
