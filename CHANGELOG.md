@@ -31,6 +31,14 @@
 
 - Simplify [./test_example/.gitignore](test_example/.gitignore), which the README recommends copying into your own repo, using `results/**` plus `!results/**/` to ignore all of `results` while still allowing the key results to be re-included. This removes the need to re-include each subdirectory before ignoring its contents. Which files are tracked is unchanged (verified over all files in the test example's `results`), so you do not need to update your own copy.
 
+- Add an optional `collapse_strain_barcodes` configuration key. When it is set to true, the counts of all of a strain's barcodes are summed in the processing of each plate before any of the QC or curve fitting, so that a plate gives one neutralization curve per strain rather than one per barcode.
+
+  The rationale against collapsing is that having multiple barcodes per strain provides internal replicates.
+  The rationale for collapsing barcodes is that the noise in the measurements is largely determined by the finite number of virions of each barcoded strain that go in each well, so collapsing barcodes can increase the total input virions for each strain and so reduce experimental noise.
+  Which rationale wins out can be experiment-dependent, depending for instance on the evenness of the barcode distribution and the number of strains and barcodes in the library, so we do not have a universal recommendation on whether collapsing is or is not a good idea.
+
+  This option defaults to false, which analyzes each barcode separately as before the option was introduced. Note that `min_replicates` in the serum QC thresholds then counts only the plates a serum was measured on, so it typically has to be set to one; see the README for this and the other implications of collapsing. The test example is also run a second time with the barcodes collapsed, using the new `config_collapse_strain_barcodes.yml` overrides.
+
 ### version 7.1.0
 Update software versions (reason is to update `neutcurve` to fix bug causing scrunched panels in curve plots):
  - `altair`: 5.5 -> 6.2

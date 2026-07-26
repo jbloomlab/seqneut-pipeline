@@ -23,4 +23,13 @@ If you then run:
 Then the HTML docs in `./results/docs` will be pushed to a *gh-pages* branch; if you set GitHub Pages to serve from *gh-pages* and `/root` then
 the HTML documentation for the example is rendered on GitHub pages at [https://jbloomlab.github.io/seqneut-pipeline](https://jbloomlab.github.io/seqneut-pipeline).
 
-The files [expected_titers_for_test.csv](expected_titers_for_test.csv) and [test_titers_as_expected.py](test_titers_as_expected.py) are files for testing the pipeline.
+The pipeline is tested by running the example and then comparing the titers it computes to the expected ones with [test_titers_as_expected.py](test_titers_as_expected.py), which by default reads them from [expected_titers_for_test.csv](expected_titers_for_test.csv):
+
+    python test_titers_as_expected.py
+
+The example is also run a second time with the barcodes for each strain collapsed, which is done by adding [config_collapse_strain_barcodes.yml](config_collapse_strain_barcodes.yml) to the configuration and comparing to the expected titers for that run:
+
+    snakemake -j <n_jobs> --software-deployment-method conda --configfile config_collapse_strain_barcodes.yml
+    python test_titers_as_expected.py expected_titers_for_test_collapse_strain_barcodes.csv
+
+That run writes over the results of the standard run, so the GitHub Action does it in a copy of this subdirectory in order to keep both sets of results.

@@ -147,6 +147,28 @@ GCATGGATCCTTTACT,A/Togo/845/2020
 ```
 These CSV files can optionally have additional columns as well if those are useful for storing further metadata.
 
+### collapse_strain_barcodes
+An optional key that determines whether each of a strain's barcodes is analyzed as its own measurement of that strain (the default), or whether they are all collapsed into a single measurement.
+
+The rationale against collapsing is that having multiple barcodes per strain provides internal replicates.
+The rationale for collapsing barcodes is that the noise in the measurements is largely determined by the finite number of virions of each barcoded strain that go in each well, so collapsing barcodes can increase the total input virions for each strain and so reduce experimental noise.
+Which rationale wins out can be experiment-dependent, depending for instance on the evenness of the barcode distribution and the number of strains and barcodes in the library, so we do not have a universal recommendation on whether collapsing is or is not a good idea.
+
+Set it as below to sum the counts of all of a strain's barcodes in each well before any of the QC or curve fitting, so that there is one neutralization curve per strain on a plate rather than one per barcode:
+```
+collapse_strain_barcodes: true
+```
+If the key is not specified it defaults to `false`.
+You can also set it on the command line with `--config collapse_strain_barcodes=True`, being sure to capitalize the value as `snakemake` only converts a capitalized value to a boolean.
+
+The counts are summed per plate after the `manual_drops` are applied, and the collapsed barcode is named for its strain.
+Note the following implications of collapsing:
+
+ - `min_replicates` in the serum QC thresholds counts the replicates of a serum-virus titer, which are now just the plates a serum was measured on (times its replicates on each of those plates) rather than those multiplied by the strain's barcodes. So it typically must be set to one unless every serum is measured on multiple plates or in replicate on a plate.
+ - The QC thresholds and plots that are described as being per barcode are then per strain, so those on counts or fractions of counts (such as `avg_barcode_counts_per_well` and `min_no_serum_count_per_viral_barcode_well`) apply to the summed counts of all of a strain's barcodes and may need to be adjusted.
+ - `manual_drops` still specify actual barcodes, as they are applied before the collapsing. But `barcode_wells` and `barcode_serum_replicates` drops cannot be used at all, and are an error: they remove a barcode from only some wells, which would leave a strain's summed counts in those wells over a different set of barcodes than in the rest of the plate. Use `barcodes` to drop a barcode from the entire plate instead.
+ - `barcode_serum_replicates_ignore_curvefit_qc` in `curvefit_qc` refers to the collapsed barcodes, so specify strain names rather than barcodes there.
+
 ### viral_strain_plot_order
 A a CSV with a column named "strain" that lists the strains in the order they should be plotted.
 If not specified or set to "null", then plotting is just alphabetical.
@@ -459,7 +481,7 @@ default_serum_qc_thresholds: &default_serum_qc_thresholds
 ```
 where:
 
- - `min_replicates`: drop any virus-serum titer that is not supported by at least this many replicates.
+ - `min_replicates`: drop any virus-serum titer that is not supported by at least this many replicates. A replicate is one of the strain's barcodes on one of the plates the serum was measured on, so a serum measured on a single plate can still have several replicates---but not if [collapse_strain_barcodes](#collapse_strain_barcodes) is set, in which case this key counts only plates and so typically must be set to one.
  - `max_fold_change_from_median`: drop any virus-serum titer where any replicate differs by more than this from the median across replicates.
  - `viruses_ignore_qc`: list of viruses for which you want to ignore the above QC. Specifying a virus here will ignore the QC for **all** sera, if you want to make a virus-serum specific exclusion then instead specify this in `sera_override_defaults`.
 

@@ -1,0 +1,37 @@
+# === Configuration overrides to test `collapse_strain_barcodes` =======================
+
+# Add this file to the configuration to run the test example with the barcodes for each
+# strain collapsed, which overrides only the keys below in `config.yml`:
+#
+#   snakemake -j <n_jobs> --software-deployment-method conda \
+#       --configfile config_collapse_strain_barcodes.yml
+#
+# Collapsing leaves each plate with just one measurement of a strain for each serum
+# replicate, so `min_replicates` now counts plates rather than barcodes and is set to one
+# here (in the defaults and for each serum that overrides them), as most sera in the test
+# example are measured on only one plate.
+
+collapse_strain_barcodes: true
+
+# `plate11` manually drops a barcode for just one serum replicate, which cannot be
+# combined with collapsing as that strain's collapsed counts would then be summed over a
+# different set of barcodes in that serum's wells than in the rest of the plate. So here
+# that barcode is instead dropped from the entire plate.
+plates:
+  plate11:
+    manual_drops:
+      barcode_serum_replicates: []
+      barcodes:
+        - AGTCCTATCCTCAAAT
+
+default_serum_qc_thresholds:
+  min_replicates: 1
+
+sera_override_defaults:
+  serum:
+    M099d30:
+      qc_thresholds:
+        min_replicates: 1
+    Y044d30:
+      qc_thresholds:
+        min_replicates: 1

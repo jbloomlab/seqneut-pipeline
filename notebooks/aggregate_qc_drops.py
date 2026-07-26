@@ -272,14 +272,19 @@ def _(mo, output_barcode_qc_drops, plate_qc_drops, yaml):
             tup for tup in plate_d.items() if tup[0].startswith("barcode") and tup[1]
         ]:
             for desc, reason in val.items():
-                desc_entries = desc.split(None, maxsplit=1)
-                barcode = desc_entries[0]
-                if len(desc_entries) == 2:
-                    description = f"{_plate} {desc_entries[1]}"
-                elif len(desc_entries) == 1:
+                # a drop of a barcode alone is keyed by just the barcode, while the other
+                # drops are keyed by the barcode and a well or serum replicate. Split
+                # those from the right, as a barcode collapsed by
+                # `collapse_strain_barcodes` is named for its strain and so can itself
+                # contain a space.
+                if key == "barcodes":
+                    barcode = desc
                     description = _plate
                 else:
-                    raise RuntimeError("should not get here")
+                    desc_entries = desc.rsplit(None, maxsplit=1)
+                    assert len(desc_entries) == 2, f"{key=} {desc=}"
+                    barcode = desc_entries[0]
+                    description = f"{_plate} {desc_entries[1]}"
                 if barcode not in barcode_qc_drops:
                     barcode_qc_drops[barcode] = {}
                 if key not in barcode_qc_drops[barcode]:
@@ -315,7 +320,18 @@ def _(mo):
 def _(pd, plate_qc_drops_df):
     barcode_drops = (
         plate_qc_drops_df.query("`drop type`.str.startswith('barcode')")
-        .assign(barcode=lambda x: x["drop"].str.split().str[0])
+        .assign(
+            # as above, only the drops that are not of a barcode alone have a well or
+            # serum replicate to split off the end of the barcode
+            barcode=lambda x: x.apply(
+                lambda r: (
+                    r["drop"]
+                    if r["drop type"] == "barcodes"
+                    else r["drop"].rsplit(None, maxsplit=1)[0]
+                ),
+                axis=1,
+            )
+        )
         .groupby(["drop type", "barcode"], as_index=False)
         .aggregate(
             plates_where_dropped=pd.NamedAgg("plate", "nunique"),

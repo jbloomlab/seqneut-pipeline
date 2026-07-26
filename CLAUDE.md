@@ -30,8 +30,8 @@ rather than in the rules.
 
 `funcs.smk` holds the config-processing helpers that run while the rules are being
 defined (`process_plate`, `process_miscellaneous_plates`, `stringify_plate_dates`,
-`get_plate_comparators`, and the sample-table validation). It relies on `pd` and `re`
-being imported by `seqneut-pipeline.smk`.
+`get_plate_comparators`, `get_collapse_strain_barcodes`, and the sample-table
+validation). It relies on `pd` and `re` being imported by `seqneut-pipeline.smk`.
 
 Two conventions of `seqneut_pipeline_outputs`, the list of final targets at the bottom of
 `seqneut-pipeline.smk`:
@@ -169,6 +169,12 @@ Built in `funcs.smk` (~lines 155-195) and relied on throughout the notebooks:
  - `plate_barcode`: `{plate_replicate}-{barcode}`, which lets one barcode be tracked as a
    distinct replicate across plates. This is what is passed to `neutcurve` as
    `replicate_col`.
+ - the barcode of a strain collapsed by `collapse_strain_barcodes`: the strain name,
+   rather than a shared literal such as `collapsed`. `barcode` is a key that identifies a
+   strain and not just a label, since the per-barcode QC drops are keyed on
+   `(barcode, serum_replicate)` and `(barcode, well)` and the fraction-infectivity chart
+   looks up `strain` from `barcode`, so one shared name would make dropping a single
+   curve drop every strain.
 
 ## Fraction infectivity
 
@@ -178,6 +184,9 @@ Computed in `notebooks/process_plate.py` as:
 
 That is, each viral barcode's count is normalized by its well's total neut-standard
 counts, then divided by the median of that same ratio across the plate's no-serum wells.
+Under `collapse_strain_barcodes`, `count` is instead the sum over the strain's barcodes,
+which are collapsed right after the `manual_drops` are applied so that everything from
+the QC onward is per strain.
 The `frac_infectivity_ceiling` from `curvefit_params` is then applied as a separate
 column; the curve fits use the ceilinged values, while the raw values are also saved.
 
@@ -198,6 +207,10 @@ These raise errors, and are not all stated in the README:
  - All barcodes on a plate, viral library and neut standard set together, must be the
    same length, since `bclen` is inferred from the first one
    (`scripts/count_barcodes.py`).
+ - `collapse_strain_barcodes` cannot be combined with `manual_drops` of `barcode_wells` or
+   `barcode_serum_replicates` (`funcs.smk`), which remove a barcode from only some wells
+   and so would leave a strain's summed counts over a different set of barcodes in those
+   wells than in the rest of the plate.
  - Plate `date` values must be strings by the time `snakemake` starts executing, because
    it hashes the config with `json.dumps` and YAML parses an unquoted `2023-08-01` into a
    `datetime.date`, which is not JSON serializable. `stringify_plate_dates` in
@@ -220,7 +233,14 @@ These raise errors, and are not all stated in the README:
    copying cells into a separate script, which tests a copy rather than the notebook.
  - Ask before running the full `test_example` pipeline. It deletes and regenerates
    ~300 git-tracked files under `test_example/results/`, and a rerun yields small
-   floating-point differences that should not be committed.
+   floating-point differences that should not be committed. The run with the barcodes
+   collapsed (`--configfile config_collapse_strain_barcodes.yml`, checked against its own
+   expected-titers CSV) writes over the same results, so run it in a copy of the
+   subdirectory named `_test_example_collapsed`, which `.gitignore` already excludes via
+   `_*`.
+ - `snakemake --config key=true` yields the *string* `"true"`, not a bool, since
+   `snakemake` only evaluates a value capitalized as in Python. A config value that flips
+   behavior therefore has to accept both, as `get_collapse_strain_barcodes` does.
  - Describe changes in `CHANGELOG.md` at a high level, including the rationale for
    anything surprising, but leave per-file and per-rule detail to the commit message.
    Bump the version in `pyproject.toml`, which is the single source of truth for it.

@@ -153,6 +153,7 @@ def _(context, io, mo, pd, yaml):
     plate = context["wildcards"]["plate"]
     plate_params = context["params"]["plate_params"]
     curve_display_method = context["params"]["curve_display_method"]
+    collapse_strain_barcodes = context["params"]["collapse_strain_barcodes"]
 
     # Show informative message about context mode
     if not context["input"]:
@@ -233,6 +234,7 @@ def _(context, io, mo, pd, yaml):
         dilution_factor_or_concentration = "dilution_factor"
         x_label = "dilution factor"
     return (
+        collapse_strain_barcodes,
         count_csvs,
         curve_display_method,
         curvefit_params,
@@ -466,6 +468,79 @@ def _(counts, manual_drops, mo, qc_drops):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    ## Collapse the barcodes for each strain
+    If `collapse_strain_barcodes` is set in the configuration, sum the counts of all of a
+    strain's barcodes, so that everything below is per strain rather than per barcode.
+    """)
+    return
+
+
+@app.cell
+def _(collapse_strain_barcodes, counts_qc_1, mo, pd):
+    if collapse_strain_barcodes:
+        # Sum the counts of a strain's viral barcodes in each sample, naming the
+        # collapsed barcode for the strain so that it still identifies the strain
+        # uniquely in the QC and curve fits below. The neut-standard barcodes have no
+        # strain and their counts are only ever used summed over each well, so they are
+        # kept as they are.
+        _viral = counts_qc_1.query("not neut_standard")
+        # the counts columns are summed over a strain's barcodes, while all of the other
+        # columns describe the sample and so are just carried through
+        _count_cols = ["count", "fraction_all_valid_and_invalid_counts"]
+        _sample_info = _viral[
+            [
+                c
+                for c in counts_qc_1.columns
+                if c not in {"barcode", "strain", *_count_cols}
+            ]
+        ].drop_duplicates()
+        assert len(_sample_info) == _sample_info["sample"].nunique()
+
+        counts_collapsed = pd.concat(
+            [
+                _viral.groupby(["sample", "strain"], as_index=False)[_count_cols]
+                .sum(min_count=1)
+                .assign(barcode=lambda x: x["strain"])
+                .merge(_sample_info, on="sample", validate="many_to_one"),
+                counts_qc_1.query("neut_standard"),
+            ],
+            ignore_index=True,
+        )[counts_qc_1.columns]
+
+        _barcodes_per_strain = (
+            _viral.groupby("strain", as_index=False)
+            .aggregate(n_barcodes=pd.NamedAgg("barcode", "nunique"))
+            .sort_values(["n_barcodes", "strain"], ascending=[False, True])
+            .set_index("strain")  # so the display has no meaningless integer index
+        )
+        mo.output.append(
+            mo.md(
+                f"Collapsed the {_viral['barcode'].nunique()} viral barcodes into "
+                f"{len(_barcodes_per_strain)} strains, with "
+                f"{_barcodes_per_strain['n_barcodes'].min()} to "
+                f"{_barcodes_per_strain['n_barcodes'].max()} barcodes per strain.\n\n"
+                "Everything below is therefore per strain even where it is labeled as "
+                "being per barcode, since each strain now has a single barcode named "
+                "for the strain. In particular, any QC threshold on the counts or the "
+                "fraction of counts for a barcode now applies to the summed counts of "
+                "all of a strain's barcodes."
+            )
+        )
+        mo.output.append(_barcodes_per_strain)
+    else:
+        counts_collapsed = counts_qc_1
+        mo.output.append(
+            mo.md(
+                "Not collapsing the barcodes for each strain, as "
+                "`collapse_strain_barcodes` is not set in the configuration."
+            )
+        )
+    return (counts_collapsed,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     ## Average counts per barcode in each well
     """)
     return
@@ -483,7 +558,7 @@ def _(mo):
 @app.cell
 def _(
     alt,
-    counts_qc_1,
+    counts_collapsed,
     mo,
     pd,
     plate,
@@ -494,7 +569,7 @@ def _(
 ):
     # Compute average barcode counts per well
     avg_barcode_counts = (
-        counts_qc_1.groupby(
+        counts_collapsed.groupby(
             ["well", "serum_replicate", "sample_well"],
             dropna=False,
             as_index=False,
@@ -559,7 +634,7 @@ def _(
     qc_drops["wells"].update(
         {w: "avg_barcode_counts_per_well" for w in avg_barcode_counts_per_well_drops}
     )
-    counts_qc_2 = counts_qc_1[~counts_qc_1["well"].isin(qc_drops["wells"])]
+    counts_qc_2 = counts_collapsed[~counts_collapsed["well"].isin(qc_drops["wells"])]
     return (counts_qc_2,)
 
 

@@ -24,6 +24,27 @@ def stringify_plate_dates(config):
                 plate_d["date"] = str(plate_d["date"])
 
 
+def get_collapse_strain_barcodes(config):
+    """Get the boolean value of the optional ``collapse_strain_barcodes`` config key.
+
+    Defaults to ``False`` if the key is absent or null. Strings are also accepted,
+    because ``snakemake`` only converts the value of ``--config`` to a bool if it is
+    capitalized as in Python, so ``--config collapse_strain_barcodes=true`` would
+    otherwise be the (always truthy) string ``"true"``.
+
+    """
+    val = config.get("collapse_strain_barcodes", False)
+    if val is None:
+        return False
+    if isinstance(val, bool):
+        return val
+    if val in {"true", "True"}:
+        return True
+    if val in {"false", "False"}:
+        return False
+    raise ValueError(f"invalid {val=} for 'collapse_strain_barcodes', must be a bool")
+
+
 def process_miscellaneous_plates(misc_plates_d):
     """Process the dictionary of miscellaneous_plates."""
     misc_plates = {}
@@ -82,6 +103,25 @@ def process_plate(plate, plate_params):
         raise ValueError(
             f"{plate=} {plate_params['neut_standard_set']=} not in {neut_standard_sets=}"
         )
+    # a manual drop of a barcode in just some wells cannot be combined with collapsing
+    # the barcodes for a strain, as the strain's collapsed counts would then be summed
+    # over a different set of barcodes in those wells than in the rest of the plate
+    if get_collapse_strain_barcodes(config):
+        invalid_drops = {
+            drop_type: drops
+            for (drop_type, drops) in plate_params["manual_drops"].items()
+            if drops and (drop_type in {"barcode_wells", "barcode_serum_replicates"})
+        }
+        if invalid_drops:
+            raise ValueError(
+                f"{plate=} cannot use 'collapse_strain_barcodes' with the "
+                f"'manual_drops' of {sorted(invalid_drops)}, as the collapsed counts "
+                "for a strain would then be summed over a different set of barcodes in "
+                "those wells than in the rest of the plate, biasing its fraction "
+                "infectivity. Instead use 'barcodes' to drop a barcode from the entire "
+                f"plate.\n{invalid_drops=}"
+            )
+
     plate_d = copy.deepcopy(plate_params)
     plate_d["group"] = str(plate_d["group"])
     plate_d["date"] = str(plate_d["date"])
