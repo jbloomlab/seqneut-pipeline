@@ -32,6 +32,20 @@ defined (`process_plate`, `process_miscellaneous_plates`, `stringify_plate_dates
 the sample-table validation). It relies on `pd` and `re` being imported by
 `seqneut-pipeline.smk`.
 
+Two conventions of `seqneut_pipeline_outputs`, the list of final targets at the bottom of
+`seqneut-pipeline.smk`:
+
+ - Notebook HTML is not listed. Every notebook HTML is an input to `build_docs`, whose
+   `docs` directory is listed, so requesting the HTML as well is redundant.
+ - The non-HTML results of a rule are listed before `build_docs.output.docs`, so that the
+   numerical outputs read as a group ahead of the documentation build.
+
+Prefer letting a notebook handle a degenerate case over precomputing which jobs are
+worth running. A rule that runs per group runs for every group, and its notebook reports
+that there is nothing to show when, say, the group has one plate; deriving the subset of
+groups in the `.smk` instead would add config-processing code for no gain. The same
+applies to adding a config key to turn an analysis off: do not add one unless asked.
+
 ## Marimo notebooks
 
 The analysis notebooks are `marimo`, not Jupyter (since v5.0.0).
@@ -62,6 +76,21 @@ and let `vega-lite` reconstruct the rest client-side:
    Assert that the key is unique in the lookup table so the join is 1:1 and lossless.
  - Ship columns wide and fold them with `.transform_fold()` rather than melting in
    `pandas`, which would multiply the row count of the embedded data.
+ - A column that exists only to filter rows to a subplot of an `alt.concat` is not needed:
+   slice the frame in `pandas` and give each subplot its own. That costs no extra rows,
+   because `altair` consolidates every frame into the chart's top-level `datasets` and the
+   rows are partitioned among the subplots either way, and it drops both the column and the
+   `transform_filter`.
+ - Round floats that came from arithmetic before plotting. A median over an even number of
+   values gives `210.35000000000002`, which costs 18 characters on every row for precision
+   far below a pixel.
+ - A column that is the same on every row (`group` and `serum` in a per-serum notebook, or
+   `titer_units`, which follows from `titer_as`) belongs in a `transform_calculate` that
+   returns a literal, so the value appears once in the chart rather than once per row. Note
+   that the quoting is `transform_calculate(titer_units=f"'{units}'")`: the argument is a
+   `vega` expression, so a string constant needs quotes inside the Python string. As with a
+   lookup, the tooltip must then name the type explicitly (`alt.Tooltip("titer_units:N")`).
+   `notebooks/group_serum_titers.py` does all three of these things, via `narrow_for_altair`.
 
 `notebooks/process_plate.py` (~lines 1237-1285) is the worked example: `strain` is
 determined by `barcode`, and `serum_replicate` and the dilution factor / concentration
@@ -69,6 +98,25 @@ are determined by `well`, so all three are dropped in favor of a barcode lookup 
 well lookup. Note that tooltips do not follow automatically; a looked-up field has no
 `pandas` dtype for `altair` to infer from, so it must be listed explicitly with its type
 suffix (`alt.Tooltip("strain:N")`).
+
+## Interaction in concatenated Altair charts
+
+A param belongs to whichever subplot declares it, so in an `alt.concat` of panels it must
+be declared on the concatenated chart with `.add_params(...)` to be in scope for all of
+them. Two consequences, both worked through in the plate-to-plate correlation plots of
+`notebooks/group_serum_titers.py` and `notebooks/plate_to_plate_corr.py`:
+
+ - `bind="legend"` cannot drive a selection across panels, as the legend is drawn by one
+   panel. Use an input binding (`alt.binding_select`) instead, which the concatenated
+   chart can declare; note it renders below the plot, not above it.
+ - A mouseover selection needs `empty=False`, or every point matches when nothing is
+   hovered. `vega-lite` puts this on the predicate rather than the selection, so it
+   appears in the emitted spec as `{"param": ..., "empty": false}` in each condition and
+   not in the param definition.
+
+Since interaction cannot be exercised headlessly, verify it by parsing the emitted spec
+out of the exported HTML, checking that each param appears once with a `views` list
+covering every panel.
 
 ## Naming conventions
 
@@ -115,6 +163,16 @@ These raise errors, and are not all stated in the README:
 
  - Verify changes with the format and lint commands given in the README, plus
    `cd test_example && snakemake -n`, which catches config and DAG errors cheaply.
+ - A new or changed notebook can be run against the committed `test_example/results`
+   without running the pipeline: build the context dict that
+   `scripts/run_marimo_w_context_pickle.py` would build (`workdir` set to
+   `test_example`, `input` / `output` / `params` / `wildcards` filled in, outputs pointed
+   somewhere scratch), pickle it, and run
+   `marimo export html <notebook> -o <html> -- --context-pickle <pickle>` with
+   `test_example` as the working directory. Synthesizing input CSVs this way also reaches
+   cases the test example does not contain. `scripts/build_docs.py` can likewise be
+   exercised by supplying a stub object as the global `snakemake`. Prefer this over
+   copying cells into a separate script, which tests a copy rather than the notebook.
  - Ask before running the full `test_example` pipeline. It deletes and regenerates
    ~300 git-tracked files under `test_example/results/`, and a rerun yields small
    floating-point differences that should not be committed.
