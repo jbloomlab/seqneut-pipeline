@@ -53,63 +53,68 @@ md_text = [
     # table of contents: https://python-markdown.github.io/extensions/toc/
     "[TOC]",
     "",
-    "## Titers for all sera",
-]
-for group in group_order:
-    md_text.append(
-        f"- [Interactive chart of titers (`{group}`)]"
-        f"({os.path.basename(copied_files[titers_charts_by_group[group]])})"
-    )
-md_text += [
-    "",
-    "## Per-serum neutralization titers",
 ]
 
-assert len(snakemake.params.groups_sera) == len(snakemake.input.serum_titers_htmls)
-for group in group_order:
-    md_text.append(f"\n### {group}")
-    for serum in groups[group]:
-        f = snakemake.input.serum_titers_htmls[
-            snakemake.params.groups_sera.index((group, serum))
-        ]
-        md_text.append(f"- [{serum}]({os.path.basename(copied_files[f])})")
-
-md_text += ["", "## Per-plate counts and curve fits"]
-assert len(snakemake.params.plates) == len(snakemake.input.process_plates_htmls)
-for group in group_order:
-    md_text.append(f"\n### {group}")
-    for plate in [p for (p, g) in snakemake.params.plates.items() if g == group]:
-        f = snakemake.input.process_plates_htmls[
-            list(snakemake.params.plates).index(plate)
-        ]
-        md_text.append(f"- [{plate}]({os.path.basename(copied_files[f])})")
-
-if plate_corr_htmls_by_plate:
+# Everything below describes the plates, and so is omitted for a project that has no
+# `plates` and only counts barcodes for `miscellaneous_plates`. Such a project still gets
+# the `add_htmls_to_docs` sections at the end of this script.
+if snakemake.params.plates:
+    md_text.append("## Titers for all sera")
+    for group in group_order:
+        md_text.append(
+            f"- [Interactive chart of titers (`{group}`)]"
+            f"({os.path.basename(copied_files[titers_charts_by_group[group]])})"
+        )
     md_text += [
         "",
-        (
-            "## Plate-to-plate correlations of titers "
-            "(only for plates that share sera with other plates)"
-        ),
+        "## Per-serum neutralization titers",
     ]
+
+    assert len(snakemake.params.groups_sera) == len(snakemake.input.serum_titers_htmls)
     for group in group_order:
-        group_corr_plates = [
-            plate
-            for (plate, plate_group) in snakemake.params.corr_plates.items()
-            if plate_group == group
-        ]
-        if not group_corr_plates:
-            continue
         md_text.append(f"\n### {group}")
-        for plate in group_corr_plates:
-            f = plate_corr_htmls_by_plate[plate]
+        for serum in groups[group]:
+            f = snakemake.input.serum_titers_htmls[
+                snakemake.params.groups_sera.index((group, serum))
+            ]
+            md_text.append(f"- [{serum}]({os.path.basename(copied_files[f])})")
+
+    md_text += ["", "## Per-plate counts and curve fits"]
+    assert len(snakemake.params.plates) == len(snakemake.input.process_plates_htmls)
+    for group in group_order:
+        md_text.append(f"\n### {group}")
+        for plate in [p for (p, g) in snakemake.params.plates.items() if g == group]:
+            f = snakemake.input.process_plates_htmls[
+                list(snakemake.params.plates).index(plate)
+            ]
             md_text.append(f"- [{plate}]({os.path.basename(copied_files[f])})")
 
-md_text += [
-    "",
-    "## Summary of data dropped during quality control",
-    f"[Notebook summarizing QC drops]({os.path.basename(copied_files[snakemake.input.qc_drops_html])})",
-]
+    if plate_corr_htmls_by_plate:
+        md_text += [
+            "",
+            (
+                "## Plate-to-plate correlations of titers "
+                "(only for plates that share sera with other plates)"
+            ),
+        ]
+        for group in group_order:
+            group_corr_plates = [
+                plate
+                for (plate, plate_group) in snakemake.params.corr_plates.items()
+                if plate_group == group
+            ]
+            if not group_corr_plates:
+                continue
+            md_text.append(f"\n### {group}")
+            for plate in group_corr_plates:
+                f = plate_corr_htmls_by_plate[plate]
+                md_text.append(f"- [{plate}]({os.path.basename(copied_files[f])})")
+
+    md_text += [
+        "",
+        "## Summary of data dropped during quality control",
+        f"[Notebook summarizing QC drops]({os.path.basename(copied_files[snakemake.input.qc_drops_html])})",
+    ]
 
 for heading, heading_d in snakemake.params.add_htmls_to_docs.items():
     md_text += ["", f"## {heading}"]

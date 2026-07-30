@@ -1,0 +1,20 @@
+# === Configuration overrides to test a project with no `plates` =======================
+
+# Add this file to the configuration to run the test example with no `plates`, as a
+# project that only counts barcodes for `miscellaneous_plates` would have:
+#
+#   snakemake -j <n_jobs> --software-deployment-method conda \
+#       --configfile config_no_plates.yml
+#
+# The pipeline then just counts barcodes for the miscellaneous plates and builds docs of
+# the HTMLs added by `add_htmls_to_docs`, with no curve fitting, titers, or QC.
+
+# Both keys are set to null rather than to an empty dict, because `snakemake` merges a
+# configuration override into the configuration recursively: an empty dict leaves the
+# value from `config.yml` untouched, whereas null overwrites it.
+
+plates:
+
+# `sera_override_defaults` is keyed by group, and there are no groups without any plates,
+# so the overrides inherited from `config.yml` have to be cleared as well.
+sera_override_defaults:

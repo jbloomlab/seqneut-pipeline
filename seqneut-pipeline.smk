@@ -41,9 +41,11 @@ stringify_plate_dates(config)  # so `snakemake` can JSON serialize the config
 # before the plates are processed, as their validation depends on it
 collapse_strain_barcodes = get_collapse_strain_barcodes(config)
 
+# `plates` may be absent, null, or empty for a project that only has
+# `miscellaneous_plates`, and so just counts barcodes rather than fitting any curves
 plates = {
     str(plate): process_plate(str(plate), plate_params)
-    for (plate, plate_params) in config["plates"].items()
+    for (plate, plate_params) in (config.get("plates") or {}).items()
 }
 
 groups = sorted(set(plate_params["group"] for plate_params in plates.values()))
@@ -88,8 +90,11 @@ wildcard_constraints:
     group="|".join(groups),
 
 
-if not set(config["sera_override_defaults"]).issubset(groups):
-    raise ValueError(f"{config['sera_override_defaults']=} keyed by invalid groups")
+# like `plates`, may be absent or null, both of which mean no sera override the defaults
+sera_override_defaults = config.get("sera_override_defaults") or {}
+
+if not set(sera_override_defaults).issubset(groups):
+    raise ValueError(f"{sera_override_defaults=} keyed by invalid groups")
 
 
 if plates == {}:
@@ -103,10 +108,9 @@ else:
     samples = samples.set_index("sample").to_dict(orient="index")
 
 
-if "miscellaneous_plates" in config:
-    miscellaneous_plates = process_miscellaneous_plates(config["miscellaneous_plates"])
-else:
-    miscellaneous_plates = {}
+miscellaneous_plates = process_miscellaneous_plates(
+    config.get("miscellaneous_plates") or {}
+)
 
 # define `add_htmls_to_docs` if not already defined.
 try:
@@ -244,26 +248,20 @@ if plates:
             ),
             concentration_units=lambda wc: group_concentration_units[wc.group],
             serum_titer_as=lambda wc: (
-                config["sera_override_defaults"][wc.group][wc.serum]["titer_as"]
+                sera_override_defaults[wc.group][wc.serum]["titer_as"]
                 if (
-                    (wc.group in config["sera_override_defaults"])
-                    and (wc.serum in config["sera_override_defaults"][wc.group])
-                    and (
-                        "titer_as"
-                        in config["sera_override_defaults"][wc.group][wc.serum]
-                    )
+                    (wc.group in sera_override_defaults)
+                    and (wc.serum in sera_override_defaults[wc.group])
+                    and ("titer_as" in sera_override_defaults[wc.group][wc.serum])
                 )
                 else config["default_serum_titer_as"]
             ),
             qc_thresholds=lambda wc: (
-                config["sera_override_defaults"][wc.group][wc.serum]["qc_thresholds"]
+                sera_override_defaults[wc.group][wc.serum]["qc_thresholds"]
                 if (
-                    (wc.group in config["sera_override_defaults"])
-                    and (wc.serum in config["sera_override_defaults"][wc.group])
-                    and (
-                        "qc_thresholds"
-                        in config["sera_override_defaults"][wc.group][wc.serum]
-                    )
+                    (wc.group in sera_override_defaults)
+                    and (wc.serum in sera_override_defaults[wc.group])
+                    and ("qc_thresholds" in sera_override_defaults[wc.group][wc.serum])
                 )
                 else config["default_serum_qc_thresholds"]
             ),
@@ -384,57 +382,6 @@ if plates:
         script:
             "scripts/run_marimo_w_context_pickle.py"
 
-    rule build_docs:
-        """Build the HTML documentation."""
-        input:
-            lambda wc: [
-                f
-                for d in add_htmls_to_docs.values()
-                for v in d.values()
-                for f in (v.values() if isinstance(v, dict) else [v])
-            ],
-            titers_charts=rules.aggregate_titers.output.titers_charts,
-            serum_titers_htmls=lambda wc: [
-                f"results/sera/{group}_{serum}/{group}_{serum}_titers.html"
-                for (group, serum) in groups_sera_plates()
-            ],
-            process_plates_htmls=expand(
-                "results/plates/{plate}/process_{plate}.html",
-                plate=plates,
-            ),
-            plate_corr_htmls=[
-                rules.plate_to_plate_corr.output.marimo_html.format(
-                    group=group, plate=plate
-                )
-                for (plate, group) in corr_plates.items()
-            ],
-            qc_drops_html="results/qc_drops/aggregate_qc_drops.html",
-        output:
-            docs=directory("results/docs"),
-        log:
-            "results/logs/build_docs.txt",
-        conda:
-            "environment.yml"
-        params:
-            description=config["description"],
-            groups_sera=lambda wc: list(groups_sera_plates()),
-            plates={plate: plates[plate]["group"] for plate in plates},
-            # keyed by plate in the same order as `plate_corr_htmls`
-            corr_plates=corr_plates,
-            add_htmls_to_docs=lambda wc: {
-                key: {
-                    key2: (
-                        {k3: str(v3) for k3, v3 in val2.items()}
-                        if isinstance(val2, dict)
-                        else str(val2)
-                    )
-                    for (key2, val2) in val.items()
-                }
-                for (key, val) in add_htmls_to_docs.items()
-            },
-        script:
-            "scripts/build_docs.py"
-
 
 rule miscellaneous_plate_count_barcodes:
     """Count barcodes for a well in a miscellaneous plate."""
@@ -466,33 +413,93 @@ rule miscellaneous_plate_count_barcodes:
         "scripts/count_barcodes.py"
 
 
-if plates:
-    seqneut_pipeline_outputs = [
-        rules.aggregate_titers.output.titers,
-        rules.aggregate_titers.output.pickles,
-        rules.aggregate_qc_drops.output.plate_qc_drops,
-        rules.aggregate_qc_drops.output.barcode_qc_drops,
-        rules.aggregate_qc_drops.output.groups_sera_qc_drops,
-        *[
-            rules.plate_to_plate_corr.output.corrs_csv.format(group=group, plate=plate)
+rule build_docs:
+    """Build the HTML documentation.
+
+    Defined outside the `if plates` block above so that a project with only
+    `miscellaneous_plates` still gets docs of the HTMLs it adds with
+    `add_htmls_to_docs`. Everything derived from the plates is then empty, and
+    `scripts/build_docs.py` omits the sections that describe them.
+
+    """
+    input:
+        lambda wc: [
+            f
+            for d in add_htmls_to_docs.values()
+            for v in d.values()
+            for f in (v.values() if isinstance(v, dict) else [v])
+        ],
+        titers_charts=(rules.aggregate_titers.output.titers_charts if plates else []),
+        serum_titers_htmls=lambda wc: (
+            [
+                f"results/sera/{group}_{serum}/{group}_{serum}_titers.html"
+                for (group, serum) in groups_sera_plates()
+            ]
+            if plates
+            else []
+        ),
+        process_plates_htmls=expand(
+            "results/plates/{plate}/process_{plate}.html",
+            plate=plates,
+        ),
+        plate_corr_htmls=[
+            rules.plate_to_plate_corr.output.marimo_html.format(
+                group=group, plate=plate
+            )
             for (plate, group) in corr_plates.items()
         ],
-        # the notebook HTMLs are not listed here, as they are inputs to `build_docs`
-        rules.build_docs.output.docs,
-        *[
-            f"results/miscellaneous_plates/{plate}/{well}_{suffix}"
-            for plate in miscellaneous_plates
-            for well in miscellaneous_plates[plate]["wells"]
-            for suffix in ["counts.csv", "fates.csv"]
-        ],
-    ]
+        qc_drops_html=(rules.aggregate_qc_drops.output.marimo_html if plates else []),
+    output:
+        docs=directory("results/docs"),
+    log:
+        "results/logs/build_docs.txt",
+    conda:
+        "environment.yml"
+    params:
+        description=config["description"],
+        groups_sera=lambda wc: (list(groups_sera_plates()) if plates else []),
+        plates={plate: plates[plate]["group"] for plate in plates},
+        # keyed by plate in the same order as `plate_corr_htmls`
+        corr_plates=corr_plates,
+        add_htmls_to_docs=lambda wc: {
+            key: {
+                key2: (
+                    {k3: str(v3) for k3, v3 in val2.items()}
+                    if isinstance(val2, dict)
+                    else str(val2)
+                )
+                for (key2, val2) in val.items()
+            }
+            for (key, val) in add_htmls_to_docs.items()
+        },
+    script:
+        "scripts/build_docs.py"
 
-else:
-    seqneut_pipeline_outputs = [
-        *[
-            f"results/miscellaneous_plates/{plate}/{well}_{suffix}"
-            for plate in miscellaneous_plates
-            for well in miscellaneous_plates[plate]["wells"]
-            for suffix in ["counts.csv", "fates.csv"]
-        ],
-    ]
+
+seqneut_pipeline_outputs = [
+    *(
+        [
+            rules.aggregate_titers.output.titers,
+            rules.aggregate_titers.output.pickles,
+            rules.aggregate_qc_drops.output.plate_qc_drops,
+            rules.aggregate_qc_drops.output.barcode_qc_drops,
+            rules.aggregate_qc_drops.output.groups_sera_qc_drops,
+            *[
+                rules.plate_to_plate_corr.output.corrs_csv.format(
+                    group=group, plate=plate
+                )
+                for (plate, group) in corr_plates.items()
+            ],
+        ]
+        if plates
+        else []
+    ),
+    *[
+        f"results/miscellaneous_plates/{plate}/{well}_{suffix}"
+        for plate in miscellaneous_plates
+        for well in miscellaneous_plates[plate]["wells"]
+        for suffix in ["counts.csv", "fates.csv"]
+    ],
+    # the notebook HTMLs are not listed here, as they are inputs to `build_docs`
+    rules.build_docs.output.docs,
+]

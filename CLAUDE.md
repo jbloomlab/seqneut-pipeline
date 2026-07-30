@@ -28,6 +28,22 @@ rather than in the rules.
 | `build_docs` | `scripts/build_docs.py` | collects the notebook HTML into `results/docs` |
 | `miscellaneous_plate_count_barcodes` | `scripts/count_barcodes.py` | counting only, for `miscellaneous_plates` |
 
+Every rule above except the last two is defined inside `if plates:`, as it has nothing to
+do without plates. `build_docs` is deliberately outside that block so that a project with
+only `miscellaneous_plates` still gets docs of the HTML it adds with `add_htmls_to_docs`.
+Each of its inputs and params that derives from the plates is therefore guarded with
+`if plates else []`, including the two that are functions: a param function and an input
+function are both evaluated when the job is created, so neither can reach
+`groups_sera_plates()` (which needs the `groups_sera_by_plate` checkpoint) when there are
+no plates. `scripts/build_docs.py` gates the four sections describing the plates on
+`snakemake.params.plates`.
+
+A configuration key that can be empty is read as `config.get(key) or {}` rather than with
+a `get` default, because emptying such a key from a `--configfile` override requires
+setting it to null: `snakemake.utils.update_config` merges an override recursively, so an
+empty dict override leaves the original value untouched. `test_example/config_no_plates.yml`
+relies on this for both `plates` and `sera_override_defaults`.
+
 `funcs.smk` holds the config-processing helpers that run while the rules are being
 defined (`process_plate`, `process_miscellaneous_plates`, `stringify_plate_dates`,
 `get_plate_comparators`, `get_collapse_strain_barcodes`, and the sample-table
