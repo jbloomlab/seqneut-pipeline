@@ -239,6 +239,9 @@ This dictionary (mapping) contains the heart of the configuration, and may be qu
 Essentially, it specifies what samples are contained in each plate, how those samples should be processed, QC thresholds, and any specific barcodes or samples that should be dropped.
 In addition, each plate is assigned to a *group*, which might be "serum" or "pilot" (if you are mixing analyses of your sera with pilot experiments), or could be additional groups if you have two distinct sets of sera.
 
+This key is optional: leave it out, or set it to null or an empty dictionary (`{}`), for a project that only counts barcodes for the plates specified under `miscellaneous_plates` and so fits no neutralization curves at all.
+Note that `sera_override_defaults` is keyed by group and so must then also be empty, since there are no groups without any plates.
+
 The basic structure is that `plates` maps plate names to configurations for the plates.
 Specifically, it should look like this:
 ```
@@ -540,6 +543,9 @@ The output is that for each plate, the following files are created:
  - `results/miscellaneous_plates/<plate_name>/<well>_invalid.csv`: counts of each invalid barcode in that well of that plate.
  - `results/miscellaneous_plates/<plate_name>/<well>_fates.csv`: summarizing number of reads that are valid and various types of invalid for each well of that plate.
 
+A project can consist of nothing but miscellaneous plates, by leaving `plates` empty.
+The docs in `./results/docs` are still built in that case, holding whatever HTML files you add with `add_htmls_to_docs` (see the GitHub Pages section below), which is how to include your own analysis of these counts alongside them.
+
 
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
@@ -623,6 +629,8 @@ add_htmls_to_docs = {
 ```
 
 You can have one level of nesting in these docs to allow subheadings.
+
+These files are added to the docs even for a project with no `plates`, in which case the docs contain only them, as the other sections all describe the plates.
 
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.

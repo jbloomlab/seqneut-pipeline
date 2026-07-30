@@ -19,7 +19,8 @@ def stringify_plate_dates(config):
 
     """
     for config_key in ["plates", "miscellaneous_plates"]:
-        for plate_d in config.get(config_key, {}).values():
+        # `or {}` rather than a `get` default, as either key can be present but null
+        for plate_d in (config.get(config_key) or {}).values():
             if "date" in plate_d:
                 plate_d["date"] = str(plate_d["date"])
 

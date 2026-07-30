@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## version 8.1.0
+- Build the docs in `./results/docs` even when there are no `plates`. A project that only counts barcodes for `miscellaneous_plates` previously got no docs at all, which silently ignored any HTML files it added with `add_htmls_to_docs`; those files are now the entire contents of its docs, since every other section describes the plates. This is what lets such a project publish its own analysis of the counts via GitHub Pages.
+
+- Make `plates` an optional configuration key, so that a project with only `miscellaneous_plates` no longer needs a placeholder `plates: {}`. Along with it, `sera_override_defaults` is now optional too (it is keyed by group, and a project with no plates has no groups), and both keys, as well as `miscellaneous_plates`, are accepted as null and not just as an empty dictionary. Note that null is the only way to empty one of these keys from a `--configfile` override, as `snakemake` merges an override into the configuration recursively and so treats an empty dictionary as leaving the existing value untouched.
+
+- Test the no-plates configuration by running the test example a third time with the new `test_example/config_no_plates.yml` overrides, checking that its docs hold the added HTML file and none of the sections describing plates.
+
 ## version 8.0.0
 - Update software versions, most notably `python` to 3.14:
   + `python`: 3.13 -> 3.14

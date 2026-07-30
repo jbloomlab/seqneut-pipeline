@@ -75,6 +75,25 @@ jobs:
           expected_titers_for_test_collapse_strain_barcodes.csv
           && cd ..
 
+      - name: run pipeline on test example with no plates
+        # in a copy of the test example so the results of the runs above are kept. A
+        # project with no `plates` just counts barcodes for its `miscellaneous_plates`,
+        # and its docs then hold only the HTMLs added with `add_htmls_to_docs` and none of
+        # the sections that describe plates.
+        shell: bash -el {0}
+        run: >
+          cp -a test_example _test_example_no_plates
+          && cd _test_example_no_plates
+          && rm -rf results
+          && snakemake --software-deployment-method conda -j 2
+          --configfile config_no_plates.yml
+          && test -f results/docs/example_html.html
+          && grep -q "Example HTML file" results/docs/index.html
+          && ! grep -q "Titers for all sera" results/docs/index.html
+          && ! grep -q "Per-plate counts and curve fits" results/docs/index.html
+          && ! grep -q "quality control" results/docs/index.html
+          && cd ..
+
       - name: upload results in case of error
         uses: actions/upload-artifact@v7
         if: failure()
@@ -83,4 +102,5 @@ jobs:
           path: |
             test_example/results
             _test_example_collapsed/results
+            _test_example_no_plates/results
           retention-days: 7
