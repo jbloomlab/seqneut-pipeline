@@ -591,6 +591,29 @@ The set of full created outputs are as follows (note only some will be tracked d
       
   - HTML documentation of results is placed in `./results/docs`. This subdirectory does not need to be tracked in the GitHub repo, but can be display via GitHub Pages as described below.
 
+### How the fraction infectivity is computed
+The fraction infectivity in `./results/plates/{plate}/frac_infectivity.csv` is computed for each viral barcode in each serum-containing well as:
+```
+frac_infectivity_raw = count / neut_standard_count / median_no_serum_ratio
+```
+That is, the barcode's count is first normalized by the total neut-standard counts in the same well, which corrects for how much of that well was sequenced.
+That ratio is then divided by `median_no_serum_ratio`, the median of the same ratio for that barcode across the plate's no-serum wells, which puts an unneutralized barcode at a fraction infectivity of one.
+This is why every plate must have at least one no-serum sample.
+
+The `frac_infectivity_ceiling` in `curvefit_params` is applied as a separate `frac_infectivity_ceiling` column rather than in place, so the file holds both the ceilinged and raw values; the curve fits use the ceilinged values.
+If `collapse_strain_barcodes` is set, `count` is instead the sum over all of the strain's barcodes, collapsed immediately after the `manual_drops` are applied so that everything from the QC onward is per strain.
+
+### Names used to identify samples and replicates
+These names are built from the `samples_csv` of each plate and appear as columns in the results:
+
+ - *serum_replicate*: the *serum*, or `{serum}-{replicate}` when a serum has more than one replicate on the plate.
+ - *sample*: `{plate}_{serum_replicate}_{dilution_factor}` (or `_{concentration}`), with the trailing part omitted for the no-serum samples.
+ - *plate_replicate*: the *plate*, or `{plate}-{replicate}` for sera with more than one replicate on the plate.
+ - *plate_barcode*: `{plate_replicate}-{barcode}`, which lets one barcode be tracked as a distinct replicate across plates. This is what is passed to `neutcurve` as its `replicate_col`.
+
+Under `collapse_strain_barcodes`, a collapsed strain's *barcode* is set to the strain name rather than to a shared literal such as `collapsed`.
+This is because *barcode* identifies a strain rather than just labeling it: the QC drops are keyed on `[barcode, serum_replicate]` and `[barcode, well]`, so a name shared across strains would make dropping one curve drop them all.
+
 ## Examining the output and setting appropriate QC values in the configuration
 When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML documentation summarizing the processing of each plate and sera are placed in `./results/docs` (see below for how to render this on GitHub Pages), alongside a summary of all QC across all plates / sera.
 YAML summaries of the QC are also created.
@@ -650,5 +673,9 @@ cd test_example && snakemake --lint && cd ..
 ```
 
 ## Further developing the pipeline
+The code is organized as follows.
+[seqneut-pipeline.smk](seqneut-pipeline.smk) defines the rules, and [funcs.smk](funcs.smk) holds the helpers that process and validate the configuration and sample tables while those rules are being defined.
+The rules themselves are thin: most of the analysis is in the [marimo](https://marimo.io/) notebooks in [./notebooks](notebooks), which are run by [scripts/run_marimo_w_context_pickle.py](scripts/run_marimo_w_context_pickle.py) and also produce the HTML documentation, while [./scripts](scripts) holds the steps that produce no plots (barcode counting and the docs build).
+
 Please raise [GitHub issues](https://github.com/jbloomlab/seqneut-pipeline/issues) or [make a pull request](https://github.com/jbloomlab/seqneut-pipeline/pulls) to improve the pipeline.
 Do note that any updates should be described in the [CHANGELOG](CHANGELOG.md), and versions updated in [pyproject.toml](pyproject.toml).
