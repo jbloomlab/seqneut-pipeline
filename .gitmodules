@@ -1,0 +1,3 @@
+[submodule "bloomlab-coding-standards"]
+	path = bloomlab-coding-standards
+	url = https://github.com/jbloomlab/bloomlab-coding-standards
