@@ -155,7 +155,7 @@ if plates:
     rule process_plate:
         """Process a plate to QC and convert counts to fraction infectivity."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/process_plate.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
             count_csvs=lambda wc: expand(
                 rules.count_barcodes.output.counts,
                 sample=plates[wc.plate]["samples"]["sample"],
@@ -165,8 +165,7 @@ if plates:
                 sample=plates[wc.plate]["samples"]["sample"],
             ),
         output:
-            marimo_html="results/plates/{plate}/process_{plate}.html",
-            context_pickle="results/plates/{plate}/process_{plate}_context.pickle",
+            html="results/plates/{plate}/process_{plate}.html",
             qc_drops="results/plates/{plate}/qc_drops.yml",
             frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
             fits_csv="results/plates/{plate}/curvefits.csv",
@@ -199,7 +198,7 @@ if plates:
             curve_display_method=config["curve_display_method"],
             collapse_strain_barcodes=collapse_strain_barcodes,
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/process_plate.py"
 
     checkpoint groups_sera_by_plate:
         """Get list of all groups/sera and plates they are on."""
@@ -219,7 +218,8 @@ if plates:
     rule group_serum_titers:
         """Aggregate and analyze titers for a group / serum."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/group_serum_titers.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             pickles=lambda wc: [
                 rules.process_plate.output.fits_pickle.format(plate=plate)
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
@@ -229,8 +229,7 @@ if plates:
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
             ],
         output:
-            marimo_html="results/sera/{group}_{serum}/{group}_{serum}_titers.html",
-            context_pickle="results/sera/{group}_{serum}/{group}_{serum}_titers_context.pickle",
+            html="results/sera/{group}_{serum}/{group}_{serum}_titers.html",
             per_rep_titers="results/sera/{group}_{serum}/titers_per_replicate.csv",
             titers="results/sera/{group}_{serum}/titers.csv",
             curves_pdf="results/sera/{group}_{serum}/curves.pdf",
@@ -266,7 +265,7 @@ if plates:
                 else config["default_serum_qc_thresholds"]
             ),
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/group_serum_titers.py"
 
     rule plate_to_plate_corr:
         """Correlate the titers on a plate with those on the other plates of its group.
@@ -282,7 +281,8 @@ if plates:
 
         """
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/plate_to_plate_corr.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             # The sera measured on this plate. Each of these files holds that serum's
             # titers from every plate it was measured on, which is what the correlations
             # need. All of the plate's sera are read rather than just those also measured
@@ -295,8 +295,7 @@ if plates:
                 if (group == wc.group) and (wc.plate in serum_plates)
             ],
         output:
-            marimo_html="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.html",
-            context_pickle="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}_context.pickle",
+            html="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.html",
             corrs_csv="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.csv",
         log:
             "results/logs/plate_to_plate_corr_{group}_{plate}.txt",
@@ -317,12 +316,12 @@ if plates:
             ),
             concentration_units=lambda wc: group_concentration_units[wc.group],
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/plate_to_plate_corr.py"
 
     rule aggregate_titers:
         """Aggregate all serum titers."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_titers.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
             pickles=lambda wc: [
                 rules.group_serum_titers.output.pickle.format(group=group, serum=serum)
                 for (group, serum) in groups_sera_plates()
@@ -332,8 +331,7 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
-            marimo_html="results/aggregated_titers/aggregate_titers.html",
-            context_pickle="results/aggregated_titers/aggregate_titers_context.pickle",
+            html="results/aggregated_titers/aggregate_titers.html",
             pickles=[
                 f"results/aggregated_titers/curvefits_{group}.pickle"
                 for group in groups
@@ -353,7 +351,7 @@ if plates:
             groups_dilution_factor_or_concentration=group_dilution_factor_or_concentration,
             groups_concentration_units=group_concentration_units,
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/aggregate_titers.py"
 
     rule aggregate_qc_drops:
         """Aggregate all QC drops."""
@@ -444,9 +442,7 @@ rule build_docs:
             plate=plates,
         ),
         plate_corr_htmls=[
-            rules.plate_to_plate_corr.output.marimo_html.format(
-                group=group, plate=plate
-            )
+            rules.plate_to_plate_corr.output.html.format(group=group, plate=plate)
             for (plate, group) in corr_plates.items()
         ],
         qc_drops_html=(rules.aggregate_qc_drops.output.html if plates else []),

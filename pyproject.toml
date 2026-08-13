@@ -27,12 +27,3 @@ builtins = [
 # run from within `test_example` after the pipeline has been run there.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-# We lint with `ruff`'s default rule selection, which is much broader as of `ruff`
-# 0.16. The rules ignored below are triggered only by the file format that `marimo`
-# writes, not by anything actually wrong with the notebooks.
-[tool.ruff.lint.per-file-ignores]
-"notebooks/*.py" = [
-    "B018",  # a cell's trailing bare expression is what that cell renders
-    "PLR1711",  # `marimo` ends each cell with a `return` of the variables it exports
-]

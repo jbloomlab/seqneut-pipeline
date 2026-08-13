@@ -159,11 +159,15 @@ def test_figure_is_embedded(tmp_path, fig, method):
         assert "data:image/png;base64," in html
 
 
-def test_figure_rejects_inline(fig):
-    """`inline` has no HTML form, so it is not a valid display method here."""
+def test_figure_propagates_an_invalid_display_method(fig):
+    """`Report.figure` does not swallow the error the renderer raises.
+
+    Which methods are valid is `neutcurve`'s to say, so this checks only that an invalid
+    one is not quietly ignored here.
+    """
     report = Report(title="t")
-    with pytest.raises(ValueError, match="Invalid display_method"):
-        report.figure(fig, "inline")
+    with pytest.raises(ValueError):
+        report.figure(fig, "not_a_real_method")
 
 
 def test_blocks_keep_their_order(tmp_path, chart):

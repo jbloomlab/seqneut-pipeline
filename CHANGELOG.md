@@ -1,15 +1,21 @@
 # CHANGELOG
 
 ## version 9.0.0 (unreleased)
-- Record the QC filter that actually dropped a barcode in `./results/plates/{plate}/qc_drops.yml`. Every barcode-level drop was previously labeled `min_neut_standard_frac_per_well`, which is the threshold on wells rather than on barcodes, so a barcode dropped by `per_neut_standard_barcode_filters` or by `no_serum_per_viral_barcode_filters` named a filter it had not failed. The labels now name the filter that dropped the barcode, which also corrects `./results/qc_drops/plate_qc_drops.yml`, `./results/qc_drops/barcode_qc_drops.yml`, and the reasons colored in the QC-drop summary plots. Only the recorded reason changes: which barcodes are dropped is determined before the label is attached, so no titers change.
+- Correctly record the QC filter that dropped a barcode in `./results/plates/{plate}/qc_drops.yml`. Every barcode-level drop was previously labeled `min_neut_standard_frac_per_well`, naming a filter it had not failed. Only the recorded reason changes, so no titers change.
 
 - Fix the spelling of the `closest_valid_barcode_hamming_distance` column of `./results/barcode_invalid/{sample}.csv`, which was `closest_valid_bacode_hamming_distance`.
 
-- Build the notebook-style HTML reports from ordinary Python scripts rather than from `marimo` notebooks, starting with the one summarizing the QC drops. The reports keep the interactive charts, the prose, and the scrolling boxes around the large panels of curves, but a script gets its inputs, outputs, and parameters from `snakemake` directly, so the pickled context that was passed to `marimo` is gone along with the `*_context.pickle` outputs. The reports are also much smaller (a fifth of the size for the QC-drop summary) and no longer need the `marimo` front end to be fetched from a CDN in order to display.
+- Build the HTML reports from ordinary Python scripts rather than from `marimo` notebooks. They show the same interactive charts, text, and scrolling boxes around the large panels of curves, but are several times smaller. The analysis for each rule is now in a script of the same name in `./scripts`.
 
-  `scripts/seqneut_report.py` builds the reports and is covered by tests in `./tests`, run with `pytest`. Note that `snakemake` re-runs a `script:` rule when the script itself changes but does not follow the script's imports, so each rule lists the modules its script imports among its `input`.
+  The `html` output of five rules was called `marimo_html`, and their `context_pickle` output is gone. A project whose own `Snakefile` refers to one of these by name (such as `rules.group_serum_titers.output.marimo_html`) has to be updated; the file paths are unchanged, so `.gitignore` and any published documentation do not.
 
-- Require `neutcurve` 2.4.0, whose new `fig_utils.fig_html` renders a panel of curves as HTML without `marimo`, and which renders SVG and PDF reproducibly so that a report no longer differs on every run.
+- Remove `inline` as an option for `curve_display_method`, leaving `svg`, `pdf`, and `png8`. It meant handing the figure to `marimo` to draw, and was in any case the worst of the options.
+
+- Write `./results/sera/{group}_{serum}/curves.pdf` without the creation timestamp that `matplotlib` embeds, so that the same curves always give the same PDF.
+
+- `marimo` is no longer used by the pipeline, but is kept in `environment.yml` so that other analyses sharing that environment still have it.
+
+- Require `neutcurve` 2.4.0, which renders the panels of curves as HTML without `marimo`, and renders SVG and PDF reproducibly.
 
 ## version 8.1.0
 - Build the docs in `./results/docs` even when there are no `plates`. A project that only counts barcodes for `miscellaneous_plates` previously got no docs at all, which silently ignored any HTML files it added with `add_htmls_to_docs`; those files are now the entire contents of its docs, since every other section describes the plates. This is what lets such a project publish its own analysis of the counts via GitHub Pages.

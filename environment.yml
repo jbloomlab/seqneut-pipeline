@@ -7,7 +7,7 @@ channels:
 dependencies:
   - altair=6.2
   - black
-  - marimo=0.23
+  - marimo=0.23  # not used by pipeline, but kept for now in case custom scripts use it
   - markdown=3.10
   - pandas=2.3
   - pillow=12.3

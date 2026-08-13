@@ -29,13 +29,14 @@ commit of that submodule; update periodically with
 
 - Verify changes with the format and lint commands in the README, plus
   `cd test_example && snakemake -n`, which catches config and DAG errors cheaply.
-- A new or changed notebook can be run against the committed `test_example/results`
-  without running the pipeline: build and pickle the context dict that
-  `scripts/run_marimo_w_context_pickle.py` builds, then run
-  `marimo export html <notebook> -o <html> -- --context-pickle <pickle>` from
-  `test_example`. Synthesizing input CSVs this way also reaches cases the test example does
-  not contain. Prefer this to copying cells into a separate script, which tests a copy
-  rather than the notebook.
+- A changed analysis script can be re-run on its own against the committed
+  `test_example/results`, without running the whole pipeline: copy `test_example` to a
+  `_`-prefixed directory and run `snakemake --force <one of the rule's outputs>
+  --rerun-triggers mtime`, which re-runs just that rule from results that are already
+  there. Synthesizing input CSVs this way also reaches cases the test example does not
+  contain.
+- `scripts/seqneut_report.py` and `scripts/seqneut_funcs.py` are imported by the analysis
+  scripts and so are tested directly, with `pytest`.
 - Ask before running the full `test_example` pipeline: it rewrites ~300 git-tracked files
   under `test_example/results/`, and a rerun yields small floating-point differences that
   should not be committed. The collapsed-barcode run
