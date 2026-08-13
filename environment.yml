@@ -13,6 +13,7 @@ dependencies:
   - pillow=12.3
   - pip
   - pyarrow
+  - pytest
   - python=3.14
   - ruamel.yaml=0.19
   - snakefmt
@@ -20,4 +21,4 @@ dependencies:
   - ruff
   - pip:
     - dms_variants==1.6.0
-    - neutcurve==2.3.1
+    - neutcurve==2.4.0

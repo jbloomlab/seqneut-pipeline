@@ -46,6 +46,10 @@ jobs:
         shell: bash -el {0}
         run: marimo check --ignore-scripts .
 
+      - name: test code with pytest
+        shell: bash -el {0}
+        run: pytest
+
       - name: lint snakemake files with snakemake --lint
         shell: bash -el {0}
         run: cd test_example && snakemake --lint && cd ..

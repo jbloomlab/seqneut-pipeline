@@ -358,7 +358,9 @@ if plates:
     rule aggregate_qc_drops:
         """Aggregate all QC drops."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_qc_drops.py"),
+            # `snakemake` re-runs a `script:` rule when the script itself changes, but
+            # does not follow its imports, so the modules it imports are inputs
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
             plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
             groups_sera_qc_drops=lambda wc: [
                 rules.group_serum_titers.output.qc_drops.format(
@@ -367,8 +369,7 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
-            marimo_html="results/qc_drops/aggregate_qc_drops.html",
-            context_pickle="results/qc_drops/aggregate_qc_drops_context.pickle",
+            html="results/qc_drops/aggregate_qc_drops.html",
             plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
             barcode_qc_drops="results/qc_drops/barcode_qc_drops.yml",
             groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
@@ -380,7 +381,7 @@ if plates:
             plates=list(plates),
             groups_sera=lambda wc: list(groups_sera_plates()),
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/aggregate_qc_drops.py"
 
 
 rule miscellaneous_plate_count_barcodes:
@@ -448,7 +449,7 @@ rule build_docs:
             )
             for (plate, group) in corr_plates.items()
         ],
-        qc_drops_html=(rules.aggregate_qc_drops.output.marimo_html if plates else []),
+        qc_drops_html=(rules.aggregate_qc_drops.output.html if plates else []),
     output:
         docs=directory("results/docs"),
     log:

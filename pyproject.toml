@@ -22,6 +22,12 @@ builtins = [
     "snakemake",  # may appear undefined as passed to scripts via `Snakefile`
 ]
 
+# `./tests` holds the tests of the code this pipeline shares with the projects that
+# include it. `test_example/test_titers_as_expected.py` is not among them: it is a script
+# run from within `test_example` after the pipeline has been run there.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 # We lint with `ruff`'s default rule selection, which is much broader as of `ruff`
 # 0.16. The rules ignored below are triggered only by the file format that `marimo`
 # writes, not by anything actually wrong with the notebooks.
