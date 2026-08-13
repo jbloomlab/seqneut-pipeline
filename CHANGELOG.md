@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## version 9.0.0 (unreleased)
+- Record the QC filter that actually dropped a barcode in `./results/plates/{plate}/qc_drops.yml`. Every barcode-level drop was previously labeled `min_neut_standard_frac_per_well`, which is the threshold on wells rather than on barcodes, so a barcode dropped by `per_neut_standard_barcode_filters` or by `no_serum_per_viral_barcode_filters` named a filter it had not failed. The labels now name the filter that dropped the barcode, which also corrects `./results/qc_drops/plate_qc_drops.yml`, `./results/qc_drops/barcode_qc_drops.yml`, and the reasons colored in the QC-drop summary plots. Only the recorded reason changes: which barcodes are dropped is determined before the label is attached, so no titers change.
+
+- Fix the spelling of the `closest_valid_barcode_hamming_distance` column of `./results/barcode_invalid/{sample}.csv`, which was `closest_valid_bacode_hamming_distance`.
+
 ## version 8.1.0
 - Build the docs in `./results/docs` even when there are no `plates`. A project that only counts barcodes for `miscellaneous_plates` previously got no docs at all, which silently ignored any HTML files it added with `add_htmls_to_docs`; those files are now the entire contents of its docs, since every other section describes the plates. This is what lets such a project publish its own analysis of the counts via GitHub Pages.
 

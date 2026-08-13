@@ -4,8 +4,8 @@ AAAGATAAATTCAAAA:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 AAAGTAGCAGAGGATT:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 AAATGCTGAGAGGGTA:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -24,12 +24,12 @@ AATCTTTCCAATCTTG:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 AATGACAGCTGTCTAG:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 AATGGTCGAGCCATTC:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 AATTACGCATAGGCCA:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -40,15 +40,15 @@ ACAAAGATAAAAATTT:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 ACGCAAATAGACCGAA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 ACGGAATCCCCTGAGA:
   barcode_wells:
     plate11 B12: min_no_serum_count_per_viral_barcode_well
 AGACCATCGCACCCAA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 AGATCATAAGCAATAA:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -66,8 +66,8 @@ AGTCCTATCCTCAAAT:
     plate11 M099d0: manual_drop
 ATAGAAAATTATCCGC:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 ATCGAAAAAACTGCAA:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -86,12 +86,12 @@ ATTAGATTATAACGTA:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 CAAAAGCAGCACGATA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CAATTCGCCGTTCCCC:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CACCGACCAACTCTCT:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -116,13 +116,13 @@ CATAATGCACAAACGC:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 CATACAGAGTTTGTTG:
   barcodes:
-    plate11: min_neut_standard_frac_per_well
-    plate2: min_neut_standard_frac_per_well
-    plate2_exact_dup: min_neut_standard_frac_per_well
+    plate11: per_neut_standard_barcode_filters
+    plate2: per_neut_standard_barcode_filters
+    plate2_exact_dup: per_neut_standard_barcode_filters
 CCAATCCCAGCCTTTA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CCACAAGTTTGAAAAC:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -133,20 +133,20 @@ CCATCACCTTATACAC:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 CCCGCTAACCCTGTCT:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CCCTCCTCAAGGGTAA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CCGATAAGACGTCGCT:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 CCGCAATGACAATTTG:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CCTATAAGGCCTTACG:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -165,40 +165,40 @@ CGGATAAAAATGATAT:
     plate11 B12: min_no_serum_count_per_viral_barcode_well
 CGTACGTATGTCCCAG:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CGTCAGAAGTTTATAA:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 CGTCCCTGGCGTGTCG:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CGTTAACGGCCTATCC:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CTATCTTAATCTACAG:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 CTCATTACAGAAATTG:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CTCCAATAGGAGACGA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CTGCGAATATTGTGAC:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 CTTCATCTCATTTAAA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 CTTGAATACACAAACA:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -244,12 +244,12 @@ TACGAAAATCAAGAGC:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 TATACTCACGGAGGAT:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 TATATGGAATACTAAA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 TATCAATTCGGTATTA:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
@@ -268,24 +268,24 @@ TCCACACCCCTAGCTA:
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 TCCCCGTGGTTTGACA:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 TCCGCCACTATAACAT:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 TCTCCGATAGCCCTAC:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 TCTTAGAGTGAACGAT:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit
     H3N2_plate A23038d0_r32_75K: goodness_of_fit
 TGACAAACACCTGAGG:
   barcodes:
-    H3N2_conc_plate: min_neut_standard_frac_per_well
-    H3N2_plate: min_neut_standard_frac_per_well
+    H3N2_conc_plate: no_serum_per_viral_barcode_filters
+    H3N2_plate: no_serum_per_viral_barcode_filters
 TGAGATCAGCCGGGTG:
   barcode_serum_replicates:
     H3N2_conc_plate A23038d0_r32_75K: goodness_of_fit

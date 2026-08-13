@@ -898,9 +898,7 @@ def _(
                 f"Dropping {len(barcode_drops)} barcodes for failing `qc={qc!r}`: {barcode_drops}"
             )
         )
-        qc_drops["barcodes"].update(
-            {bc: "min_neut_standard_frac_per_well" for bc in barcode_drops}
-        )
+        qc_drops["barcodes"].update({bc: qc_name for bc in barcode_drops})
         counts_qc_4 = counts_qc_4[~counts_qc_4["barcode"].isin(qc_drops["barcodes"])]
     return barcode_selection, counts_qc_4
 

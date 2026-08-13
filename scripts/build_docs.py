@@ -1,4 +1,4 @@
-"""Implements ``snakemake`` rule to translate gene sequence."""
+"""Build the HTML documentation of the results."""
 
 import os
 import shutil

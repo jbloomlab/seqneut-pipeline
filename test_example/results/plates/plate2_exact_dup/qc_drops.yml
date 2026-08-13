@@ -1,6 +1,6 @@
 wells: {}
 barcodes:
-  CATACAGAGTTTGTTG: min_neut_standard_frac_per_well
+  CATACAGAGTTTGTTG: per_neut_standard_barcode_filters
 barcode_wells: {}
 barcode_serum_replicates: {}
 serum_replicates: {}
