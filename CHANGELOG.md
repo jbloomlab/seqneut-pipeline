@@ -15,7 +15,12 @@
 
 - `marimo` is no longer used by the pipeline, but is kept in `environment.yml` so that other analyses sharing that environment still have it.
 
-- Require `neutcurve` 2.4.0, which renders the panels of curves as HTML without `marimo`, and renders SVG and PDF reproducibly.
+- Update the software environment:
+  + Add `nodefaults` to the channels, so the file fully specifies the environment.
+  + `neutcurve`: 2.3.1 -> 2.4.0, which draws the curve panels as HTML without `marimo`.
+  + `snakemake`: 9.23 -> 9.25
+  + Add `pytest`, which runs the tests in `./tests`.
+  + `pandas` stays at 2.3, as the `bioconda` `snakemake` package still pins `pandas <3`.
 
 ## version 8.1.0
 - Build the docs in `./results/docs` even when there are no `plates`. A project that only counts barcodes for `miscellaneous_plates` previously got no docs at all, which silently ignored any HTML files it added with `add_htmls_to_docs`; those files are now the entire contents of its docs, since every other section describes the plates. This is what lets such a project publish its own analysis of the counts via GitHub Pages.
