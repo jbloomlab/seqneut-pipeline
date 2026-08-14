@@ -306,7 +306,7 @@ def get_plate_comparators(plates):
     Computed from the sample tables in the configuration, and so before any QC. QC can
     only remove sera, so a plate with no comparator here cannot gain one, while a plate
     with comparators here can lose all of its shared titers to QC (which the plate's
-    notebook reports).
+    report notes).
 
     """
     plate_sera = {

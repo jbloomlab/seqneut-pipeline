@@ -74,9 +74,9 @@ for plate_d in plates.values():
 
 
 # the plates each plate's titers can be correlated with, and the subset of plates that
-# have at least one such comparator and so get a plate-to-plate correlation notebook
+# have at least one such comparator and so get a plate-to-plate correlation report
 # (keyed to their group). Both are determined by the configuration rather than by the
-# QC, so the set of correlation notebooks is known without the `groups_sera_by_plate`
+# QC, so the set of correlation reports is known without the `groups_sera_by_plate`
 # checkpoint even though the inputs to each of them are not.
 plate_comparators = get_plate_comparators(plates)
 corr_plates = {
@@ -272,10 +272,10 @@ if plates:
 
         Only created for the plates in `corr_plates`, which are those sharing a serum
         with another plate of their group. Each pair of plates is therefore compared
-        twice, once in each plate's notebook, which keeps a notebook from growing with
+        twice, once in each plate's report, which keeps a report from growing with
         the square of the number of plates in the group.
 
-        The notebook handles the case where the QC has dropped every titer that this
+        The script handles the case where the QC has dropped every titer that this
         plate shared with its comparators, by reporting that there is nothing to
         correlate.
 
@@ -286,7 +286,7 @@ if plates:
             # The sera measured on this plate. Each of these files holds that serum's
             # titers from every plate it was measured on, which is what the correlations
             # need. All of the plate's sera are read rather than just those also measured
-            # elsewhere, so that the notebook can report the ones that are not compared.
+            # elsewhere, so that the report can list the ones that are not compared.
             per_rep_titers=lambda wc: [
                 rules.group_serum_titers.output.per_rep_titers.format(
                     group=wc.group, serum=serum
@@ -497,6 +497,6 @@ seqneut_pipeline_outputs = [
         for well in miscellaneous_plates[plate]["wells"]
         for suffix in ["counts.csv", "fates.csv"]
     ],
-    # the notebook HTMLs are not listed here, as they are inputs to `build_docs`
+    # the report HTMLs are not listed here, as they are inputs to `build_docs`
     rules.build_docs.output.docs,
 ]

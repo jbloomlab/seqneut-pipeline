@@ -24,6 +24,8 @@ commit of that submodule; update periodically with
   a `get` default: emptying such a key from a `--configfile` override requires setting it
   to null, since `snakemake.utils.update_config` merges recursively and so leaves the
   original value untouched given an empty dict.
+- Numbers in this pipeline's output CSVs are written to four significant digits
+  (`float_format="%.4g"`) unless a different precision is called for explicitly.
 
 ## Working in this repo
 
@@ -60,7 +62,7 @@ rules on narrowing a chart's data frame:
 - Round floats that came from arithmetic before plotting. A median over an even number of
   values gives `210.35000000000002`, 18 characters on every row for precision far below a
   pixel.
-- A column with the same value on every row (`group` and `serum` in a per-serum notebook,
+- A column with the same value on every row (`group` and `serum` in a per-serum report,
   or `titer_units`, which follows from `titer_as`) belongs in a `transform_calculate`
   returning a literal, so the value appears once rather than once per row. The quoting is
   `transform_calculate(titer_units=f"'{units}'")`: the argument is a `vega` expression, so

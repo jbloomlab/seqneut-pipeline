@@ -39,7 +39,7 @@ for f in snakemake.input.titers_charts:
     assert base.startswith("titers_") and base.endswith(".html"), base
     titers_charts_by_group[base[len("titers_") : -len(".html")]] = f
 
-# map each plate to its plate-to-plate correlation notebook; only the plates sharing
+# map each plate to its plate-to-plate correlation report; only the plates sharing
 # sera with another plate of their group have one
 plate_corr_htmls_by_plate = dict(
     zip(snakemake.params.corr_plates, snakemake.input.plate_corr_htmls, strict=True)
@@ -113,7 +113,7 @@ if snakemake.params.plates:
     md_text += [
         "",
         "## Summary of data dropped during quality control",
-        f"[Notebook summarizing QC drops]({os.path.basename(copied_files[snakemake.input.qc_drops_html])})",
+        f"[Report summarizing QC drops]({os.path.basename(copied_files[snakemake.input.qc_drops_html])})",
     ]
 
 for heading, heading_d in snakemake.params.add_htmls_to_docs.items():

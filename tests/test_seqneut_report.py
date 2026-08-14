@@ -42,9 +42,9 @@ def test_page_is_written_with_title(tmp_path):
 def test_md_is_dedented_not_read_as_code(tmp_path):
     """Indented markdown renders as prose, not as an indented code block.
 
-    The notebooks this replaces wrote their prose as indented triple-quoted strings, and
-    four spaces of indentation is a code block to markdown, so failing to dedent would
-    turn every heading into preformatted text.
+    Report prose is written as indented triple-quoted strings, and four spaces of
+    indentation is a code block to markdown, so failing to dedent would turn every
+    heading into preformatted text.
     """
     report = Report(title="t")
     report.md("""
