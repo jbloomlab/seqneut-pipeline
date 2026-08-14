@@ -97,15 +97,23 @@ class Report:
         self._blocks = []
         self._n_charts = 0  # gives each chart a unique `altair` `output_div`
 
-    def md(self, text):
+    def md(self, text, log=False):
         """Append a block of markdown prose, which may contain LaTeX.
 
-        The text is dedented first, so that it can be written as an indented triple-
-        quoted string without markdown reading the indentation as a code block.
+        Args:
+            `text` (str)
+                The markdown. It is dedented first, so that it can be written as an
+                indented triple-quoted string without markdown reading the indentation
+                as a code block.
+            `log` (bool)
+                Also print the text to stdout.
 
         """
+        text = textwrap.dedent(text)
+        if log:
+            print(text)
         html = markdown.markdown(
-            textwrap.dedent(text),
+            text,
             extensions=["fenced_code", "tables", "sane_lists"],
         )
         self._blocks.append(f'<div class="md-block">{html}</div>')

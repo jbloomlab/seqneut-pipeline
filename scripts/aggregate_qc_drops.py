@@ -44,8 +44,7 @@ for plate, qc_drops_yaml in zip(plates, input_plate_qc_drops):
         plate_qc_drops[plate] = yaml.load(f)
 assert len(plate_qc_drops) == len(input_plate_qc_drops)
 
-report.md(f"Writing merged plate drops to {output_plate_qc_drops}")
-print(f"Writing merged plate drops to {output_plate_qc_drops}")
+report.md(f"Writing merged plate drops to {output_plate_qc_drops}", log=True)
 with open(output_plate_qc_drops, "w") as f:
     yaml.dump(plate_qc_drops, stream=f)
 
@@ -162,8 +161,7 @@ def sort_nested(d):
 
 barcode_qc_drops = sort_nested(barcode_qc_drops)
 
-report.md(f"Writing merged barcode drops to {output_barcode_qc_drops}")
-print(f"Writing merged barcode drops to {output_barcode_qc_drops}")
+report.md(f"Writing merged barcode drops to {output_barcode_qc_drops}", log=True)
 with open(output_barcode_qc_drops, "w") as f:
     yaml.dump(barcode_qc_drops, stream=f)
 
@@ -247,8 +245,9 @@ for (group, serum), qc_drops_yaml in zip(groups_sera, input_groups_sera_qc_drops
     with open(qc_drops_yaml) as f:
         groups_sera_qc_drops[group][serum] = yaml.load(f)
 
-report.md(f"Writing merged groups/sera drops to {output_groups_sera_qc_drops}")
-print(f"Writing merged groups/sera drops to {output_groups_sera_qc_drops}")
+report.md(
+    f"Writing merged groups/sera drops to {output_groups_sera_qc_drops}", log=True
+)
 with open(output_groups_sera_qc_drops, "w") as f:
     yaml.dump(groups_sera_qc_drops, stream=f)
 

@@ -45,8 +45,7 @@ titers = pd.concat(
 )
 assert len(titers) == len(titers.groupby(["group", "serum", "virus"]))
 for group, f_out_titer in zip(groups, output_titers):
-    report.md(f"Writing aggregated titers for `{group}` to `{f_out_titer}`")
-    print(f"Writing aggregated titers for {group} to {f_out_titer}")
+    report.md(f"Writing aggregated titers for `{group}` to `{f_out_titer}`", log=True)
     titers.query("group == @group").to_csv(
         f_out_titer, index=False, float_format="%.4g"
     )
@@ -58,8 +57,9 @@ for group, f_out_pickle in zip(groups, output_pickles):
             with open(pickle_f, "rb") as f_in_pickle:
                 fits_list.append(pickle.load(f_in_pickle))
     curvefits = neutcurve.CurveFits.combineCurveFits(fits_list)
-    report.md(f"Pickling aggregated `CurveFits` for `{group}` to `{f_out_pickle}`")
-    print(f"Pickling aggregated CurveFits for {group} to {f_out_pickle}")
+    report.md(
+        f"Pickling aggregated `CurveFits` for `{group}` to `{f_out_pickle}`", log=True
+    )
     with open(f_out_pickle, "wb") as f_out_pickle_file:
         pickle.dump(curvefits, f_out_pickle_file)
 
@@ -176,8 +176,7 @@ for group, titers_chart_html in zip(groups, titers_charts):
         )
     )
 
-    report.md(f"Saving chart for `{group}` to `{titers_chart_html}`")
-    print(f"Saving chart for {group} to {titers_chart_html}")
+    report.md(f"Saving chart for `{group}` to `{titers_chart_html}`", log=True)
     titers_chart.save(titers_chart_html)
     report.chart(titers_chart)
 

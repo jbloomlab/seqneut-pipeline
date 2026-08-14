@@ -476,8 +476,7 @@ if nkept := (len(viruses_failing_qc) - len(viruses_to_drop)):
         f"Retaining {nkept} viruses that fail QC because they are in "
         f"`viruses_ignore_qc`: {kept_viruses}"
     )
-report.md(f"Writing QC drops to `{qc_drops_file}`")
-print(f"Writing QC drops to {qc_drops_file}")
+report.md(f"Writing QC drops to `{qc_drops_file}`", log=True)
 with open(qc_drops_file, "w") as f_qc_drops:
     yaml.YAML(typ="rt").dump(viruses_to_drop, f_qc_drops)
 
@@ -491,8 +490,7 @@ report.md("""
     column has the same value for all replicates of a virus:
     """)
 
-report.md(f"Writing per-replicate titers to `{per_rep_titers_csv}`")
-print(f"Writing per-replicate titers to {per_rep_titers_csv}")
+report.md(f"Writing per-replicate titers to `{per_rep_titers_csv}`", log=True)
 per_rep_titers.assign(
     dropped_by_qc=lambda x: x["virus"].isin(set(viruses_to_drop))
 ).to_csv(per_rep_titers_csv, index=False, float_format="%.4g")
@@ -828,8 +826,7 @@ _ = fig_retained.suptitle(
 )
 fig_retained.tight_layout()
 report.figure(fig_retained, curve_display_method)
-report.md(f"Saving to plot of curves to `{curves_pdf}`")
-print(f"Saving plot of curves to {curves_pdf}")
+report.md(f"Saving plot of curves to `{curves_pdf}`", log=True)
 # `CreationDate` is omitted so that the same curves always give the same PDF; matplotlib
 # otherwise stamps the current time into it, as `neutcurve.fig_utils.fig_html` also avoids
 fig_retained.savefig(curves_pdf, metadata={"CreationDate": None})
@@ -840,13 +837,11 @@ report.md("Save the `CurveFits` to a pickle file:")
 with open(output_pickle, "wb") as f_out_pickle:
     pickle.dump(fits_qc, f_out_pickle)
 
-report.md(f"Writing curve fits to {output_pickle}")
-print(f"Writing curve fits to {output_pickle}")
+report.md(f"Writing curve fits to {output_pickle}", log=True)
 
 report.md("Write the titers (excluding QC dropped viruses) to a CSV:")
 
-report.md(f"Writing titers to `{titers_csv}`")
-print(f"Writing titers to {titers_csv}")
+report.md(f"Writing titers to `{titers_csv}`", log=True)
 (
     median_titers_noqc.query("virus not in @viruses_to_drop")[
         [

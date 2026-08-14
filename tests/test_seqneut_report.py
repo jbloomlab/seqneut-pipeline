@@ -59,6 +59,19 @@ def test_md_is_dedented_not_read_as_code(tmp_path):
     assert "<pre>" not in html
 
 
+def test_md_logs_only_when_asked(tmp_path, capsys):
+    """`log=True` also prints, which each script redirects into its rule's log file."""
+    report = Report(title="t")
+    report.md("not logged")
+    assert capsys.readouterr().out == ""
+    report.md("logged", log=True)
+    assert capsys.readouterr().out.strip() == "logged"
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert "not logged" in html
+    assert "logged" in html
+
+
 def test_yaml_renders_as_a_code_block(tmp_path):
     """The QC parameters and the QC drops are shown as YAML, which renders as code."""
     report = Report(title="t")

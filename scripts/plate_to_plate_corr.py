@@ -584,8 +584,7 @@ corrs = pd.DataFrame(
         "pearson_r_retained",
     ],
 )
-report.md(f"Writing the correlations to `{corrs_csv}`")
-print(f"Writing the correlations to {corrs_csv}")
+report.md(f"Writing the correlations to `{corrs_csv}`", log=True)
 corrs.to_csv(corrs_csv, index=False, float_format="%.4g")
 report.table(corrs, index=False)
 
