@@ -5,15 +5,15 @@
 
 - Fix the spelling of the `closest_valid_barcode_hamming_distance` column of `./results/barcode_invalid/{sample}.csv`, which was `closest_valid_bacode_hamming_distance`.
 
-- Build the HTML reports from ordinary Python scripts rather than from `marimo` notebooks. They show the same interactive charts, text, and scrolling boxes around the large panels of curves, but are several times smaller. The analysis for each rule is now in a script of the same name in `./scripts`.
-
-  The `html` output of five rules was called `marimo_html`, and their `context_pickle` output is gone. A project whose own `Snakefile` refers to one of these by name (such as `rules.group_serum_titers.output.marimo_html`) has to be updated; the file paths are unchanged, so `.gitignore` and any published documentation do not.
+- Build the HTML reports from ordinary Python scripts rather than from `marimo` notebooks:
+  + The new reports show the same interactive charts, text, and scrolling boxes around the large panels of curves. The analysis for each rule is now in a script of the same name in `./scripts`.
+  + `scripts/run_marimo_w_context_pickle.py` is removed.
+  + The `html` output of five rules was called `marimo_html`, and their `context_pickle` output is gone. A project whose own `Snakefile` refers to one of these by name (such as `rules.group_serum_titers.output.marimo_html`) has to be updated; the file paths are unchanged, so `.gitignore` and any published documentation do not.
+  + `marimo` is no longer used by the pipeline, but is kept in `environment.yml` so that other analyses sharing that environment still have it.
 
 - Remove `inline` as an option for `curve_display_method`, leaving `svg`, `pdf`, and `png8`. It meant handing the figure to `marimo` to draw, and was in any case the worst of the options.
 
 - Write `./results/sera/{group}_{serum}/curves.pdf` without the creation timestamp that `matplotlib` embeds, so that the same curves always give the same PDF.
-
-- `marimo` is no longer used by the pipeline, but is kept in `environment.yml` so that other analyses sharing that environment still have it.
 
 - Update the software environment:
   + Add `nodefaults` to the channels, so the file fully specifies the environment.
