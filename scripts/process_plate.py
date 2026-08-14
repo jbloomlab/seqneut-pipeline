@@ -633,7 +633,7 @@ report.md(r"""
 
     The fraction infectivity for viral barcode $v_b$ in sample $s$ is computed as:
 
-    $$F_{v_b,s} = \frac{c_{v_b,s} / \left(\sum_{n_b} c_{n_b,s}\right)}{{\rm median}_{s_0}\left[ c_{v_b,s_0} / \left(\sum_{n_b} c_{n_b,s_0}\right)\right]}$$
+    $$F_{v_b,s} = \frac{c_{v_b,s} / \left(\sum_{n_b} c_{n_b,s}\right)}{{\rm median}\_{s_0}\left[ c_{v_b,s_0} / \left(\sum_{n_b} c_{n_b,s_0}\right)\right]}$$
 
     where
 
@@ -643,7 +643,7 @@ report.md(r"""
      - $c_{v_b,s_0}$ is the counts of viral barcode $v_b$ in no-serum sample $s_0$.
      - $\sum_{n_b} c_{n_b,s_0}$ is the sum of the counts for all neutralization standard
        barcodes $n_b$ for no-serum sample $s_0$.
-     - ${\rm median}_{s_0}\left[ c_{v_b,s_0} / \left(\sum_{n_b} c_{n_b,s_0}\right)\right]$
+     - ${\rm median}\_{s_0}\left[ c_{v_b,s_0} / \left(\sum_{n_b} c_{n_b,s_0}\right)\right]$
        is the median taken across all no-serum samples of the counts of viral barcode
        $v_b$ versus the total counts for all neutralization standard barcodes.
 

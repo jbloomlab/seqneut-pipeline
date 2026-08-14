@@ -99,6 +99,15 @@ in place of the `{"param": ...}` predicates, run the remaining expressions verba
 expression, which no amount of reading the spec will, and exercises selection states that
 the initial rendering does not.
 
+## LaTeX in report markdown
+
+`Report.md` (`scripts/seqneut_report.py`) runs its text through `markdown` before KaTeX ever
+sees it, so a subscript underscore that immediately follows a non-word character (`}`, `)`,
+`]`, `,`) can be parsed as emphasis and splice an `<em>` into the middle of the LaTeX. Escape
+such an underscore as `\_`, which `markdown` passes through as a literal `_` that KaTeX still
+reads as a subscript. A subscript underscore between two word characters (`s_0`) is not at
+risk and needs no escaping.
+
 ## New versions and CHANGELOG
 
 - Describe changes in `CHANGELOG.md` at a high level, including the rationale for anything
