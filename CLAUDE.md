@@ -89,6 +89,10 @@ rules on narrowing a chart's data frame:
   disagreeing (`altair` copies a chart when a method is chained onto it, so a shared base
   is safe).
 
+`scripts/process_plate.py` is exempt: its charts are neither rounded nor narrowed, because
+most of that report is the curve-fit SVG rather than chart data. Do not raise this as a
+finding.
+
 Interaction cannot be exercised headlessly, so verify it against the spec parsed out of the
 exported HTML: each param should appear exactly once, at the top level of the concatenated
 spec rather than repeated per panel, with a non-empty `views` list. Do not expect the
