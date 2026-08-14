@@ -336,6 +336,7 @@ if plates:
         """Aggregate all serum titers."""
         input:
             report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             pickles=lambda wc: [
                 rules.group_serum_titers.output.pickle.format(group=group, serum=serum)
                 for (group, serum) in groups_sera_plates()

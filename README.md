@@ -171,7 +171,7 @@ Note the following implications of collapsing:
  - `barcode_serum_replicates_ignore_curvefit_qc` in `curvefit_qc` refers to the collapsed barcodes, so specify strain names rather than barcodes there.
 
 ### viral_strain_plot_order
-A a CSV with a column named "strain" that lists the strains in the order they should be plotted.
+Optional: a CSV with a column named "strain" that lists the strains in the order they should be plotted.
 If not specified or set to "null", then plotting is just alphabetical.
 Must include all strains being used if specified.
 So should look like this:

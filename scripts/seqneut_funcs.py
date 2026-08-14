@@ -74,6 +74,32 @@ def get_median_bound(s):
             return "inconsistent"
 
 
+def viruses_in_plot_order(viruses, viral_strain_plot_order):
+    """The unique `viruses`, ordered as configured or alphabetically.
+
+    Args:
+        `viruses` (iterable)
+            Viruses to order, typically the `virus` column of a titer frame.
+        `viral_strain_plot_order` (list or None)
+            The configured order, or `None` to order alphabetically.
+
+    Returns:
+        List of the unique viruses in the order to plot them.
+
+    Raises a `ValueError` naming any of `viruses` that `viral_strain_plot_order` lacks,
+    as such a virus would be dropped from the order rather than positioned in it.
+
+    """
+    viruses = set(viruses)
+    if viral_strain_plot_order is None:
+        return sorted(viruses)
+    if missing := viruses - set(viral_strain_plot_order):
+        raise ValueError(
+            f"`viral_strain_plot_order` lacks viruses with titers: {sorted(missing)}"
+        )
+    return [v for v in viral_strain_plot_order if v in viruses]
+
+
 def pearson_r_log10(df, x_col="titer_x", y_col="titer_y"):
     """Pearson R of the log-transformed titers, or `None` if too few points.
 

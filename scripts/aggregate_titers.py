@@ -6,6 +6,7 @@ import sys
 import altair as alt
 import neutcurve
 import pandas as pd
+from seqneut_funcs import viruses_in_plot_order
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
@@ -65,23 +66,12 @@ for group, f_out_pickle in zip(groups, output_pickles):
 
 report.md("## Plot all the titers")
 
-if viral_strain_plot_order is None:
-    viral_strain_plot_order_used = sorted(curvefits.allviruses)
-elif set(curvefits.allviruses) - set(viral_strain_plot_order):
-    raise ValueError(
-        "not all viruses in `viral_strain_plot_order`:\n"
-        + f"{set(curvefits.allviruses) - set(viral_strain_plot_order)=}"
-    )
-else:
-    viral_strain_plot_order_used = viral_strain_plot_order
-
 # one chart per group; each group has a single titer unit and so a single
 # correct x-axis label (avoids mixing reciprocal dilutions and concentrations)
 for group, titers_chart_html in zip(groups, titers_charts):
     group_titers = titers[titers["group"] == group]
-    viruses = [
-        v for v in viral_strain_plot_order_used if v in set(group_titers["virus"])
-    ]
+    # ordered on this group's own viruses, as the groups need not share a virus set
+    viruses = viruses_in_plot_order(group_titers["virus"], viral_strain_plot_order)
     group_sera = sorted(group_titers["serum"].unique())
 
     if groups_dilution_factor_or_concentration[group] == "dilution_factor":

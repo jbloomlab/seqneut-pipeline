@@ -7,6 +7,8 @@
 
 - Fix the spelling of the `closest_valid_barcode_hamming_distance` column of `./results/barcode_invalid/{sample}.csv`, which was `closest_valid_bacode_hamming_distance`.
 
+- Fix bug in application of `viral_strain_plot_order` that made it not always actually order plots.
+
 - Build the HTML reports from ordinary Python scripts rather than from `marimo` notebooks:
   + The new reports show the same interactive charts, text, and scrolling boxes around the large panels of curves. The analysis for each rule is now in a script of the same name in `./scripts`.
   + `scripts/run_marimo_w_context_pickle.py` is removed.

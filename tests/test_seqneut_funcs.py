@@ -9,6 +9,7 @@ from seqneut_funcs import (
     padded_log_domain,
     pearson_r_log10,
     round_sig,
+    viruses_in_plot_order,
 )
 
 
@@ -105,6 +106,51 @@ class TestPaddedLogDomain:
         """The domain is embedded in a chart specification, so it must be JSON-able."""
         s = pd.Series([1.0, 100.0])
         assert all(type(x) is float for x in padded_log_domain(s, s))
+
+
+# a configured plot order, deliberately not alphabetical
+ORDER = ["A/Texas/1/2024", "A/Bangkok/2/2023", "A/Bhutan/3/2022"]
+
+
+class TestVirusesInPlotOrder:
+    """The order the viruses are plotted in."""
+
+    def test_uses_the_configured_order(self):
+        """The configured order is not alphabetical, and is what is followed."""
+        assert viruses_in_plot_order(ORDER[::-1], ORDER) == ORDER
+
+    def test_restricts_to_the_viruses_present(self):
+        """The order names every virus in the project, a subset of any one chart's."""
+        assert viruses_in_plot_order(["A/Bhutan/3/2022"], ORDER) == ["A/Bhutan/3/2022"]
+
+    def test_alphabetical_when_unconfigured(self):
+        """`viral_strain_plot_order` is optional, and unset means alphabetical."""
+        assert viruses_in_plot_order(ORDER, None) == sorted(ORDER)
+
+    def test_missing_virus_raises_and_is_named(self):
+        """A virus absent from the order would be dropped from it, so it must fail."""
+        with pytest.raises(ValueError, match="A/Perth/4/2021"):
+            viruses_in_plot_order([*ORDER, "A/Perth/4/2021"], ORDER)
+
+    def test_accepts_a_column_and_dedupes(self):
+        """Both callers pass a `virus` column, which repeats a virus across rows."""
+        column = pd.Series(["A/Bangkok/2/2023"] * 3 + ["A/Texas/1/2024"])
+        assert viruses_in_plot_order(column, ORDER) == [
+            "A/Texas/1/2024",
+            "A/Bangkok/2/2023",
+        ]
+
+    @pytest.mark.parametrize("order", [ORDER, None])
+    def test_each_group_keeps_all_of_its_own_viruses(self, order):
+        """Groups need not share a virus set, and neither may truncate the other.
+
+        Ordering one group's viruses using another group's would silently drop those the
+        other group lacks, leaving them off the chart's axis.
+        """
+        group_a = ["A/Texas/1/2024", "A/Bangkok/2/2023"]
+        group_b = ["A/Bangkok/2/2023", "A/Bhutan/3/2022"]
+        assert set(viruses_in_plot_order(group_a, order)) == set(group_a)
+        assert set(viruses_in_plot_order(group_b, order)) == set(group_b)
 
 
 class TestNarrowForAltair:

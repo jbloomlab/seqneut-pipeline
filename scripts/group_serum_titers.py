@@ -16,6 +16,7 @@ from seqneut_funcs import (
     narrow_for_altair,
     padded_log_domain,
     pearson_r_log10,
+    viruses_in_plot_order,
 )
 from seqneut_report import Report
 
@@ -189,14 +190,7 @@ if len(
 assert len(per_rep_titers) == per_rep_titers["replicate"].nunique()
 
 # get viruses in the order to plot them
-viruses = sorted(per_rep_titers["virus"].unique())
-if viral_strain_plot_order is not None:
-    if not set(viruses).issubset(viral_strain_plot_order):
-        raise ValueError(
-            "`viral_strain_plot_order` lacks some viruses with titers:\n"
-            + str(set(viruses) - set(viral_strain_plot_order))
-        )
-    viruses = [v for v in viral_strain_plot_order if v in viruses]
+viruses = viruses_in_plot_order(per_rep_titers["virus"], viral_strain_plot_order)
 report.md(f"`{serum}` has titers for a total of {len(viruses)} viruses")
 
 report.md("""
