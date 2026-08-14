@@ -75,7 +75,11 @@ report.md("""
     """)
 
 plate_reps = pd.concat(
-    [pd.read_csv(f)[["plate", "replicate"]] for f in fits_csvs], ignore_index=True
+    [
+        pd.read_csv(f, dtype={"plate": str, "replicate": str})[["plate", "replicate"]]
+        for f in fits_csvs
+    ],
+    ignore_index=True,
 ).drop_duplicates()
 assert (
     len(plate_reps) == plate_reps["replicate"].nunique()

@@ -37,7 +37,11 @@ assert len(input_titers) == len(input_pickles) == len(groups_sera)
 assert len(groups) == len(output_titers) == len(output_pickles)
 
 titers = pd.concat(
-    [pd.read_csv(f_titer) for f_titer in input_titers], ignore_index=True
+    [
+        pd.read_csv(f_titer, dtype={"group": str, "serum": str, "virus": str})
+        for f_titer in input_titers
+    ],
+    ignore_index=True,
 )
 assert len(titers) == len(titers.groupby(["group", "serum", "virus"]))
 for group, f_out_titer in zip(groups, output_titers):
