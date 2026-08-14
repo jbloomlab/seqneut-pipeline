@@ -3,9 +3,13 @@
 import sys
 
 import altair as alt
-import numpy
 import pandas as pd
-from seqneut_funcs import get_median_bound, pearson_r_log10, round_sig
+from seqneut_funcs import (
+    get_median_bound,
+    padded_log_domain,
+    pearson_r_log10,
+    round_sig,
+)
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
@@ -220,21 +224,8 @@ for other in comparator_dates:  # config order, which orders the panels
 if comparator_info:
     # Every panel shares one domain, used for both of its axes. Sharing it between
     # the axes makes the y = x line a true diagonal, and sharing it between the
-    # panels puts all of the plates on the same scale. The domain is the range of the
-    # titers on this plate or any of the others, padded by a fraction of that range
-    # on a log scale so that points do not sit on the plot edge. The padding is
-    # proportional rather than a fixed factor so that it does not swamp a plate whose
-    # titers span a narrow range, and the floor keeps a plate with almost no spread
-    # (such as one compared with an exact duplicate of itself) from collapsing.
-    lo = min(pair_titers["titer_x"].min(), pair_titers["titer_y"].min())
-    hi = max(pair_titers["titer_x"].max(), pair_titers["titer_y"].max())
-    pad = max(0.05 * (numpy.log10(hi) - numpy.log10(lo)), numpy.log10(1.1))
-    # rounded for the same reason as the titers, and by so much less than the padding
-    # that it cannot bring a point to the edge of a panel
-    plot_domain = [
-        round_sig(10 ** (numpy.log10(lo) - pad)),
-        round_sig(10 ** (numpy.log10(hi) + pad)),
-    ]
+    # panels puts all of the plates on the same scale.
+    plot_domain = padded_log_domain(pair_titers["titer_x"], pair_titers["titer_y"])
     # end points of the y = x line of each panel, which are the ends of its axes
     # rather than of its data so that the line spans the whole panel
     diagonal = pd.DataFrame({"titer": plot_domain})

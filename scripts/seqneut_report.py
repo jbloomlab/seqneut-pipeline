@@ -12,10 +12,12 @@ many charts a page holds.
 
 """
 
+import io
 import textwrap
 
 import markdown
 from neutcurve.fig_utils import fig_html
+from ruamel.yaml import YAML
 
 # Blocks that can be taller than the window are put in a box of this height that scrolls
 # rather than pushing the rest of the page down. `neutcurve.fig_utils.fig_html` uses the
@@ -107,6 +109,12 @@ class Report:
             extensions=["fenced_code", "tables", "sane_lists"],
         )
         self._blocks.append(f'<div class="md-block">{html}</div>')
+
+    def yaml(self, obj):
+        """Append `obj` as a fenced YAML block."""
+        buffer = io.StringIO()
+        YAML(typ="rt").dump(obj, buffer)
+        self.md(f"```yaml\n{buffer.getvalue()}```")
 
     def chart(self, chart):
         """Append an `altair` chart."""

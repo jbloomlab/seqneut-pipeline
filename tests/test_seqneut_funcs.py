@@ -6,6 +6,7 @@ import pytest
 from seqneut_funcs import (
     get_median_bound,
     narrow_for_altair,
+    padded_log_domain,
     pearson_r_log10,
     round_sig,
 )
@@ -79,6 +80,31 @@ class TestPearsonRLog10:
         """The columns can be named, as the two callers use different frames."""
         df = pd.DataFrame({"a": [1.0, 10.0, 100.0], "b": [1.0, 10.0, 100.0]})
         assert pearson_r_log10(df, x_col="a", y_col="b") == pytest.approx(1.0)
+
+
+class TestPaddedLogDomain:
+    """The shared domain of the two axes of a titer-versus-titer plot."""
+
+    def test_pads_proportionally_to_the_log_range(self):
+        """Two decades of titers are padded by a twentieth of that range at each end."""
+        s = pd.Series([1.0, 100.0])
+        assert padded_log_domain(s, s) == [0.7943, 125.9]
+
+    def test_spans_both_axes(self):
+        """The domain is shared, so it must cover the titers on either axis."""
+        domain = padded_log_domain(pd.Series([1.0, 5.0]), pd.Series([0.5, 100.0]))
+        assert domain[0] < 0.5
+        assert domain[1] > 100.0
+
+    def test_floor_keeps_a_flat_range_from_collapsing(self):
+        """A plate against an exact duplicate of itself has no spread to pad."""
+        s = pd.Series([10.0, 10.0])
+        assert padded_log_domain(s, s) == [9.091, 11.0]
+
+    def test_returns_plain_floats(self):
+        """The domain is embedded in a chart specification, so it must be JSON-able."""
+        s = pd.Series([1.0, 100.0])
+        assert all(type(x) is float for x in padded_log_domain(s, s))
 
 
 class TestNarrowForAltair:

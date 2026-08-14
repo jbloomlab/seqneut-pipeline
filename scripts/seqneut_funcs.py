@@ -30,6 +30,34 @@ def narrow_for_altair(df, drop=()):
     )
 
 
+def padded_log_domain(x, y):
+    """Domain of a log axis spanning both `x` and `y`, padded away from the edges.
+
+    Args:
+        `x` and `y` (pandas.Series)
+            Values plotted on the two axes, which share this domain so that the y = x
+            line is a true diagonal.
+
+    Returns:
+        The rounded `[min, max]` domain.
+
+    The padding is a fraction of the plotted range rather than a fixed factor, so that
+    it does not swamp axes whose values span a narrow range, and the floor keeps values
+    with almost no spread (such as a plate compared with an exact duplicate of itself)
+    from collapsing. The end points are rounded for the same reason as the plotted
+    values, and by so much less than the padding that the rounding cannot bring a point
+    to the edge.
+
+    """
+    lo = min(x.min(), y.min())
+    hi = max(x.max(), y.max())
+    pad = max(0.05 * (numpy.log10(hi) - numpy.log10(lo)), numpy.log10(1.1))
+    return [
+        round_sig(10 ** (numpy.log10(lo) - pad)),
+        round_sig(10 ** (numpy.log10(hi) + pad)),
+    ]
+
+
 def get_median_bound(s):
     """Get the bound on titer when taking median."""
     s = list(s)

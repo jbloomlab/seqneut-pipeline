@@ -1,6 +1,5 @@
 """Process a plate to QC and convert counts to fraction infectivity, then fit curves."""
 
-import io
 import pickle
 import sys
 import warnings
@@ -95,9 +94,7 @@ for d, key, title in [
     (curvefit_qc, "curvefit_qc", "Curve-fitting QC:"),
 ]:
     report.md(f"{title}")
-    yaml_buffer_params = io.StringIO()
-    yaml.YAML(typ="rt").dump({key: d}, stream=yaml_buffer_params)
-    report.md(f"```yaml\n{yaml_buffer_params.getvalue()}```")
+    report.yaml({key: d})
 
 # Set up dictionary to keep track of wells, barcodes, well-barcodes, and
 # serum-replicates that are dropped:
@@ -1477,9 +1474,7 @@ qc_drops_for_yaml = {
 with open(qc_drops_yaml, "w") as f_yaml:
     yaml.YAML(typ="rt").dump(qc_drops_for_yaml, f_yaml)
 report.md("Here are the QC drops:")
-yaml_buffer_qc_drops = io.StringIO()
-yaml.YAML(typ="rt").dump(qc_drops_for_yaml, stream=yaml_buffer_qc_drops)
-report.md(f"```yaml\n{yaml_buffer_qc_drops.getvalue()}```")
+report.yaml(qc_drops_for_yaml)
 
 report.write(snakemake.output.html)
 print(f"Wrote the report to {snakemake.output.html}")

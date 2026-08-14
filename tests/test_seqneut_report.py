@@ -59,14 +59,22 @@ def test_md_is_dedented_not_read_as_code(tmp_path):
     assert "<pre>" not in html
 
 
-def test_md_renders_fenced_yaml(tmp_path):
-    """Fenced blocks render as code, which is how the QC parameters are shown."""
+def test_yaml_renders_as_a_code_block(tmp_path):
+    """The QC parameters and the QC drops are shown as YAML, which renders as code."""
     report = Report(title="t")
-    report.md("```yaml\nqc_thresholds:\n  min_replicates: 2\n```")
+    report.yaml({"qc_thresholds": {"min_replicates": 2}})
     report.write(out := tmp_path / "r.html")
     html = out.read_text()
     assert "<pre>" in html
-    assert "min_replicates" in html
+    assert "min_replicates: 2" in html
+
+
+def test_yaml_keeps_nested_indentation(tmp_path):
+    """`Report.md` dedents its text, which must not flatten a nested mapping."""
+    report = Report(title="t")
+    report.yaml({"qc_thresholds": {"min_replicates": 2}})
+    report.write(out := tmp_path / "r.html")
+    assert "\n  min_replicates: 2" in out.read_text()
 
 
 def test_md_passes_latex_through_for_katex(tmp_path):

@@ -1,6 +1,5 @@
 """Analyze titers for a serum assigned to a group, aggregating replicates across plates."""
 
-import io
 import itertools
 import pickle
 import sys
@@ -12,7 +11,12 @@ import neutcurve
 import numpy
 import pandas as pd
 from ruamel import yaml
-from seqneut_funcs import get_median_bound, narrow_for_altair, pearson_r_log10
+from seqneut_funcs import (
+    get_median_bound,
+    narrow_for_altair,
+    padded_log_domain,
+    pearson_r_log10,
+)
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
@@ -457,9 +461,7 @@ viruses_to_drop = {
     if v not in qc_thresholds["viruses_ignore_qc"]
 }
 report.md(f"Dropping {len(viruses_to_drop)} viruses for failing QC:")
-yaml_buffer_viruses_drop = io.StringIO()
-yaml.YAML(typ="rt").dump(viruses_to_drop, stream=yaml_buffer_viruses_drop)
-report.md(f"```yaml\n{yaml_buffer_viruses_drop.getvalue()}```")
+report.yaml(viruses_to_drop)
 if nkept := (len(viruses_failing_qc) - len(viruses_to_drop)):
     kept_viruses = {
         v: reason
@@ -542,15 +544,6 @@ for plate_x, plate_y in itertools.combinations(serum_plates, 2):
     if not len(pair_df):
         continue
     kept_df = pair_df[~pair_df["virus"].isin(dropped)]
-    # both axes get the same domain so that the y = x line is a true diagonal. The
-    # domain is the range of the titers on either plate, padded by a fraction of that
-    # range on a log scale so that points do not sit on the plot edge. The padding is
-    # proportional rather than a fixed factor so that it does not swamp a pair whose
-    # titers span a narrow range, and the floor keeps a pair with almost no spread
-    # (such as a plate compared with an exact duplicate of itself) from collapsing.
-    lo = min(pair_df["titer_x"].min(), pair_df["titer_y"].min())
-    hi = max(pair_df["titer_x"].max(), pair_df["titer_y"].max())
-    pad = max(0.05 * (numpy.log10(hi) - numpy.log10(lo)), numpy.log10(1.1))
     plate_pair_info.append(
         {
             "pair": f"{plate_x} vs {plate_y}",
@@ -560,12 +553,9 @@ for plate_x, plate_y in itertools.combinations(serum_plates, 2):
             "r": pearson_r_log10(pair_df),
             "n_kept": len(kept_df),
             "r_kept": pearson_r_log10(kept_df),
-            # rounded for the same reason as the titers in `narrow_for_altair`, and by
-            # so much less than the padding that it cannot bring a point to the edge
-            "domain": [
-                float(f"{10 ** (numpy.log10(lo) - pad):.4g}"),
-                float(f"{10 ** (numpy.log10(hi) + pad):.4g}"),
-            ],
+            # both axes of the subplot get this domain, so that the y = x line drawn
+            # across it is a true diagonal
+            "domain": padded_log_domain(pair_df["titer_x"], pair_df["titer_y"]),
             # keep the plotted data frame narrow: each subplot gets just its own pair
             # of plates, so no column names the pair. That costs no extra rows, since
             # `altair` consolidates every frame into the chart's `datasets` and the
