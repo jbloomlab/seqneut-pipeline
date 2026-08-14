@@ -38,6 +38,8 @@ report.md("""
 assert len(plates) == len(input_plate_qc_drops)
 plate_qc_drops = {}
 for plate, qc_drops_yaml in zip(plates, input_plate_qc_drops):
+    # joined to a well or serum replicate by a space to describe a drop below
+    assert len(plate.split()) == 1, f"whitespace in {plate=}"
     with open(qc_drops_yaml) as f:
         plate_qc_drops[plate] = yaml.load(f)
 assert len(plate_qc_drops) == len(input_plate_qc_drops)
@@ -134,16 +136,11 @@ for plate, plate_d in plate_qc_drops.items():
         tup for tup in plate_d.items() if tup[0].startswith("barcode") and tup[1]
     ]:
         for desc, reason in val.items():
-            # a drop of a barcode alone is keyed by just the barcode, while the other
-            # drops are keyed by the barcode and a well or serum replicate. Split
-            # those from the right, as a barcode collapsed by
-            # `collapse_strain_barcodes` is named for its strain and so can itself
-            # contain a space.
             if key == "barcodes":
                 barcode = desc
                 description = plate
             else:
-                desc_entries = desc.rsplit(None, maxsplit=1)
+                desc_entries = desc.split()
                 assert len(desc_entries) == 2, f"{key=} {desc=}"
                 barcode = desc_entries[0]
                 description = f"{plate} {desc_entries[1]}"
@@ -175,13 +172,10 @@ report.md("Now make a plot showing how often each barcode is dropped for each re
 barcode_drops = (
     plate_qc_drops_df.query("`drop type`.str.startswith('barcode')")
     .assign(
-        # as above, only the drops that are not of a barcode alone have a well or
-        # serum replicate to split off the end of the barcode
+        # the same keys the loop above split, which asserted their shape
         barcode=lambda x: x.apply(
             lambda r: (
-                r["drop"]
-                if r["drop type"] == "barcodes"
-                else r["drop"].rsplit(None, maxsplit=1)[0]
+                r["drop"] if r["drop type"] == "barcodes" else r["drop"].split()[0]
             ),
             axis=1,
         )

@@ -41,12 +41,25 @@ stringify_plate_dates(config)  # so `snakemake` can JSON serialize the config
 # before the plates are processed, as their validation depends on it
 collapse_strain_barcodes = get_collapse_strain_barcodes(config)
 
+for lib, lib_df in viral_libraries.items():
+    check_no_whitespace(lib_df["barcode"], f"barcodes in viral library {lib!r}")
+    if collapse_strain_barcodes:
+        # collapsing names a strain's barcode for the strain, so the strain name is
+        # then subject to the same constraint as a barcode
+        check_no_whitespace(lib_df["strain"], f"strains in viral library {lib!r}")
+for neut_standard_set, neut_standard_df in neut_standard_sets.items():
+    check_no_whitespace(
+        neut_standard_df["barcode"],
+        f"barcodes in neut standard set {neut_standard_set!r}",
+    )
+
 # `plates` may be absent, null, or empty for a project that only has
 # `miscellaneous_plates`, and so just counts barcodes rather than fitting any curves
 plates = {
     str(plate): process_plate(str(plate), plate_params)
     for (plate, plate_params) in (config.get("plates") or {}).items()
 }
+check_no_whitespace(plates, "plate names")
 
 groups = sorted(set(plate_params["group"] for plate_params in plates.values()))
 groups_cannot_contain = ["|", "_"]  # wildcard problems if group contains these

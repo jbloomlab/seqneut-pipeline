@@ -3,6 +3,8 @@
 ## version 9.0.0 (unreleased)
 - Correctly record the QC filter that dropped a barcode in `./results/plates/{plate}/qc_drops.yml`. Every barcode-level drop was previously labeled `min_neut_standard_frac_per_well`, naming a filter it had not failed. Only the recorded reason changes, so no titers change.
 
+- Explicitly reject whitespace in barcode, well, serum, and plate names (and in strain names when using `collapse_strain_barcodes`), which never should have been allowed given how these names were used to construct space-joined drop keys and file names.
+
 - Fix the spelling of the `closest_valid_barcode_hamming_distance` column of `./results/barcode_invalid/{sample}.csv`, which was `closest_valid_bacode_hamming_distance`.
 
 - Build the HTML reports from ordinary Python scripts rather than from `marimo` notebooks:
