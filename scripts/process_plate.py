@@ -1433,8 +1433,7 @@ else:
 
 report.md("## Save results to files")
 
-report.md(f"Writing fraction infectivities to `{frac_infectivity_csv}`")
-print(f"Writing fraction infectivities to {frac_infectivity_csv}")
+report.md(f"Writing fraction infectivities to `{frac_infectivity_csv}`", log=True)
 (
     frac_infectivity_3[
         [
@@ -1449,17 +1448,16 @@ print(f"Writing fraction infectivities to {frac_infectivity_csv}")
     .sort_values(["serum", "plate_barcode", dilution_factor_or_concentration])
     .to_csv(frac_infectivity_csv, index=False, float_format="%.4g")
 )
-report.md(f"Writing fit parameters to `{fits_csv}`")
-print(f"Writing fit parameters to {fits_csv}")
+report.md(f"Writing fit parameters to `{fits_csv}`", log=True)
 fit_params_qc.drop(columns=["nreplicates", "ic50_str"]).to_csv(
     fits_csv, index=False, float_format="%.4g"
 )
-report.md(f"Pickling neutcurve.CurveFits object for these data to `{fits_pickle}`")
-print(f"Pickling neutcurve.CurveFits object to {fits_pickle}")
+report.md(
+    f"Pickling neutcurve.CurveFits object for these data to `{fits_pickle}`", log=True
+)
 with open(fits_pickle, "wb") as f_pickle:
     pickle.dump(fits_qc, f_pickle)
-report.md(f"Writing QC drops to `{qc_drops_yaml}`")
-print(f"Writing QC drops to {qc_drops_yaml}")
+report.md(f"Writing QC drops to `{qc_drops_yaml}`", log=True)
 
 
 def tup_to_str(x):
