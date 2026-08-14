@@ -17,6 +17,10 @@ sys.stderr = sys.stdout = open(snakemake.log[0], "w")  # noqa: SIM115
 
 _ = alt.data_transformers.disable_max_rows()
 
+# columns of the per-replicate titers that identify something rather than measure it,
+# read as strings so that a name like `007` is not turned into a number
+ID_COLS = ["group", "serum", "virus", "plate", "replicate"]
+
 per_rep_titers_csvs = snakemake.input.per_rep_titers
 corrs_csv = snakemake.output.corrs_csv
 plate_date = snakemake.params.plate_date
@@ -51,18 +55,18 @@ report.md("""
 
 if per_rep_titers_csvs:
     per_rep_titers = pd.concat(
-        [pd.read_csv(f) for f in per_rep_titers_csvs], ignore_index=True
+        [
+            pd.read_csv(f, dtype=dict.fromkeys(ID_COLS, str))
+            for f in per_rep_titers_csvs
+        ],
+        ignore_index=True,
     )
 else:
     # every serum on this plate lost all of its titers to the per-plate QC; the
     # columns are still specified so that the code below can be run unchanged
     per_rep_titers = pd.DataFrame(
         columns=[
-            "group",
-            "serum",
-            "virus",
-            "plate",
-            "replicate",
+            *ID_COLS,
             "titer",
             "titer_bound",
             "titer_as",

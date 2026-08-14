@@ -207,7 +207,9 @@ def process_plate(plate, plate_params):
         "replicate",
         "fastq",
     ]
-    samples_df = pd.read_csv(plate_params["samples_csv"], comment="#")
+    samples_df = pd.read_csv(
+        plate_params["samples_csv"], comment="#", dtype={"serum": str}
+    )
     if {"dilution_factor", "concentration"}.issubset(samples_df.columns):
         raise ValueError(
             f"{plate=} 'samples_csv' has both 'dilution_factor' and 'concentration' "
@@ -219,7 +221,7 @@ def process_plate(plate, plate_params):
     if samples_df["serum"].isnull().any():
         raise ValueError(f"{plate=} 'samples_csv' has null values in 'serum' column")
 
-    # try to turn columns of ints and NAs into Int64 to avoid ints appearing as flaots
+    # try to turn columns of ints and NAs into Int64 to avoid ints appearing as floats
     # (only cosmetic; concentrations stay float and are not coerced)
     coerce_int_cols = ["replicate"]
     if dilution_factor_or_concentration == "dilution_factor":
@@ -239,7 +241,7 @@ def process_plate(plate, plate_params):
             ),
             serum_replicate=lambda x: x.apply(
                 lambda row: (
-                    str(row["serum"])
+                    row["serum"]
                     + (
                         ""
                         if row["one_serum_replicate"] == 1
@@ -352,7 +354,7 @@ def get_plate_comparators(plates):
 
     """
     plate_sera = {
-        plate: set(plate_d["samples"]["serum"].astype(str)) - {"none"}
+        plate: set(plate_d["samples"]["serum"]) - {"none"}
         for (plate, plate_d) in plates.items()
     }
     return {
