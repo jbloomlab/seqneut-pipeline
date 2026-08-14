@@ -25,6 +25,26 @@ def stringify_plate_dates(config):
                 plate_d["date"] = str(plate_d["date"])
 
 
+def check_no_whitespace(values, description):
+    """Raise a ``ValueError`` if any of ``values`` contains whitespace.
+
+    Args:
+        `values` (iterable)
+            The values to check.
+        `description` (str)
+            Names these values in the error message.
+
+    """
+    with_whitespace = sorted(
+        {str(val) for val in values if any(char.isspace() for char in str(val))}
+    )
+    if with_whitespace:
+        raise ValueError(
+            f"{description} cannot contain whitespace, as it would break the output "
+            f"paths or the QC-drop YAML keys built from them: {with_whitespace}"
+        )
+
+
 def get_collapse_strain_barcodes(config):
     """Get the boolean value of the optional ``collapse_strain_barcodes`` config key.
 
@@ -50,6 +70,7 @@ def process_miscellaneous_plates(misc_plates_d):
     """Process the dictionary of miscellaneous_plates."""
     misc_plates = {}
     req_keys = {"viral_library", "neut_standard_set", "samples_csv"}
+    check_no_whitespace(misc_plates_d, "miscellaneous_plate names")
     for plate, plate_dict in misc_plates_d.items():
         misc_plates[plate] = {}
         if not req_keys.issubset(plate_dict):
@@ -65,6 +86,7 @@ def process_miscellaneous_plates(misc_plates_d):
             raise ValueError(
                 f"{plate_dict['samples_csv']} has non-unique entries in 'well' column"
             )
+        check_no_whitespace(samples["well"], f"miscellaneous_plate {plate} wells")
         misc_plates[plate]["wells"] = samples.set_index("well")["fastq"].to_dict()
 
         # get default barcode parser params, update if specified per plate
@@ -104,6 +126,16 @@ def process_plate(plate, plate_params):
         raise ValueError(
             f"{plate=} {plate_params['neut_standard_set']=} not in {neut_standard_sets=}"
         )
+    check_no_whitespace(
+        (
+            value
+            for drops in plate_params["manual_drops"].values()
+            for drop in (drops or [])
+            for value in (drop if isinstance(drop, list) else [drop])
+        ),
+        f"{plate=} 'manual_drops' values",
+    )
+
     # a manual drop of a barcode in just some wells cannot be combined with collapsing
     # the barcodes for a strain, as the strain's collapsed counts would then be summed
     # over a different set of barcodes in those wells than in the rest of the plate
@@ -234,6 +266,11 @@ def process_plate(plate, plate_params):
         )
         .drop(columns="one_serum_replicate")
     )
+
+    check_no_whitespace(
+        samples_df["serum_replicate"], f"{plate=} serum/replicate names"
+    )
+    check_no_whitespace(samples_df["well"], f"{plate=} wells")
 
     duplicated_samples = samples_df[samples_df.duplicated("sample", False)]
     if len(duplicated_samples):

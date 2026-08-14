@@ -146,6 +146,7 @@ GCATGGATCCTTTACT,A/Togo/845/2020
 <additional lines>
 ```
 These CSV files can optionally have additional columns as well if those are useful for storing further metadata.
+The *barcode* cannot contain whitespace, nor can the *strain* if using `collapse_strain_barcodes`.
 
 ### collapse_strain_barcodes
 An optional key that determines whether each of a strain's barcodes is analyzed as its own measurement of that strain (the default), or whether they are all collapsed into a single measurement.
@@ -209,7 +210,7 @@ neut_standard_sets:
 ```
 The recommended way to organize the neutralization-standard sets (as indicated above) is to put them in a `./data/neut_standard_sets/` subdirectory.
 
-The CSV files need just a single column specifying the neutralization standard barcode, such as:
+The CSV files need just a single column specifying the neutralization standard barcode (which cannot contain whitespace), such as:
 ```
 barcode
 CTTTAAATTATAGTCT
@@ -241,7 +242,7 @@ In addition, each plate is assigned to a *group*, which might be "serum" or "pil
 This key is optional: leave it out, or set it to null or an empty dictionary (`{}`), for a project that only counts barcodes for the plates specified under `miscellaneous_plates` and so fits no neutralization curves at all.
 Note that `sera_override_defaults` is keyed by group and so must then also be empty, since there are no groups without any plates.
 
-The basic structure is that `plates` maps plate names to configurations for the plates.
+The basic structure is that `plates` maps plate names (which cannot contain whitespace) to configurations for the plates.
 Specifically, it should look like this:
 ```
 plates:
@@ -268,7 +269,7 @@ The above example shows the configuration of a plate called `plate1`, and there 
 The elements under each plate-mapping are in turn as follows:
 
 #### group
-The group that this plate is assigned to (cannot contain any underscores). Typically this might be "serum" or "pilot" or however you are categorizing the runs.
+The group that this plate is assigned to (cannot contain any underscores or whitespace). Typically this might be "serum" or "pilot" or however you are categorizing the runs.
 
 #### date
 The `date` key specifies the date on which the plate was processed in `YYYY-MM-DD` format.
@@ -300,8 +301,8 @@ All plates assigned to the same `group` must share the same `dilution_factor_or_
 The `samples_csv` key gives the name of a CSV file specifying the samples for that plate.
 The recommended way to organize these sample CSVs is to put them in `./data/plates/` subdirectory.
 The CSV file must have the following columns:
- - *well*: well in plate in which sample was run, typically names like "A1", "B1", etc.
- - *serum*: name of the serum in this well, or "none" if it is a no-serum sample.
+ - *well*: well in plate in which sample was run, typically names like "A1", "B1", etc. Cannot contain whitespace.
+ - *serum*: name of the serum in this well, or "none" if it is a no-serum sample. Cannot contain whitespace.
  - *dilution_factor*: dilution factor of the serum (should be a number > 1), leave blank for the no-serum samples (*serum* of "none"). If the plate sets `dilution_factor_or_concentration: concentration`, then include a *concentration* column (a number > 0, blank for no-serum samples) instead of *dilution_factor*.
  - *replicate*: the replicate of this serum, which you only need to specify if there are multiple different samples with the same *serum* and *dilution_factor* (or *concentration*) in the plate.
  - *fastq*: path to the FASTQ file, can be gzipped
@@ -513,6 +514,7 @@ This is an optional key that can be used specify plates that you just want to co
 This might be useful for library pooling or QC, for instance---or if you want to look at some failed plates that you don't actually want to fit curves for.
 
 If you do not want to specify any miscellaneous plates either leave this key out or set it to an empty dictionary (`{}`).
+Neither the plate names nor the wells in their `samples_csv` can contain whitespace.
 
 The key should look like this:
 
