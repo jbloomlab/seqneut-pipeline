@@ -63,9 +63,11 @@ So the overall structure will look like this:
 So after you have created your project repo, add this pipeline as a git submodule with:
 
       git submodule add https://github.com/jbloomlab/seqneut-pipeline
+      git submodule update --init --recursive
 
-This creates a file called `gitmodules` and the `seqneut-pipeline` submodule, which can then be committed to the repo.
-If at some point you want to update the version of the pipeline, simply `cd` into the `seqneut-pipeline` subdirectory and pull or checkout the version you want.
+This creates a file called `.gitmodules` and the `seqneut-pipeline` submodule, which can then be committed to the repo.
+If at some point you want to update the version of the pipeline, `cd` into the `seqneut-pipeline` subdirectory and pull or checkout the version you want (or, to jump to the latest version, run `git submodule update --remote --recursive seqneut-pipeline` from the repo root instead). Either way, run `git submodule update --init --recursive` again from the repo root afterward.
+In all of these commands, the recursive flag is to ensure the embedded [bloomlab-coding-standards](bloomlab-coding-standards) are included.
 
 To use the pipeline, you then need to add a few things to your main-level repo.
 The first is a top-level `Snakefile` that includes your configuration, `seqneut-pipeline`, and outputs of `seqneut-pipeline` as targets of the `all` rule.
