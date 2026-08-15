@@ -42,9 +42,9 @@ jobs:
         shell: bash -el {0}
         run: snakefmt --check .
 
-      - name: check marimo notebooks
+      - name: test code with pytest
         shell: bash -el {0}
-        run: marimo check --ignore-scripts .
+        run: pytest
 
       - name: lint snakemake files with snakemake --lint
         shell: bash -el {0}

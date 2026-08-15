@@ -41,14 +41,28 @@ stringify_plate_dates(config)  # so `snakemake` can JSON serialize the config
 # before the plates are processed, as their validation depends on it
 collapse_strain_barcodes = get_collapse_strain_barcodes(config)
 
+for lib, lib_df in viral_libraries.items():
+    check_no_whitespace(lib_df["barcode"], f"barcodes in viral library {lib!r}")
+    if collapse_strain_barcodes:
+        # collapsing names a strain's barcode for the strain, so the strain name is
+        # then subject to the same constraint as a barcode
+        check_no_whitespace(lib_df["strain"], f"strains in viral library {lib!r}")
+for neut_standard_set, neut_standard_df in neut_standard_sets.items():
+    check_no_whitespace(
+        neut_standard_df["barcode"],
+        f"barcodes in neut standard set {neut_standard_set!r}",
+    )
+
 # `plates` may be absent, null, or empty for a project that only has
 # `miscellaneous_plates`, and so just counts barcodes rather than fitting any curves
 plates = {
     str(plate): process_plate(str(plate), plate_params)
     for (plate, plate_params) in (config.get("plates") or {}).items()
 }
+check_no_whitespace(plates, "plate names")
 
 groups = sorted(set(plate_params["group"] for plate_params in plates.values()))
+check_no_whitespace(groups, "group names")
 groups_cannot_contain = ["|", "_"]  # wildcard problems if group contains these
 if any(s in group for s in groups_cannot_contain for group in groups):
     raise ValueError(f"found {groups_cannot_contain=} character in {groups=}")
@@ -74,9 +88,9 @@ for plate_d in plates.values():
 
 
 # the plates each plate's titers can be correlated with, and the subset of plates that
-# have at least one such comparator and so get a plate-to-plate correlation notebook
+# have at least one such comparator and so get a plate-to-plate correlation report
 # (keyed to their group). Both are determined by the configuration rather than by the
-# QC, so the set of correlation notebooks is known without the `groups_sera_by_plate`
+# QC, so the set of correlation reports is known without the `groups_sera_by_plate`
 # checkpoint even though the inputs to each of them are not.
 plate_comparators = get_plate_comparators(plates)
 corr_plates = {
@@ -155,7 +169,7 @@ if plates:
     rule process_plate:
         """Process a plate to QC and convert counts to fraction infectivity."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/process_plate.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
             count_csvs=lambda wc: expand(
                 rules.count_barcodes.output.counts,
                 sample=plates[wc.plate]["samples"]["sample"],
@@ -165,8 +179,7 @@ if plates:
                 sample=plates[wc.plate]["samples"]["sample"],
             ),
         output:
-            marimo_html="results/plates/{plate}/process_{plate}.html",
-            context_pickle="results/plates/{plate}/process_{plate}_context.pickle",
+            html="results/plates/{plate}/process_{plate}.html",
             qc_drops="results/plates/{plate}/qc_drops.yml",
             frac_infectivity_csv="results/plates/{plate}/frac_infectivity.csv",
             fits_csv="results/plates/{plate}/curvefits.csv",
@@ -199,7 +212,7 @@ if plates:
             curve_display_method=config["curve_display_method"],
             collapse_strain_barcodes=collapse_strain_barcodes,
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/process_plate.py"
 
     checkpoint groups_sera_by_plate:
         """Get list of all groups/sera and plates they are on."""
@@ -219,7 +232,8 @@ if plates:
     rule group_serum_titers:
         """Aggregate and analyze titers for a group / serum."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/group_serum_titers.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             pickles=lambda wc: [
                 rules.process_plate.output.fits_pickle.format(plate=plate)
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
@@ -229,8 +243,7 @@ if plates:
                 for plate in groups_sera_plates()[(wc.group, wc.serum)]
             ],
         output:
-            marimo_html="results/sera/{group}_{serum}/{group}_{serum}_titers.html",
-            context_pickle="results/sera/{group}_{serum}/{group}_{serum}_titers_context.pickle",
+            html="results/sera/{group}_{serum}/{group}_{serum}_titers.html",
             per_rep_titers="results/sera/{group}_{serum}/titers_per_replicate.csv",
             titers="results/sera/{group}_{serum}/titers.csv",
             curves_pdf="results/sera/{group}_{serum}/curves.pdf",
@@ -266,27 +279,28 @@ if plates:
                 else config["default_serum_qc_thresholds"]
             ),
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/group_serum_titers.py"
 
     rule plate_to_plate_corr:
         """Correlate the titers on a plate with those on the other plates of its group.
 
         Only created for the plates in `corr_plates`, which are those sharing a serum
         with another plate of their group. Each pair of plates is therefore compared
-        twice, once in each plate's notebook, which keeps a notebook from growing with
+        twice, once in each plate's report, which keeps a report from growing with
         the square of the number of plates in the group.
 
-        The notebook handles the case where the QC has dropped every titer that this
+        The script handles the case where the QC has dropped every titer that this
         plate shared with its comparators, by reporting that there is nothing to
         correlate.
 
         """
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/plate_to_plate_corr.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             # The sera measured on this plate. Each of these files holds that serum's
             # titers from every plate it was measured on, which is what the correlations
             # need. All of the plate's sera are read rather than just those also measured
-            # elsewhere, so that the notebook can report the ones that are not compared.
+            # elsewhere, so that the report can list the ones that are not compared.
             per_rep_titers=lambda wc: [
                 rules.group_serum_titers.output.per_rep_titers.format(
                     group=wc.group, serum=serum
@@ -295,8 +309,7 @@ if plates:
                 if (group == wc.group) and (wc.plate in serum_plates)
             ],
         output:
-            marimo_html="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.html",
-            context_pickle="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}_context.pickle",
+            html="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.html",
             corrs_csv="results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.csv",
         log:
             "results/logs/plate_to_plate_corr_{group}_{plate}.txt",
@@ -317,12 +330,13 @@ if plates:
             ),
             concentration_units=lambda wc: group_concentration_units[wc.group],
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/plate_to_plate_corr.py"
 
     rule aggregate_titers:
         """Aggregate all serum titers."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_titers.py"),
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             pickles=lambda wc: [
                 rules.group_serum_titers.output.pickle.format(group=group, serum=serum)
                 for (group, serum) in groups_sera_plates()
@@ -332,8 +346,7 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
-            marimo_html="results/aggregated_titers/aggregate_titers.html",
-            context_pickle="results/aggregated_titers/aggregate_titers_context.pickle",
+            html="results/aggregated_titers/aggregate_titers.html",
             pickles=[
                 f"results/aggregated_titers/curvefits_{group}.pickle"
                 for group in groups
@@ -353,12 +366,14 @@ if plates:
             groups_dilution_factor_or_concentration=group_dilution_factor_or_concentration,
             groups_concentration_units=group_concentration_units,
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/aggregate_titers.py"
 
     rule aggregate_qc_drops:
         """Aggregate all QC drops."""
         input:
-            marimo_nb=os.path.join(pipeline_subdir, "notebooks/aggregate_qc_drops.py"),
+            # `snakemake` re-runs a `script:` rule when the script itself changes, but
+            # does not follow its imports, so the modules it imports are inputs
+            report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
             plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
             groups_sera_qc_drops=lambda wc: [
                 rules.group_serum_titers.output.qc_drops.format(
@@ -367,8 +382,7 @@ if plates:
                 for (group, serum) in groups_sera_plates()
             ],
         output:
-            marimo_html="results/qc_drops/aggregate_qc_drops.html",
-            context_pickle="results/qc_drops/aggregate_qc_drops_context.pickle",
+            html="results/qc_drops/aggregate_qc_drops.html",
             plate_qc_drops="results/qc_drops/plate_qc_drops.yml",
             barcode_qc_drops="results/qc_drops/barcode_qc_drops.yml",
             groups_sera_qc_drops="results/qc_drops/groups_sera_qc_drops.yml",
@@ -380,7 +394,7 @@ if plates:
             plates=list(plates),
             groups_sera=lambda wc: list(groups_sera_plates()),
         script:
-            "scripts/run_marimo_w_context_pickle.py"
+            "scripts/aggregate_qc_drops.py"
 
 
 rule miscellaneous_plate_count_barcodes:
@@ -443,12 +457,10 @@ rule build_docs:
             plate=plates,
         ),
         plate_corr_htmls=[
-            rules.plate_to_plate_corr.output.marimo_html.format(
-                group=group, plate=plate
-            )
+            rules.plate_to_plate_corr.output.html.format(group=group, plate=plate)
             for (plate, group) in corr_plates.items()
         ],
-        qc_drops_html=(rules.aggregate_qc_drops.output.marimo_html if plates else []),
+        qc_drops_html=(rules.aggregate_qc_drops.output.html if plates else []),
     output:
         docs=directory("results/docs"),
     log:
@@ -500,6 +512,6 @@ seqneut_pipeline_outputs = [
         for well in miscellaneous_plates[plate]["wells"]
         for suffix in ["counts.csv", "fates.csv"]
     ],
-    # the notebook HTMLs are not listed here, as they are inputs to `build_docs`
+    # the report HTMLs are not listed here, as they are inputs to `build_docs`
     rules.build_docs.output.docs,
 ]

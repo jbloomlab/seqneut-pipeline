@@ -3,7 +3,7 @@ wells:
   C9: min_neut_standard_count_per_well
   D9: min_neut_standard_count_per_well
 barcodes:
-  CATACAGAGTTTGTTG: min_neut_standard_frac_per_well
+  CATACAGAGTTTGTTG: per_neut_standard_barcode_filters
 barcode_wells:
   CGGATAAAAATGATAT B12: min_no_serum_count_per_viral_barcode_well
   ACGGAATCCCCTGAGA B12: min_no_serum_count_per_viral_barcode_well

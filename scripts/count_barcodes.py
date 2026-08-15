@@ -84,7 +84,7 @@ invalid_barcodes_df = (
 # compute closest valid barcodes
 closest_valid_barcode_cols = [
     "closest_valid_barcode",
-    "closest_valid_bacode_hamming_distance",
+    "closest_valid_barcode_hamming_distance",
     "closest_valid_barcode_count",
 ]
 if len(invalid_barcodes_df) > 0:

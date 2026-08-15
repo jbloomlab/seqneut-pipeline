@@ -1,6 +1,6 @@
 [project]
 name = "seqneut-pipeline"
-version = "8.1.0"
+version = "9.0.0"
 description = "Modular analysis pipeline for high-throughput sequencing-based neutralization assays"
 readme = "README.md"
 license = {text = "MIT"}
@@ -22,11 +22,8 @@ builtins = [
     "snakemake",  # may appear undefined as passed to scripts via `Snakefile`
 ]
 
-# We lint with `ruff`'s default rule selection, which is much broader as of `ruff`
-# 0.16. The rules ignored below are triggered only by the file format that `marimo`
-# writes, not by anything actually wrong with the notebooks.
-[tool.ruff.lint.per-file-ignores]
-"notebooks/*.py" = [
-    "B018",  # a cell's trailing bare expression is what that cell renders
-    "PLR1711",  # `marimo` ends each cell with a `return` of the variables it exports
-]
+# `./tests` holds the tests of the code this pipeline shares with the projects that
+# include it. `test_example/test_titers_as_expected.py` is not among them: it is a script
+# run from within `test_example` after the pipeline has been run there.
+[tool.pytest.ini_options]
+testpaths = ["tests"]

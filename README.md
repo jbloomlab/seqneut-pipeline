@@ -63,9 +63,11 @@ So the overall structure will look like this:
 So after you have created your project repo, add this pipeline as a git submodule with:
 
       git submodule add https://github.com/jbloomlab/seqneut-pipeline
+      git submodule update --init --recursive
 
-This creates a file called `gitmodules` and the `seqneut-pipeline` submodule, which can then be committed to the repo.
-If at some point you want to update the version of the pipeline, simply `cd` into the `seqneut-pipeline` subdirectory and pull or checkout the version you want.
+This creates a file called `.gitmodules` and the `seqneut-pipeline` submodule, which can then be committed to the repo.
+If at some point you want to update the version of the pipeline, `cd` into the `seqneut-pipeline` subdirectory and pull or checkout the version you want (or, to jump to the latest version, run `git submodule update --remote --recursive seqneut-pipeline` from the repo root instead). Either way, run `git submodule update --init --recursive` again from the repo root afterward.
+In all of these commands, the recursive flag is to ensure the embedded [bloomlab-coding-standards](bloomlab-coding-standards) are included.
 
 To use the pipeline, you then need to add a few things to your main-level repo.
 The first is a top-level `Snakefile` that includes your configuration, `seqneut-pipeline`, and outputs of `seqneut-pipeline` as targets of the `all` rule.
@@ -146,6 +148,7 @@ GCATGGATCCTTTACT,A/Togo/845/2020
 <additional lines>
 ```
 These CSV files can optionally have additional columns as well if those are useful for storing further metadata.
+The *barcode* cannot contain whitespace, nor can the *strain* if using `collapse_strain_barcodes`.
 
 ### collapse_strain_barcodes
 An optional key that determines whether each of a strain's barcodes is analyzed as its own measurement of that strain (the default), or whether they are all collapsed into a single measurement.
@@ -170,7 +173,7 @@ Note the following implications of collapsing:
  - `barcode_serum_replicates_ignore_curvefit_qc` in `curvefit_qc` refers to the collapsed barcodes, so specify strain names rather than barcodes there.
 
 ### viral_strain_plot_order
-A a CSV with a column named "strain" that lists the strains in the order they should be plotted.
+Optional: a CSV with a column named "strain" that lists the strains in the order they should be plotted.
 If not specified or set to "null", then plotting is just alphabetical.
 Must include all strains being used if specified.
 So should look like this:
@@ -187,7 +190,7 @@ A/Michigan/45/2015
 ```
 
 ### curve_display_method
-How large panels of neutralization curves are displayed in notebooks created by pipeline and rendered in the documentation.
+How large panels of neutralization curves are displayed in the HTML reports created by the pipeline and rendered in the documentation.
 Set such as:
 ```
 curve_display_method: svg
@@ -197,7 +200,6 @@ Options are:
   - *svg*: high-resolution SVGs, but large file sizes
   - *pdf*: high-resolution PDFs, file size is smaller than *svg* however these may not render in some browsers (eg, Chrome)
   - *png8*: lower-resolution PNG8 but much smaller file sizes
-  - *inline*: display as inline `matplotlib` plots, usually inferior to other options as both the largest file size and relatively poor resolution.
 
 
 ### neut_standard_sets
@@ -210,7 +212,7 @@ neut_standard_sets:
 ```
 The recommended way to organize the neutralization-standard sets (as indicated above) is to put them in a `./data/neut_standard_sets/` subdirectory.
 
-The CSV files need just a single column specifying the neutralization standard barcode, such as:
+The CSV files need just a single column specifying the neutralization standard barcode (which cannot contain whitespace), such as:
 ```
 barcode
 CTTTAAATTATAGTCT
@@ -242,7 +244,7 @@ In addition, each plate is assigned to a *group*, which might be "serum" or "pil
 This key is optional: leave it out, or set it to null or an empty dictionary (`{}`), for a project that only counts barcodes for the plates specified under `miscellaneous_plates` and so fits no neutralization curves at all.
 Note that `sera_override_defaults` is keyed by group and so must then also be empty, since there are no groups without any plates.
 
-The basic structure is that `plates` maps plate names to configurations for the plates.
+The basic structure is that `plates` maps plate names (which cannot contain whitespace) to configurations for the plates.
 Specifically, it should look like this:
 ```
 plates:
@@ -269,7 +271,7 @@ The above example shows the configuration of a plate called `plate1`, and there 
 The elements under each plate-mapping are in turn as follows:
 
 #### group
-The group that this plate is assigned to (cannot contain any underscores). Typically this might be "serum" or "pilot" or however you are categorizing the runs.
+The group that this plate is assigned to (cannot contain any underscores or whitespace). Typically this might be "serum" or "pilot" or however you are categorizing the runs.
 
 #### date
 The `date` key specifies the date on which the plate was processed in `YYYY-MM-DD` format.
@@ -301,8 +303,8 @@ All plates assigned to the same `group` must share the same `dilution_factor_or_
 The `samples_csv` key gives the name of a CSV file specifying the samples for that plate.
 The recommended way to organize these sample CSVs is to put them in `./data/plates/` subdirectory.
 The CSV file must have the following columns:
- - *well*: well in plate in which sample was run, typically names like "A1", "B1", etc.
- - *serum*: name of the serum in this well, or "none" if it is a no-serum sample.
+ - *well*: well in plate in which sample was run, typically names like "A1", "B1", etc. Cannot contain whitespace.
+ - *serum*: name of the serum in this well, or "none" if it is a no-serum sample. Cannot contain whitespace.
  - *dilution_factor*: dilution factor of the serum (should be a number > 1), leave blank for the no-serum samples (*serum* of "none"). If the plate sets `dilution_factor_or_concentration: concentration`, then include a *concentration* column (a number > 0, blank for no-serum samples) instead of *dilution_factor*.
  - *replicate*: the replicate of this serum, which you only need to specify if there are multiple different samples with the same *serum* and *dilution_factor* (or *concentration*) in the plate.
  - *fastq*: path to the FASTQ file, can be gzipped
@@ -514,6 +516,7 @@ This is an optional key that can be used specify plates that you just want to co
 This might be useful for library pooling or QC, for instance---or if you want to look at some failed plates that you don't actually want to fit curves for.
 
 If you do not want to specify any miscellaneous plates either leave this key out or set it to an empty dictionary (`{}`).
+Neither the plate names nor the wells in their `samples_csv` can contain whitespace.
 
 The key should look like this:
 
@@ -560,7 +563,7 @@ The set of full created outputs are as follows (note only some will be tracked d
 
   - Outputs related to processing each plate:
     - `./results/plates/{plate}/frac_infectivity.csv`: fraction infectivity for viral barcodes for a plate. You should track this in the repo.
-    - `./results/plates/{plate}/process_{plate}.html`: HTML of marimo notebook processing counts for a plate. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+    - `./results/plates/{plate}/process_{plate}.html`: HTML report on processing the counts for a plate. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/plates/{plate}/qc_drops.yml`: details on data (barcodes, wells, etc) dropped for failing QC when processing this plate.
     - `./results/plates/{plate}/curvefits.csv`: the neutralization curve fits to each serum on each plate. You should track this in repo.
     - `./results/plates/{plate}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for the plate. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
@@ -571,7 +574,7 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/sera/{group}_{serum}/titers_per_replicate.csv`: titers for each replicate of each virus against the group/serum. This contains every replicate that passed the QC applied when its plate was processed, and is not filtered by the per-serum QC on replicate-to-replicate variation; instead the `dropped_by_qc` column indicates whether the virus was dropped by that QC, so this file is a superset of `titers.csv`. Because the per-serum QC drops a virus rather than an individual replicate, that column has the same value for all replicates of a virus. You should track this file in the repo.
     - `./results/sera/{group}_{serum}/curves.pdf`: PDF rendering of the neutralization curves for the group/serum. You do not need to track this as a HTML version is rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/sera/{group}_{serum}/curvefits.pickle`: pickle file with the `neutcurve.CurveFits` object for this group/serum, after applying QC filters. You do not need to track this in the repo as both the plots and numerical data are rendered elsewhere.
-    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML rendering of marimo notebook that aggregates titers for a group/serum across all plates. If the serum was measured on more than one plate, this includes a scatter plot of the titers for each pair of plates to show the plate-to-plate correlation. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+    - `./results/sera/{group}_{serum}/{group}_{serum}_titers.html`: HTML report aggregating the titers for a group/serum across all plates. If the serum was measured on more than one plate, this includes a scatter plot of the titers for each pair of plates to show the plate-to-plate correlation. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/sera/{group}_{serum}/qc_drops.yml`: virus-group/serum titers dropped due to QC when processing this serum's titers.
 
   - Results related to aggregated titers across all sera in a group after applying all quality control:
@@ -580,16 +583,39 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/aggregated_titers/titers_{group}.html`: interactive plot of the titers for all sera in a group (one plot per group). You do not need to track these as they can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
 
   - Results related to plate-to-plate correlations of titers, which assess plate-to-plate reproducibility. These are created for each plate that shares at least one serum with another plate of its group, and each pair of plates is compared in both plates' files. Titers are only correlated within a group, as different groups may report titers in different units:
-    - `./results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.html`: HTML of marimo notebook correlating the titers on `{plate}` with those on each other plate of its group, with a point for each strain against each serum measured on both plates. Points are colored by whether they are retained in the final titers or were dropped by the per-serum QC described in `default_serum_qc_thresholds`, and dropdowns restrict the plot, and the correlations annotating it, to just the retained or just the dropped points or to a single serum. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+    - `./results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.html`: HTML report correlating the titers on `{plate}` with those on each other plate of its group, with a point for each strain against each serum measured on both plates. Points are colored by whether they are retained in the final titers or were dropped by the per-serum QC described in `default_serum_qc_thresholds`, and dropdowns restrict the plot, and the correlations annotating it, to just the retained or just the dropped points or to a single serum. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
     - `./results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.csv`: the Pearson correlations of the titers on `{plate}` with those on each other plate of its group, for each serum measured on both. You should track this file in the repo.
 
   - Results summarizing data dropped due to QC:
     - `./results/qc_drops/plate_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-plate. You should track this in repo.
     - `./results/qc_drops/barcode_qc_drops.yml`: YAML file summarizing all data (barcodes, wells, etc) dropped during the plate-processing QC, summarized per-barcode. You should track this in repo.
     - `./results/qc_drops/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
-    - `./results/qc_drops/aggregate_qc_drops.html`: HTML of marimo notebook summarizing the QC drops. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+    - `./results/qc_drops/aggregate_qc_drops.html`: HTML report summarizing the QC drops. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
       
   - HTML documentation of results is placed in `./results/docs`. This subdirectory does not need to be tracked in the GitHub repo, but can be display via GitHub Pages as described below.
+
+### How the fraction infectivity is computed
+The fraction infectivity in `./results/plates/{plate}/frac_infectivity.csv` is computed for each viral barcode in each serum-containing well as:
+```
+frac_infectivity_raw = count / neut_standard_count / median_no_serum_ratio
+```
+That is, the barcode's count is first normalized by the total neut-standard counts in the same well, which corrects for how much of that well was sequenced.
+That ratio is then divided by `median_no_serum_ratio`, the median of the same ratio for that barcode across the plate's no-serum wells, which puts an unneutralized barcode at a fraction infectivity of one.
+This is why every plate must have at least one no-serum sample.
+
+The `frac_infectivity_ceiling` in `curvefit_params` is applied as a separate `frac_infectivity_ceiling` column rather than in place, so the file holds both the ceilinged and raw values; the curve fits use the ceilinged values.
+If `collapse_strain_barcodes` is set, `count` is instead the sum over all of the strain's barcodes, collapsed immediately after the `manual_drops` are applied so that everything from the QC onward is per strain.
+
+### Names used to identify samples and replicates
+These names are built from the `samples_csv` of each plate and appear as columns in the results:
+
+ - *serum_replicate*: the *serum*, or `{serum}-{replicate}` when a serum has more than one replicate on the plate.
+ - *sample*: `{plate}_{serum_replicate}_{dilution_factor}` (or `_{concentration}`), with the trailing part omitted for the no-serum samples.
+ - *plate_replicate*: the *plate*, or `{plate}-{replicate}` for sera with more than one replicate on the plate.
+ - *plate_barcode*: `{plate_replicate}-{barcode}`, which lets one barcode be tracked as a distinct replicate across plates. This is what is passed to `neutcurve` as its `replicate_col`.
+
+Under `collapse_strain_barcodes`, a collapsed strain's *barcode* is set to the strain name rather than to a shared literal such as `collapsed`.
+This is because *barcode* identifies a strain rather than just labeling it: the QC drops are keyed on `[barcode, serum_replicate]` and `[barcode, well]`, so a name shared across strains would make dropping one curve drop them all.
 
 ## Examining the output and setting appropriate QC values in the configuration
 When you run the pipeline, the QC values in the configuration will be automatically applied, and HTML documentation summarizing the processing of each plate and sera are placed in `./results/docs` (see below for how to render this on GitHub Pages), alongside a summary of all QC across all plates / sera.
@@ -635,7 +661,7 @@ These files are added to the docs even for a project with no `plates`, in which 
 ## Test example and testing via GitHub Actions
 The [./test_example](test_example) subdirectory contains a small test example that illustrates use of the pipeline.
 
-The code is tested by running this example, as well as formatted with [black](https://github.com/psf/black) and [snakefmt](https://github.com/snakemake/snakefmt) and linted with [ruff](https://github.com/astral-sh/ruff), [marimo check](https://docs.marimo.io/guides/editor_features/linting_and_formatting.html), and [snakemake --lint](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html) via the GitHub Action specified in [.github/workflows/test.yaml](.github/workflows/test.yaml).
+The code is tested by running this example, as well as formatted with [black](https://github.com/psf/black) and [snakefmt](https://github.com/snakemake/snakefmt), linted with [ruff](https://github.com/astral-sh/ruff) and [snakemake --lint](https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html), and tested with [pytest](https://docs.pytest.org/) via the GitHub Action specified in [.github/workflows/test.yaml](.github/workflows/test.yaml).
 
 To manually run formatting and linting:
 ```bash
@@ -645,10 +671,18 @@ snakefmt .
 
 # Lint code
 ruff check .
-marimo check --ignore-scripts .
 cd test_example && snakemake --lint && cd ..
+
+# Run tests of the code shared with the projects that include this pipeline
+pytest
 ```
 
 ## Further developing the pipeline
+The code is organized as follows.
+[seqneut-pipeline.smk](seqneut-pipeline.smk) defines the rules, and [funcs.smk](funcs.smk) holds the helpers that process and validate the configuration and sample tables while those rules are being defined.
+The rules themselves are thin: the analysis is in the scripts in [./scripts](scripts), one per rule, which also write the HTML reports that make up the documentation.
+Those reports are built by [scripts/seqneut_report.py](scripts/seqneut_report.py), and [scripts/seqneut_funcs.py](scripts/seqneut_funcs.py) holds the analysis functions used by more than one script; both are covered by the tests in [./tests](tests).
+Note that `snakemake` re-runs a `script:` rule when the script itself changes but does not follow the script's imports, so a rule lists the modules its script imports among its `input`.
+
 Please raise [GitHub issues](https://github.com/jbloomlab/seqneut-pipeline/issues) or [make a pull request](https://github.com/jbloomlab/seqneut-pipeline/pulls) to improve the pipeline.
 Do note that any updates should be described in the [CHANGELOG](CHANGELOG.md), and versions updated in [pyproject.toml](pyproject.toml).
