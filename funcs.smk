@@ -369,7 +369,7 @@ def groups_sera_plates():
     """Get dict keyed by /groupserum with values lists of plates with titers."""
     csv_file = checkpoints.groups_sera_by_plate.get().output.csv
     return (
-        pd.read_csv(csv_file)
+        pd.read_csv(csv_file, dtype={"group": str, "serum": str})
         .assign(plates=lambda x: x["plates"].str.split(";"))
         .set_index(["group", "serum"])["plates"]
         .to_dict()
