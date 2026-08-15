@@ -6,7 +6,7 @@ import sys
 import altair as alt
 import neutcurve
 import pandas as pd
-from seqneut_funcs import viruses_in_plot_order
+from seqneut_funcs import narrow_for_altair, viruses_in_plot_order
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
@@ -79,6 +79,15 @@ for group, titers_chart_html in zip(groups, titers_charts):
     else:
         x_title = f"titer ({groups_concentration_units[group]})"
 
+    # `group` and `titer_units` are the same on every row of this group's chart (unlike
+    # `titer_as`, which can differ by serum), so they are dropped here and put back as
+    # constants by `transform_calculate`
+    titer_units = group_titers["titer_units"].unique()
+    assert len(titer_units) == 1, titer_units
+    constants = {"group": group, "titer_units": titer_units[0]}
+    calculate = {col: f"'{val}'" for col, val in constants.items()}
+    narrowed_titers = narrow_for_altair(group_titers, drop=list(constants))
+
     serum_selection = alt.selection_point(
         fields=["serum"],
         bind="legend",
@@ -87,7 +96,8 @@ for group, titers_chart_html in zip(groups, titers_charts):
     )
 
     base_chart = (
-        alt.Chart(group_titers)
+        alt.Chart(narrowed_titers)
+        .transform_calculate(**calculate)
         .add_params(serum_selection)
         .encode(
             alt.X(
@@ -135,9 +145,15 @@ for group, titers_chart_html in zip(groups, titers_charts):
             opacity=alt.condition(serum_selection, alt.value(1), alt.value(0.15)),
             strokeWidth=alt.condition(serum_selection, alt.value(3), alt.value(1)),
             tooltip=[
-                (alt.Tooltip(c, format=".3g") if group_titers[c].dtype == float else c)
-                for c in group_titers.columns
-            ],
+                (
+                    alt.Tooltip(c, format=".3g")
+                    if narrowed_titers[c].dtype == float
+                    else c
+                )
+                for c in narrowed_titers.columns
+            ]
+            # a calculated field has no `pandas` dtype, so its type is given explicitly
+            + [alt.Tooltip(f"{c}:N") for c in calculate],
         )
         .mark_line(point={"filled": True, "size": 20})
         .properties(width=225, title="per-serum titers")
