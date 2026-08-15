@@ -1,6 +1,7 @@
 """Functions shared by more than one of the pipeline's analysis scripts."""
 
 import numpy
+import pandas
 
 # Floats that came from arithmetic are rounded to this many significant figures before
 # being embedded in a chart. A median over an even number of values otherwise runs to 18
@@ -26,7 +27,11 @@ def narrow_for_altair(df, drop=()):
     """
     df = df.drop(columns=list(drop))
     return df.assign(
-        **{col: df[col].map(round_sig) for col in df.columns if df[col].dtype == float}
+        **{
+            col: df[col].map(round_sig)
+            for col in df.columns
+            if pandas.api.types.is_float_dtype(df[col])
+        }
     )
 
 

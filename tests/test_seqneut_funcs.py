@@ -180,3 +180,8 @@ class TestNarrowForAltair:
         """The point of the rounding is the size of the JSON `altair` embeds."""
         df = pd.DataFrame({"f": [210.35000000000002] * 10})
         assert len(narrow_for_altair(df).to_json()) < len(df.to_json())
+
+    def test_rounds_nullable_float_dtype(self):
+        """A pandas nullable `Float64` column is rounded like an ordinary float column."""
+        df = pd.DataFrame({"f": pd.array([210.35000000000002], dtype="Float64")})
+        assert narrow_for_altair(df)["f"].tolist() == [210.4]
