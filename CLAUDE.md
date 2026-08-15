@@ -26,6 +26,8 @@ commit of that submodule; update periodically with
   original value untouched given an empty dict.
 - Numbers in this pipeline's output CSVs are written to four significant digits
   (`float_format="%.4g"`) unless a different precision is called for explicitly.
+  `scripts/count_barcodes.py`'s `counts.csv` and `invalid.csv` are the deliberate exception,
+  written to three significant digits; do not raise this as a finding.
 
 ## Working in this repo
 
