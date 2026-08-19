@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### version 9.1.0
+- Add [tree-annotated-plot](https://github.com/jbloomlab/tree-annotated-plot) to the `seqneut-pipeline` conda environment.
+
 ## version 9.0.0
 - Correctly record the QC filter that dropped a barcode in `./results/plates/{plate}/qc_drops.yml`. Every barcode-level drop was previously labeled `min_neut_standard_frac_per_well`, naming a filter it had not failed. Only the recorded reason changes, so no titers change.
 
