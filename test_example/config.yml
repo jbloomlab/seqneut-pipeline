@@ -22,6 +22,18 @@ viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
   H3N2_lib2023_Kikawa: data/viral_libraries/2023_H3N2_Kikawa.csv
 
+# Optional checks on each library in `viral_libraries`, one entry per library. These two
+# have only the `barcode` and `strain` that the pipeline itself reads, so there is nothing
+# else to check; a real project may describe other columns as well.
+viral_library_validations:
+  pdmH1N1_lib2023_loes: &library_validations
+    columns:
+      # uppercase is required, not merely conventional: the uniqueness check compares
+      # exact strings, so a lowercase barcode would not collide with its uppercase twin
+      barcode: {nulls: false, unique: barcode, matches: ['^[ACGT]{16}$']}
+      strain: {nulls: false, matches: ['^\S+$']}
+  H3N2_lib2023_Kikawa: *library_validations
+
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 
 curve_display_method: svg  # {svg, pdf, png8}; svg best resolution, png8 smallest

@@ -21,6 +21,16 @@ viral_libraries = {
     lib: pd.read_csv(f) for (lib, f) in config["viral_libraries"].items()
 }
 
+# optional key; absent or null means no library is validated. Keyed by library so that
+# libraries with different schemas each get their own checks.
+viral_library_validations = config.get("viral_library_validations") or {}
+if viral_library_validations and set(viral_library_validations) != set(viral_libraries):
+    raise ValueError(
+        "`viral_library_validations` must have an entry for every library in "
+        f"`viral_libraries`, but is keyed by {sorted(viral_library_validations)} rather "
+        f"than {sorted(viral_libraries)}"
+    )
+
 if ("viral_strain_plot_order" not in config) or (
     config["viral_strain_plot_order"] is None
 ):
@@ -102,6 +112,7 @@ corr_plates = {
 
 wildcard_constraints:
     group="|".join(groups),
+    viral_library="|".join(re.escape(lib) for lib in viral_libraries),
 
 
 # like `plates`, may be absent or null, both of which mean no sera override the defaults
@@ -134,6 +145,27 @@ except NameError:  # if not defined
 
 
 # --- Snakemake rules -------------------------------------------------------------------
+
+if viral_library_validations:
+
+    rule validate_viral_library:
+        """Validate a viral library CSV against the checks configured for it."""
+        input:
+            csv=lambda wc: config["viral_libraries"][wc.viral_library],
+            validation_module=os.path.join(
+                pipeline_subdir, "scripts/viral_library_validation.py"
+            ),
+        output:
+            validation="results/validate_viral_library/{viral_library}_validation.txt",
+        log:
+            "results/logs/validate_viral_library_{viral_library}.txt",
+        conda:
+            "environment.yml"
+        params:
+            validations=lambda wc: viral_library_validations[wc.viral_library],
+        script:
+            "scripts/validate_viral_library.py"
+
 
 if plates:
 
@@ -489,6 +521,16 @@ rule build_docs:
 
 
 seqneut_pipeline_outputs = [
+    # `rules.validate_viral_library` does not exist when no validations are configured,
+    # so the guard is what keeps this from raising rather than just documenting intent
+    *(
+        expand(
+            rules.validate_viral_library.output.validation,
+            viral_library=viral_library_validations,
+        )
+        if viral_library_validations
+        else []
+    ),
     *(
         [
             rules.aggregate_titers.output.titers,

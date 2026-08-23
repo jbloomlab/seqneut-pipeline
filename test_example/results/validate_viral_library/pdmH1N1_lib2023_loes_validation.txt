@@ -1,0 +1,22 @@
+=== schema ===
+   OK   all columns listed in `columns` are present                               (2 columns)
+
+=== summary of data/viral_libraries/pdmH1N1_lib2023_loes.csv ===
+110 barcodes for 36 strains
+
+  column   null  non-null  distinct  max per strain  checks
+  barcode     0       110       110               4  non-null; distinct per row; matches ^[ACGT]{16}$
+  strain      0       110        36               1  non-null; matches ^\S+$
+
+columns not listed in `viral_library_validations: columns`: none
+
+=== columns ===
+   OK   columns declared non-null have no null values                             (2 columns)
+
+=== patterns ===
+   OK   `barcode` matches ^[ACGT]{16}$                                            (110 non-null rows)
+   OK   `strain` matches ^\S+$                                                    (110 non-null rows)
+
+=== uniqueness ===
+   OK   `barcode` is distinct in every row that sets it                           (110 non-null rows)
+   OK   each strain has one set of values for all listed columns but ['barcode']  (36 strains)
