@@ -9,6 +9,8 @@ _*
 results/**
 !results/**/
 
+!results/validate_viral_library/*_validation.txt
+
 !results/barcode_counts/*.csv
 !results/barcode_fates/*.csv
 

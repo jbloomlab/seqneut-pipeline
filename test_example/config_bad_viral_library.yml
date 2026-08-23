@@ -1,0 +1,10 @@
+# === Overrides making a viral library fail its validation ==============================
+
+# Used by the tests to check that a library which does not meet its configured checks
+# stops the run rather than passing quietly. The barcodes really are 16 nucleotides, so
+# requiring 12 fails every row of this library.
+
+viral_library_validations:
+  pdmH1N1_lib2023_loes:
+    columns:
+      barcode: {nulls: false, unique: barcode, matches: ["^[ACGT]{12}$"]}

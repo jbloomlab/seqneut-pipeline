@@ -62,6 +62,15 @@ jobs:
         shell: bash -el {0}
         run: cd test_example && python test_titers_as_expected.py && cd ..
 
+      - name: test the viral libraries were validated
+        shell: bash -el {0}
+        run: >
+          cd test_example
+          && test -f results/validate_viral_library/H3N2_lib2023_Kikawa_validation.txt
+          && grep -q "110 barcodes for 36 strains"
+          results/validate_viral_library/pdmH1N1_lib2023_loes_validation.txt
+          && cd ..
+
       - name: run pipeline on test example collapsing strain barcodes
         # in a copy of the test example so the results of the run above are kept
         shell: bash -el {0}
@@ -94,6 +103,27 @@ jobs:
           && ! grep -q "quality control" results/docs/index.html
           && cd ..
 
+      - name: run pipeline on test example with a viral library that fails validation
+        # `viral_library_validations` exists to stop a run on a library that does not meet
+        # it, so the failure is tested as well as the success. Just the one validation is
+        # requested, with one job, so that which log the run leaves behind does not depend
+        # on the order `snakemake` happens to schedule jobs in. The assertion is on the
+        # log, as `snakemake` deletes a failed job's output but keeps its log.
+        shell: bash -el {0}
+        run: >
+          cp -a test_example _test_example_bad_viral_library
+          && cd _test_example_bad_viral_library
+          && rm -rf results
+          && ! snakemake --software-deployment-method conda -j 1
+          --configfile config_bad_viral_library.yml
+          -- results/validate_viral_library/pdmH1N1_lib2023_loes_validation.txt
+          && ! test -f results/validate_viral_library/pdmH1N1_lib2023_loes_validation.txt
+          && grep -q "FAIL  .barcode. matches"
+          results/logs/validate_viral_library_pdmH1N1_lib2023_loes.txt
+          && grep -q "OK   .strain. matches"
+          results/logs/validate_viral_library_pdmH1N1_lib2023_loes.txt
+          && cd ..
+
       - name: upload results in case of error
         uses: actions/upload-artifact@v7
         if: failure()
@@ -103,4 +133,5 @@ jobs:
             test_example/results
             _test_example_collapsed/results
             _test_example_no_plates/results
+            _test_example_bad_viral_library/results
           retention-days: 7

@@ -9,38 +9,38 @@
 
 ---
 
-This is a modular analysis pipeline for analyzing high-throughput sequencing-based neutralization assays of the type developed in the [Bloom lab](https://jbloomlab.org).
+This is a modular pipeline for analyzing high-throughput sequencing-based neutralization assays developed in the [Bloom lab](https://jbloomlab.org).
 
 Please cite [Loes et al (2024)](https://doi.org/10.1128/jvi.00689-24) if you use this pipeline for your scientific study.
 
 Here are some key studies using this pipeline:
+  - [Kikawa et al (2026), Virus Evolution](https://doi.org/10.1093/ve/veag046)
   - [Loes et al (2026), Journal of Virology](https://doi.org/10.1128/jvi.00317-26)
-  - [Kikawa et al (2026), bioRxiv](https://doi.org/10.64898/2026.02.18.706711)
   - [Kikawa et al (2025), Virus Evolution](https://doi.org/10.1093/ve/veaf086)
   - [Kikawa et al (2026), eLife](https://doi.org/10.7554/eLife.106811)
   - [Loes et al (2024), Journal of Virology](https://doi.org/10.1128/jvi.00689-24)
 
-For an up-to-date example of use of this pipeline for a real project, see [https://github.com/jbloomlab/flu-seqneut-2025to2026](https://github.com/jbloomlab/flu-seqneut-2025to2026).
+For up-to-date examples of use of this pipeline for real projects, see:
+  - [https://github.com/jbloomlab/flu-seqneut-2026](https://github.com/jbloomlab/flu-seqneut-2026).
 
 See [here](https://github.com/jbloomlab/seqneut-pipeline/graphs/contributors) for a list of the contributors to this pipeline.
 
 ## Overview
 
 This pipeline goes from the FASTQ files that represent the counts of each barcoded viral variant to the computed neutralization titers for each sera.
-The titers are computed by fitting Hill-curve style neutralization curves using the [neutcurve](https://jbloomlab.github.io/neutcurve/) package; see the documentation for the details of these curves.
-The titers represent the reciprocal serum dilutions at which half the viral infectivity is neutralized.
+The titers are computed by fitting Hill-curve style neutralization curves using the [neutcurve](https://jbloomlab.github.io/neutcurve/) package.
+The titers represent the reciprocal serum dilutions or antibody concentrations at which half the viral infectivity is neutralized.
 The pipeline provides options to compute these titers as either:
  - the reciprocal of the inhibitory concentration 50% (IC50), namely as the neutralization titer 50% (NT50)
  - the reciprocal of the midpoint of the neutralization curve
 
 When the curves are fit with a top plateau of 1 and a bottom plateau of zero, these two different ways of calculating the titers are identical, and represent the serum dilution factor at which the serum neutralizes half of the viral infectivity.
-Typically there will be multiple replicates, and the final reported titer is the median among replicates.
+There can be multiple experimental replicates for each titer measurement, and the final reported titer is the median among replicates.
 
 The pipeline also performs extensive quality control at different steps using configurable options described below.
 
 ## Using this pipeline
 This pipeline is designed to be included as a modular portion of a larger [snakemake](https://snakemake.readthedocs.io/) analysis.
-This pipeline processes FASTQ files to get the counts of each barcode, analyzes those to determine the fraction infectivity at each serum concentration, and then fits and plots neutralization curves.
 
 To use the pipeline, first create another repository specific to your project.
 The include this pipeline as a [git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules) in your repository, where it will be present in a subdirectory named `seqneut-pipeline`.
@@ -85,17 +85,17 @@ rule all:
 ```
 
 In this `Snakefile`, the `seqneut_pipeline_outputs` specify files created by the pipeline.
-Several of of these may be of special interest for you to use in additional rules you define in `Snakefile`:
+Several of of these may be of special interest to use in additional rules you define in `Snakefile`:
   - `./results/aggregated_titers/titers_{group}.csv`: CSV with the final (median across replicates) titers for each serum-virus pair in a group after applying quality control filters.
   - `./results/aggregated_titers/curvefits_{group}.pickle`: a pickled [neutcurve.CurveFits](https://jbloomlab.github.io/neutcurve/neutcurve.curvefits.html#neutcurve.curvefits.CurveFits) object with all of the curve fits for all serum-virus-replicates in a group after applying the QC filters. You can use the methods of this object to make plots of neutralization curves for specific sera / viruses / replicates.
 
 In addition, you need to create the configuration file `config.yml` and ensure it includes the appropriate configuration for `seqneut-pipeline` as described below.
 
-To track the correct files in the created results, we suggest you copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
-This will track key results files, but not an excessive number of non-essential files.
+To track the correct files in the created results, copy the [./test_example/.gitignore](test_example/.gitignore) file to be the `.gitignore` for your main repo.
+This will track key results files, but not all of the files created in `./results/`.
 
 Finally, you need to create a `conda` environment that minimally includes the packages needed to run the pipeline, which are a recent version of [snakemake](https://snakemake.readthedocs.io/) and [pandas](https://pandas.pydata.org/).
-You can either create your own environment containing these, or simply build and use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. So if you are using that environment, you can simply run the pipeline with:
+You can either create your own environment, but we suggest you use the one specified in [environment.yml](environment.yml) file of `seqneut-pipeline`, which is named `seqneut-pipeline`. If you are using that environment, you can simply run the pipeline with:
 ```
 conda activate seqneut-pipeline
 snakemake -j <n_jobs> --software-deployment-method conda
@@ -105,7 +105,7 @@ snakemake -j <n_jobs> --software-deployment-method conda
 The configuration for the pipeline is in a file called `config.yml`.
 An example configuration file is in [./test_example/config.yml](test_example/config.yml) (although some of the QC thresholds are set more leniently to make the test example work for small data as described in the comments in that YAML).
 
-Here we describe the required keys in this YAML file (you can also add additional information specific to your repo, but we advise adding comments to put that in a separate part of the YAML from the `seqneut-pipeline` configuration).
+Here we describe the required keys in this YAML file (you can also add additional information specific to your repo, but we advise adding comments in the YAML to separate project-specific and `seqneut-pipeline` configuration).
 For background on YAML format, including on the anchor (`&`) and merge (`<<: *`) operators that can be helpful to simplify the YAML file, see [here](https://spacelift.io/blog/yaml) and [here](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html).
 
 The top-level keys in the YAML are:
@@ -120,7 +120,7 @@ This will almost always be a subdirectory of the same name, so this key will be 
 Description of pipeline, used in the HTML docs rendering.
 Should include title (with markdown `#` heading, authors and/or citation, and link to GitHub repo.
 For instance:
-```
+```yaml
 description: |
   # <title>
   <short description>
@@ -131,24 +131,94 @@ description: |
 ```
 
 ### viral_libraries
-A dictionary (mapping) of viral library names to CSV files holding these libraries.
-So in general this key will look like:
-```
+A dictionary (mapping) of viral library names to CSV files holding these libraries, as in:
+```yaml
 viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
   <potentially more viral libraries specified as name: CSV pairs>
 ```
-The recommended way to organize the viral libraries (as indicated above) is to put them in a `./data/viral_libraries/` subdirectory.
+The recommended way to organize the viral libraries is to put them in a `./data/viral_libraries/` subdirectory.
 
-The CSV files themselves will have columns specifying the viral barcode and the strain it corresponds to, such as:
-```
+The CSV files themselves must have columns specifying the viral barcode and the strain it corresponds to, such as:
+```csv
 barcode,strain
 ACGGAATCCCCTGAGA,A/Washington/23/2020
 GCATGGATCCTTTACT,A/Togo/845/2020
 <additional lines>
 ```
-These CSV files can optionally have additional columns as well if those are useful for storing further metadata.
 The *barcode* cannot contain whitespace, nor can the *strain* if using `collapse_strain_barcodes`.
+These CSV files can optionally have additional columns that store further metadata;
+use the optional `viral_library_validations` described next to specify what any further columns must hold.
+
+### viral_library_validations
+An optional key giving checks to apply to each CSV in `viral_libraries`, keyed by library name.
+If absent or null then no library is validated; if present it must have an entry for every library.
+A library that fails any of its checks stops the run, and a report of every library is written to `./results/validate_viral_library/{viral_library}_validation.txt`.
+
+Each library's entry has a `columns` mapping with one entry per column to check.
+Only `barcode` and `strain` have to be listed, but we recommend you include any other important columns in your libraries CSV.
+A minimal entry looks like:
+```yaml
+viral_library_validations:
+  pdmH1N1_lib2023_loes:
+    columns:
+      barcode: {nulls: false, unique: barcode, matches: ['^[ACGT]{16}$']}
+      strain: {nulls: false, matches: ['^\S+$']}
+```
+Where several libraries share their checks, write the entry once and give it a YAML anchor, as [./test_example/config.yml](test_example/config.yml) does.
+
+A column entry may have the following keys, of which only `nulls` is required:
+
+  - `nulls`: whether the column may be empty.
+  - `unique`: `barcode` if the value must be distinct for every barcode (row), or `strain` if it must be distinct for every strain. Nulls are ignored (use the `nulls` option to specify if those are allowed).
+  - `unique_within`: names another column scoping `unique: strain`, so a value must only be unique within this group of the library.
+  - `values`: list of values the column may hold, where it is categorical.
+  - `matches`: regular expressions the value must match.
+  - `length`: `{min, max}`, the range of lengths the value may have.
+  - `translates_to`: names the column holding the protein this coding sequence translates to.
+  - `numeric`: whether the value must be a number.
+  - `non_null_when`: `{column: value}`, the column must be set for exactly the rows where that column holds this value, and so must be empty in all the others.
+  - `by` and `groups`: `matches` and `length` applied per value of another column, for a convention that differs between the groups of strains in a library. `by` names that column, which must declare `values`, and `groups` must have an entry for each of them.
+
+A libraries CSV can also have columns not specified for validation, but we recommend you validate any important columns used by custom rules in the pipeline or that provide important metadata you want to validate is present.
+
+Note that regular expressions are best written in single quotes, as a backslash in a double-quoted YAML string is an escape (so `"^\S+$"` is an error, while `'^\S+$'` is what you want).
+
+Here is a more complex example, for a library of influenza HA ectodomains of two subtypes with a *designed* and an *actual* version that share their checks:
+```yaml
+viral_library_validations:
+  DRIVElib: &library_validations
+    columns:
+      strain: {nulls: false, matches: ['^\S+$']}
+      barcode: {nulls: false, unique: barcode, matches: ['^[ACGT]{16}$']}
+      alternative_names: {nulls: true}  # empty when the strain has no other name
+      subtype: {nulls: false, values: [H1N1, H3N2]}
+      # "True" / "False" quoted, as the CSV is read as text and so values are compared as written
+      vaccine_strain: {nulls: false, values: ["True", "False"]}
+      clade: {nulls: false}
+      subclade: {nulls: false}
+      # the subtypes share haplotype names, so a haplotype names one strain only within one
+      derived_haplotype: {nulls: false, unique: strain, unique_within: subtype}
+      collection_date: {nulls: false, numeric: true}
+      nt_sequence_HA_ectodomain:
+        nulls: false
+        unique: strain
+        matches: ['^([ACGT]{3})+$']
+        translates_to: protein_sequence_HA_ectodomain
+      protein_sequence_HA_ectodomain:
+        nulls: false
+        unique: strain
+        matches: ['^[ACDEFGHIKLMNPQRSTVWY]+$']  # no ambiguities and no stop codons
+        by: subtype  # the ectodomain length and termini differ between the subtypes
+        groups:
+          H1N1:
+            length: {min: 500, max: 500}
+            matches: ['^CIGY', '[EK]IDGV$']
+          H3N2:
+            length: {min: 501, max: 501}
+            matches: ['^Q[KEN][IL]P', 'NNRFQ$']
+  DRIVElib-designed: *library_validations
+```
 
 ### collapse_strain_barcodes
 An optional key that determines whether each of a strain's barcodes is analyzed as its own measurement of that strain (the default), or whether they are all collapsed into a single measurement.
@@ -158,7 +228,7 @@ The rationale for collapsing barcodes is that the noise in the measurements is l
 Which rationale wins out can be experiment-dependent, depending for instance on the evenness of the barcode distribution and the number of strains and barcodes in the library, so we do not have a universal recommendation on whether collapsing is or is not a good idea.
 
 Set it as below to sum the counts of all of a strain's barcodes in each well before any of the QC or curve fitting, so that there is one neutralization curve per strain on a plate rather than one per barcode:
-```
+```yaml
 collapse_strain_barcodes: true
 ```
 If the key is not specified it defaults to `false`.
@@ -177,12 +247,12 @@ Optional: a CSV with a column named "strain" that lists the strains in the order
 If not specified or set to "null", then plotting is just alphabetical.
 Must include all strains being used if specified.
 So should look like this:
-```
+```yaml
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 ```
 
 The CSV file itself will just have a column named "strain" specifying the order, such as:
-```
+```csv
 strain
 A/California/07/2009
 A/Michigan/45/2015
@@ -192,7 +262,7 @@ A/Michigan/45/2015
 ### curve_display_method
 How large panels of neutralization curves are displayed in the HTML reports created by the pipeline and rendered in the documentation.
 Set such as:
-```
+```yaml
 curve_display_method: svg
 ```
 
@@ -205,7 +275,7 @@ Options are:
 ### neut_standard_sets
 A dictionary (mapping) of neutralization-standard set names to CSV files holding the barcodes for the neutralization standard set.
 So in general, this key will look like:
-```
+```yaml
 neut_standard_sets:
   loes2023: data/neut_standard_sets/loes2023_neut_standards.csv
   <potentially more neut standard sets specified as name: CSV pairs>
@@ -213,7 +283,7 @@ neut_standard_sets:
 The recommended way to organize the neutralization-standard sets (as indicated above) is to put them in a `./data/neut_standard_sets/` subdirectory.
 
 The CSV files need just a single column specifying the neutralization standard barcode (which cannot contain whitespace), such as:
-```
+```csv
 barcode
 CTTTAAATTATAGTCT
 CATACAGAGTTTGTTG
@@ -227,7 +297,7 @@ This is a global dictionary that is applied to all plates, but can be augmented 
 This mapping should just specify key-word arguments that can be passed to [dms_variants.illuminabarcodeparser.IlluminaBarcodeParser](https://jbloomlab.github.io/dms_variants/dms_variants.illuminabarcodeparser.html#dms_variants.illuminabarcodeparser.IlluminaBarcodeParser); note that the barcode-length (`bclen`) parameter should not be specified as it is inferred from the length of the barcodes.
 
 So in general, this key will look like this:
-```
+```yaml
 illumina_barcode_parser_params:
   upstream: CTCCCTACAATGTCGGATTTGTATTTAATAG
   downstream: ''
@@ -246,7 +316,7 @@ Note that `sera_override_defaults` is keyed by group and so must then also be em
 
 The basic structure is that `plates` maps plate names (which cannot contain whitespace) to configurations for the plates.
 Specifically, it should look like this:
-```
+```yaml
 plates:
 
   plate1:
@@ -285,7 +355,7 @@ The `neut_standard_set` key gives the name of a key in `neut_standard_sets` that
 #### dilution_factor_or_concentration and concentration_units (optional)
 By default each plate titrates a serum *dilution_factor*, and titers are reported as reciprocal serum dilutions.
 Alternatively, a plate can titrate a *concentration* directly (for instance, the concentration of a monoclonal antibody) by setting:
-```
+```yaml
     dilution_factor_or_concentration: concentration
     concentration_units: ug/ml
 ```
@@ -311,7 +381,7 @@ The CSV file must have the following columns:
  - other columns (e.g., *notes*, etc) are allowed but are ignored by the pipeline
 
 Here are a few lines of an example CSV file:
-```
+```csv
 well,serum,dilution_factor,replicate,fastq
 A1,none,,1,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/Plate1_Noserum1_S1_R1_001.fastq.gz
 A2,Y106d182,20.0,1,/fh/fast/bloom_j/SR/ngs/illumina/aloes/230801_VH00319_391_AACWKHTM5/Unaligned/Project_aloes/Y106_d182_conc1_S9_R1_001.fastq.gz
@@ -335,7 +405,7 @@ The manual drops can have the following keys:
  - `serum_replicates`: list of serum-replicates to drop
 
 So for instance, you could have this specification if you wanted to drop barcode `AGTCCTATCCTCAAAT` for all wells of serum-replicate `M099d0`
-```
+```yaml
 manual_drops:
   barcode_serum_replicates:
     - [AGTCCTATCCTCAAAT, M099d0]
@@ -347,7 +417,7 @@ These thresholds are used for the QC in the `process_count` rule (see section be
 
 Since it is a bit complex, you typically will want to use the [YAML anchor / merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
 The default can be defined like this:
-```
+```yaml
 default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
   avg_barcode_counts_per_well: 500
   min_neut_standard_frac_per_well: 0.005
@@ -366,7 +436,7 @@ default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
 ```
 and then for specific plates you can merge this default it in and overwrite any specific keys if needed.
 For instance, below would merge the above defaults but then overwrite the `min_viral_barcode_frac` to a different value:
-```
+```yaml
 plates:
 
   plate1:
@@ -403,7 +473,7 @@ This key defines some parameters specifying how the neutralization curves are fi
 
 You typically want to use the [YAML anchor/merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
 The default can be defined like this:
-```
+```yaml
 default_process_plate_curvefit_params: &default_process_plate_curvefit_params
   frac_infectivity_ceiling: 1
   fixtop: [0.75, 1.0]
@@ -429,7 +499,7 @@ This key defines some parameters on quality-control performed after the curve-fi
 
 You typically want to use the [YAML anchor/merge](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html) syntax to define a default that you then merge for specific plates.
 The default can be defined like this:
-```
+```yaml
 default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
   max_frac_infectivity_at_least: 0
   goodness_of_fit:
@@ -460,11 +530,11 @@ The main anticipated use case is if you add plate-specific indices in the round 
 ### default_serum_titer_as
 Specifies how we compute the final titers in `serum_titers`.
 Can be either `midpoint` or `nt50` depending on whether you want to report the value where the fraction infectivity gets to 50%, or the midpoint of the curve, so should be either
-```
+```yaml
 default_serum_titer_as: midpoint
 ```
 or
-```
+```yaml
 default_serum_titer_as: nt50
 ```
 The difference only becomes relevant if some your curves have plateaus substantially different than zero and one.
@@ -478,7 +548,7 @@ Default QC we apply to each serum-virus pair when reporting out the final titers
 Any serum-virus pair that fails this QC does not have a titer reported unless it is specified in `sera_override_defaults`.
 
 Should look like this:
-```
+```yaml
 default_serum_qc_thresholds: &default_serum_qc_thresholds
   min_replicates: 2
   max_fold_change_from_median: 3
@@ -493,7 +563,7 @@ where:
 ### sera_override_defaults
 Override `default_serum_titer_as` or `default_serum_qc_thresholds` for specific sera in each group (recall groups are assigned per-plate).
 For instance, this could look like:
-```
+```yaml
 sera_override_defaults:
   serum:
     M099d30:
@@ -520,7 +590,7 @@ Neither the plate names nor the wells in their `samples_csv` can contain whitesp
 
 The key should look like this:
 
-```
+```yaml
 miscellaneous_plates:
 
   <plate_name_1>:
@@ -555,6 +625,9 @@ The results of running the pipeline are put in the `./results/` subdirectory of 
 We recommend using the `.gitignore` file in [./test_example/.gitignore](test_example/.gitignore) in your main repo to only track key results in your GitHub repo.
 The key results if the pipeline runs to completion are in `./results/aggregated_titers/titers_{group}.csv` for each group of sera.
 The set of full created outputs are as follows (note only some will be tracked depending on your `.gitignore`):
+
+  - Output related to validating the viral libraries, if `viral_library_validations` is configured:
+    - `./results/validate_viral_library/{viral_library}_validation.txt`: a report of each viral library and of every check applied to it. You should track this in the repo, as it is the only record of what a library was actually checked against.
 
   - Outputs related to barcode counting:
     - `./results/barcode_counts/`: files giving the barcode counts for each sample. You should track this in the repo.
@@ -681,7 +754,7 @@ pytest
 The code is organized as follows.
 [seqneut-pipeline.smk](seqneut-pipeline.smk) defines the rules, and [funcs.smk](funcs.smk) holds the helpers that process and validate the configuration and sample tables while those rules are being defined.
 The rules themselves are thin: the analysis is in the scripts in [./scripts](scripts), one per rule, which also write the HTML reports that make up the documentation.
-Those reports are built by [scripts/seqneut_report.py](scripts/seqneut_report.py), and [scripts/seqneut_funcs.py](scripts/seqneut_funcs.py) holds the analysis functions used by more than one script; both are covered by the tests in [./tests](tests).
+Those reports are built by [scripts/seqneut_report.py](scripts/seqneut_report.py), [scripts/seqneut_funcs.py](scripts/seqneut_funcs.py) holds the analysis functions used by more than one script, and [scripts/viral_library_validation.py](scripts/viral_library_validation.py) holds the viral library checks; all three are covered by the tests in [./tests](tests).
 Note that `snakemake` re-runs a `script:` rule when the script itself changes but does not follow the script's imports, so a rule lists the modules its script imports among its `input`.
 
 Please raise [GitHub issues](https://github.com/jbloomlab/seqneut-pipeline/issues) or [make a pull request](https://github.com/jbloomlab/seqneut-pipeline/pulls) to improve the pipeline.

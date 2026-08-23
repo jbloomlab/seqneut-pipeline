@@ -1,5 +1,12 @@
 # CHANGELOG
 
+### version 9.2.0
+- Added an optional `viral_library_validations` key that checks each CSV in `viral_libraries` against expectations declared in the config and writes a report to `./results/validate_viral_library/{viral_library}_validation.txt`. Added because most projects had their own version of this rule, which is better modularized in the pipeline. A project with a local copy has to delete it in the same commit that bumps this submodule, as `snakemake` will not parse two rules of the same name.
+
+- Updated `.gitignore` to track viral validation output.
+
+- Added `biopython` (version 1.88) to `environment.yml`.
+
 ### version 9.1.0
 - Add [tree-annotated-plot](https://github.com/jbloomlab/tree-annotated-plot) to the `seqneut-pipeline` conda environment.
 
