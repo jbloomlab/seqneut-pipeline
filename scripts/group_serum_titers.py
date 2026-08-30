@@ -472,7 +472,12 @@ if nkept := (len(viruses_failing_qc) - len(viruses_to_drop)):
     )
 report.md(f"Writing QC drops to `{qc_drops_file}`", log=True)
 with open(qc_drops_file, "w") as f_qc_drops:
-    yaml.YAML(typ="rt").dump(viruses_to_drop, f_qc_drops)
+    yaml_writer = yaml.YAML(typ="rt")
+    # Disable line wrapping: virus/serum names can exceed the default
+    # 80-char width, and ruamel wraps *keys* mid-string in a way that
+    # produces YAML that cannot be re-parsed.
+    yaml_writer.width = 4096
+    yaml_writer.dump(viruses_to_drop, f_qc_drops)
 
 report.md("""
     Write the individual per-replicate titers to a file.
