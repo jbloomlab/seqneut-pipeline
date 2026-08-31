@@ -1,5 +1,6 @@
 """Build the HTML documentation of the results."""
 
+import collections
 import os
 import shutil
 import sys
@@ -11,10 +12,41 @@ import markdown.extensions.toc
 # `noqa: SIM115` as this log file must stay open for the life of the script
 sys.stderr = sys.stdout = log = open(snakemake.log[0], "w")  # noqa: SIM115
 
+# Every input is copied into one directory by basename, so two inputs from different
+# directories that share a basename would overwrite each other, and the generated
+# `index.html` written below would overwrite a copied one. Checked before anything is
+# written, so `results/docs` is never left half-populated.
+duplicated = sorted(f for f, n in collections.Counter(snakemake.input).items() if n > 1)
+if duplicated:
+    raise ValueError(
+        "these inputs are listed more than once:\n  " + "\n  ".join(duplicated)
+    )
+
+inputs_by_basename = collections.defaultdict(list)
+for f in snakemake.input:
+    inputs_by_basename[os.path.basename(f)].append(f)
+
+collisions = {b: fs for b, fs in sorted(inputs_by_basename.items()) if len(fs) > 1}
+if collisions:
+    raise ValueError(
+        "\n".join(
+            f"{len(fs)} inputs share the basename {b!r}:\n  " + "\n  ".join(fs)
+            for b, fs in collisions.items()
+        )
+        + f"\n`build_docs` copies every input into {snakemake.output.docs} by basename, "
+        "so these must be unique."
+    )
+
+if "index.html" in inputs_by_basename:
+    raise ValueError(
+        f"cannot copy {inputs_by_basename['index.html'][0]} into "
+        f"{snakemake.output.docs}, where `build_docs` writes its own generated "
+        "`index.html`."
+    )
+
 copied_files = {
     f: os.path.join(snakemake.output.docs, os.path.basename(f)) for f in snakemake.input
 }
-assert len(copied_files) == len(set(copied_files.values())) == len(snakemake.input)
 os.makedirs(snakemake.output.docs, exist_ok=True)
 for f in snakemake.input:
     shutil.copy(f, snakemake.output.docs)

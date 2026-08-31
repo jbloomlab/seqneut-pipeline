@@ -729,6 +729,8 @@ add_htmls_to_docs = {
 
 You can have one level of nesting in these docs to allow subheadings.
 
+Every file the docs collect is copied into `./results/docs` by its base name, so those base names must be unique across the files you add *and* the HTMLs the pipeline itself renders; putting two files with the same name in different directories is not enough.
+
 These files are added to the docs even for a project with no `plates`, in which case the docs contain only them, as the other sections all describe the plates.
 
 ## Test example and testing via GitHub Actions
