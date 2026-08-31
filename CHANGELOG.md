@@ -1,6 +1,6 @@
 # CHANGELOG
 
-### version 9.2.1
+#### version 9.2.1
 - Fixed a bug where `qc_drops.yml` files (per-plate, per-serum, and the aggregated files in `./results/qc_drops/`) could be written with barcode/serum/virus names wrapped mid-key by `ruamel.yaml`'s default line width, producing YAML that could not be re-parsed by `aggregate_qc_drops`. Fixed by disabling line wrapping when writing these files.
 
 ### version 9.2.0

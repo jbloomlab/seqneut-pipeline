@@ -82,6 +82,18 @@ def test_yaml_renders_as_a_code_block(tmp_path):
     assert "min_replicates: 2" in html
 
 
+def test_yaml_does_not_wrap_a_long_key(tmp_path):
+    """The QC drops shown in the report must read as the keys they actually are."""
+    key = (
+        "A/Massachusetts/18/2022_H3N2 AGCTAGCTAGCTAGCTAGCT "
+        "M09d21-serum-participant-0123 1"
+    )
+    report = Report(title="t")
+    report.yaml({"barcode drops": {key: "min_no_serum_count_per_barcode_well"}})
+    report.write(out := tmp_path / "r.html")
+    assert f"{key}: min_no_serum_count_per_barcode_well" in out.read_text()
+
+
 def test_yaml_keeps_nested_indentation(tmp_path):
     """`Report.md` dedents its text, which must not flatten a nested mapping."""
     report = Report(title="t")

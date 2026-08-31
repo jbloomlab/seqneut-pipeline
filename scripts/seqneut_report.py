@@ -17,7 +17,7 @@ import textwrap
 
 import markdown
 from neutcurve.fig_utils import fig_html
-from ruamel.yaml import YAML
+from seqneut_funcs import yaml_rt
 
 # Blocks that can be taller than the window are put in a box of this height that scrolls
 # rather than pushing the rest of the page down. `neutcurve.fig_utils.fig_html` uses the
@@ -121,7 +121,7 @@ class Report:
     def yaml(self, obj):
         """Append `obj` as a fenced YAML block."""
         buffer = io.StringIO()
-        YAML(typ="rt").dump(obj, buffer)
+        yaml_rt().dump(obj, buffer)
         self.md(f"```yaml\n{buffer.getvalue()}```")
 
     def chart(self, chart):

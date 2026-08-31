@@ -4,17 +4,13 @@ import sys
 
 import altair as alt
 import pandas as pd
-from ruamel.yaml import YAML
+from seqneut_funcs import yaml_rt
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
 sys.stderr = sys.stdout = open(snakemake.log[0], "w")  # noqa: SIM115
 
-yaml = YAML(typ="rt")
-# Disable line wrapping: barcode/serum/virus names can exceed the default
-# 80-char width, and ruamel wraps *keys* mid-string in a way that produces
-# YAML that cannot be re-parsed on a subsequent run.
-yaml.width = 4096
+yaml = yaml_rt()
 
 _ = alt.data_transformers.disable_max_rows()
 

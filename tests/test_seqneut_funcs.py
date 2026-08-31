@@ -1,5 +1,7 @@
 """Tests for ``scripts/seqneut_funcs.py``."""
 
+import io
+
 import numpy
 import pandas as pd
 import pytest
@@ -10,7 +12,29 @@ from seqneut_funcs import (
     pearson_r_log10,
     round_sig,
     viruses_in_plot_order,
+    yaml_rt,
 )
+
+
+def test_yaml_rt_does_not_wrap_a_long_key():
+    """A wrapped mapping key emits YAML that cannot be read back.
+
+    `ruamel` wraps a plain scalar past its width, and a key wrapped mid-string is no
+    longer a valid implicit key. Keys longer than its `MAX_SIMPLE_KEY_LENGTH` of 128 are
+    written in the explicit `? key` form, which survives, so it is the keys in between
+    that break: here a space-joined barcode, well and serum replicate.
+
+    """
+    key = (
+        "A/Massachusetts/18/2022_H3N2 AGCTAGCTAGCTAGCTAGCT "
+        "M09d21-serum-participant-0123 1"
+    )
+    drops = {"plate1": {"barcode drops": {key: "min_no_serum_count_per_barcode_well"}}}
+
+    buffer = io.StringIO()
+    yaml_rt().dump(drops, buffer)
+
+    assert yaml_rt().load(io.StringIO(buffer.getvalue())) == drops
 
 
 def test_round_sig():

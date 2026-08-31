@@ -10,7 +10,7 @@ import neutcurve
 import numpy
 import pandas as pd
 from neutcurve.colorschemes import CBMARKERS, CBPALETTE
-from ruamel import yaml
+from seqneut_funcs import yaml_rt
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
@@ -1470,13 +1470,7 @@ qc_drops_for_yaml = {
     for key, val in qc_drops.items()
 }
 with open(qc_drops_yaml, "w") as f_yaml:
-    yaml_writer = yaml.YAML(typ="rt")
-    # Disable line wrapping: barcode/serum-replicate names can exceed the
-    # default 80-char width, and ruamel wraps *keys* mid-string in a way
-    # that produces YAML that cannot be re-parsed (see issue with long
-    # sample names like "A/SouthAfrica/.../2026_H1N1 <long serum name>").
-    yaml_writer.width = 4096
-    yaml_writer.dump(qc_drops_for_yaml, f_yaml)
+    yaml_rt().dump(qc_drops_for_yaml, f_yaml)
 report.md("Here are the QC drops:")
 report.yaml(qc_drops_for_yaml)
 

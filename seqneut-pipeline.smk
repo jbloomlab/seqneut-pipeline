@@ -202,6 +202,7 @@ if plates:
         """Process a plate to QC and convert counts to fraction infectivity."""
         input:
             report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             count_csvs=lambda wc: expand(
                 rules.count_barcodes.output.counts,
                 sample=plates[wc.plate]["samples"]["sample"],
@@ -406,6 +407,7 @@ if plates:
             # `snakemake` re-runs a `script:` rule when the script itself changes, but
             # does not follow its imports, so the modules it imports are inputs
             report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+            funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
             plate_qc_drops=expand(rules.process_plate.output.qc_drops, plate=plates),
             groups_sera_qc_drops=lambda wc: [
                 rules.group_serum_titers.output.qc_drops.format(
