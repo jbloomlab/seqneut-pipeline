@@ -3,6 +3,8 @@
 #### version 9.2.1
 - Fixed a bug where `qc_drops.yml` files (per-plate, per-serum, and the aggregated files in `./results/qc_drops/`) could be written with barcode/serum/virus names wrapped mid-key by `ruamel.yaml`'s default line width, producing YAML that could not be re-parsed by `aggregate_qc_drops`. Fixed by disabling line wrapping when writing these files.
 
+- Fixed a bug where `aggregate_qc_drops` failed with `ValueError: Cannot set a DataFrame with multiple columns to the single column barcode` when no plate had any barcode-level QC drops, which made the pipeline unfinishable for a project whose libraries were clean enough to drop nothing. The report now also says in words when no barcode was dropped, or when no virus titers were dropped at serum QC, rather than just showing empty plots.
+
 - Plates with no QC drops now appear in the plate-drops plot of `./results/qc_drops/aggregate_qc_drops.html`, as an empty row, rather than being missing from it. The report also now names any drop type with no drops on any plate, which likewise has no column in that plot.
 
 - When two of the files collected into `./results/docs` share a base name, `build_docs` now raises an error naming them and the base name they share, rather than a bare `AssertionError`. It also now rejects a collected file named `index.html`, which the generated index would silently overwrite.

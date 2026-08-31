@@ -183,21 +183,18 @@ report.md("Now make a plot showing how often each barcode is dropped for each re
 
 barcode_drops = (
     plate_qc_drops_df.query("`drop type`.str.startswith('barcode')")
-    .assign(
-        # the same keys the loop above split, which asserted their shape
-        barcode=lambda x: x.apply(
-            lambda r: (
-                r["drop"] if r["drop type"] == "barcodes" else r["drop"].split()[0]
-            ),
-            axis=1,
-        )
-    )
+    # a drop key is a barcode alone, or a barcode and a well or serum replicate joined
+    # by a space, whose shape the loop above asserted
+    .assign(barcode=lambda x: x["drop"].str.split().str[0])
     .groupby(["drop type", "barcode"], as_index=False)
     .aggregate(
         plates_where_dropped=pd.NamedAgg("plate", "nunique"),
         total_drops=pd.NamedAgg("plate", "count"),
     )
 )
+
+if barcode_drops.empty:
+    report.md("No barcode was dropped by any plate's QC, so the plot below is empty.")
 
 barcode_selection = alt.selection_point(fields=["barcode"], on="mouseover", empty=False)
 
@@ -277,6 +274,11 @@ groups_sera_qc_drop_tups = [
 groups_sera_qc_drops_df = pd.DataFrame(
     groups_sera_qc_drop_tups, columns=["group", "serum", "virus", "reason"]
 )
+
+if groups_sera_qc_drops_df.empty:
+    report.md(
+        "No virus titers were dropped at serum QC, so the two plots below are empty."
+    )
 
 report.md("""
     Plot the number of viruses dropped for each group/serum.
