@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 import neutcurve
 import numpy
 import pandas as pd
-from ruamel import yaml
 from seqneut_funcs import (
     get_median_bound,
     narrow_for_altair,
     padded_log_domain,
     pearson_r_log10,
     viruses_in_plot_order,
+    yaml_rt,
 )
 from seqneut_report import Report
 
@@ -472,7 +472,7 @@ if nkept := (len(viruses_failing_qc) - len(viruses_to_drop)):
     )
 report.md(f"Writing QC drops to `{qc_drops_file}`", log=True)
 with open(qc_drops_file, "w") as f_qc_drops:
-    yaml.YAML(typ="rt").dump(viruses_to_drop, f_qc_drops)
+    yaml_rt().dump(viruses_to_drop, f_qc_drops)
 
 report.md("""
     Write the individual per-replicate titers to a file.

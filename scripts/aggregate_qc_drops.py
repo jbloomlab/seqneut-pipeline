@@ -4,13 +4,13 @@ import sys
 
 import altair as alt
 import pandas as pd
-from ruamel.yaml import YAML
+from seqneut_funcs import yaml_rt
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
 sys.stderr = sys.stdout = open(snakemake.log[0], "w")  # noqa: SIM115
 
-yaml = YAML(typ="rt")
+yaml = yaml_rt()
 
 _ = alt.data_transformers.disable_max_rows()
 

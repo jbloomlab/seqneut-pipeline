@@ -10,7 +10,7 @@ import neutcurve
 import numpy
 import pandas as pd
 from neutcurve.colorschemes import CBMARKERS, CBPALETTE
-from ruamel import yaml
+from seqneut_funcs import yaml_rt
 from seqneut_report import Report
 
 # `noqa: SIM115` as this log file must stay open for the life of the script
@@ -1470,7 +1470,7 @@ qc_drops_for_yaml = {
     for key, val in qc_drops.items()
 }
 with open(qc_drops_yaml, "w") as f_yaml:
-    yaml.YAML(typ="rt").dump(qc_drops_for_yaml, f_yaml)
+    yaml_rt().dump(qc_drops_for_yaml, f_yaml)
 report.md("Here are the QC drops:")
 report.yaml(qc_drops_for_yaml)
 

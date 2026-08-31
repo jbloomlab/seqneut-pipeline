@@ -1,12 +1,27 @@
 """Functions shared by more than one of the pipeline's analysis scripts."""
 
+import sys
+
 import numpy
 import pandas
+from ruamel.yaml import YAML
+
+# The QC-drop keys are names joined by spaces, so `ruamel` wraps them at its default
+# width of 80, and a mapping key wrapped mid-string emits YAML that no longer parses.
+# `width = None` would not help: `ruamel` falls back to 80 for a falsy width.
+YAML_WIDTH = sys.maxsize
 
 # Floats that came from arithmetic are rounded to this many significant figures before
 # being embedded in a chart. A median over an even number of values otherwise runs to 18
 # characters apiece, which is far finer than a pixel and finer than the chart tooltips.
 SIG_FIGS_FOR_CHARTS = 4
+
+
+def yaml_rt():
+    """A round-trip `ruamel` YAML that never wraps a line."""
+    yaml = YAML(typ="rt")
+    yaml.width = YAML_WIDTH
+    return yaml
 
 
 def round_sig(x):
