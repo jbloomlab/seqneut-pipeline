@@ -3,6 +3,8 @@
 #### version 9.2.1
 - Fixed a bug where `qc_drops.yml` files (per-plate, per-serum, and the aggregated files in `./results/qc_drops/`) could be written with barcode/serum/virus names wrapped mid-key by `ruamel.yaml`'s default line width, producing YAML that could not be re-parsed by `aggregate_qc_drops`. Fixed by disabling line wrapping when writing these files.
 
+- When two of the files collected into `./results/docs` share a base name, `build_docs` now raises an error naming them and the base name they share, rather than a bare `AssertionError`. It also now rejects a collected file named `index.html`, which the generated index would silently overwrite.
+
 ### version 9.2.0
 - Added an optional `viral_library_validations` key that checks each CSV in `viral_libraries` against expectations declared in the config and writes a report to `./results/validate_viral_library/{viral_library}_validation.txt`. Added because most projects had their own version of this rule, which is better modularized in the pipeline. A project with a local copy has to delete it in the same commit that bumps this submodule, as `snakemake` will not parse two rules of the same name.
 
