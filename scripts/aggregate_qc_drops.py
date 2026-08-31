@@ -66,8 +66,21 @@ plate_qc_drop_counts = plate_qc_drops_df.groupby(
 ).aggregate(n_drops=pd.NamedAgg("drop", "nunique"))
 assert plate_qc_drop_counts["n_drops"].sum() == len(plate_qc_drops_df)
 
+# a drop type with no drops on any plate has no rows, and so no column in the plot
+drop_types_with_no_drops = [
+    drop_type
+    for drop_type in dict.fromkeys(k for d in plate_qc_drops.values() for k in d)
+    if drop_type not in set(plate_qc_drops_df["drop type"])
+]
+if drop_types_with_no_drops:
+    report.md(
+        "No plate had any drops of the following types, so they are not plotted below: "
+        + ", ".join(f"`{drop_type}`" for drop_type in drop_types_with_no_drops)
+    )
+
 report.md("""
     Now plot the number of drops for each plate.
+    A plate with no drops at all still gets a row, which is simply empty.
     You should be worried (maybe re-do or discard) any plates with a very large number
     of drops:
     """)
@@ -84,7 +97,8 @@ plate_qc_drop_counts_chart = (
         ),
         alt.Y(
             "plate",
-            sort=plates,
+            # a domain rather than `sort`, so a plate with no drops still gets a row
+            scale=alt.Scale(domain=plates),
             title=None,
             axis=alt.Axis(labelFontStyle="bold", labelFontSize=11),
         ),
