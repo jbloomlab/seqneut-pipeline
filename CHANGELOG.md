@@ -1,5 +1,12 @@
 # CHANGELOG
 
+#### version 9.2.2
+- `publish_docs_gh-pages.sh` now publishes documentation of any size, and no longer requires `rsync`. It previously needed as much free temporary disk space as `./results/docs` itself, and so failed with `No space left on device` for a project whose documentation had grown to ~0.9 GB.
+
+- `publish_docs_gh-pages.sh` no longer creates or deletes branches or worktrees in your repository, and refuses to publish documentation with no top-level `index.html` rather than replacing an already published site with nothing.
+
+- If you scripted around the old behavior of `publish_docs_gh-pages.sh`, note that it no longer reads `TMPDIR` and no longer leaves a local branch tracking the Pages branch.
+
 #### version 9.2.1
 - Fixed a bug where `qc_drops.yml` files (per-plate, per-serum, and the aggregated files in `./results/qc_drops/`) could be written with barcode/serum/virus names wrapped mid-key by `ruamel.yaml`'s default line width, producing YAML that could not be re-parsed by `aggregate_qc_drops`. Fixed by disabling line wrapping when writing these files.
 
