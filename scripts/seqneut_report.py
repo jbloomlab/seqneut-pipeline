@@ -16,7 +16,6 @@ import io
 import textwrap
 
 import markdown
-from neutcurve.fig_utils import fig_html
 from seqneut_funcs import yaml_rt
 
 # Blocks that can be taller than the window are put in a box of this height that scrolls
@@ -150,6 +149,10 @@ class Report:
 
     def figure(self, fig, display_method):
         """Append a `matplotlib` figure, rendered as by `neutcurve.fig_utils.fig_html`."""
+        # Imported here rather than at the top so that the scripts that never draw a figure
+        # run in a `conda` environment without `neutcurve` (see `envs/`).
+        from neutcurve.fig_utils import fig_html
+
         self._blocks.append(fig_html(fig, display_method))
 
     def write(self, path):

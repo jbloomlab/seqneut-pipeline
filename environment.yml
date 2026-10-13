@@ -23,5 +23,5 @@ dependencies:
   - ruff
   - pip:
     - dms_variants==1.6.0
-    - neutcurve==2.4.0
+    - neutcurve==2.5.0
     - tree-annotated-plot==0.4.0

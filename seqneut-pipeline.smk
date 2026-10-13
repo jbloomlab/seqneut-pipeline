@@ -160,7 +160,7 @@ if viral_library_validations:
         log:
             "results/logs/validate_viral_library_{viral_library}.txt",
         conda:
-            "environment.yml"
+            "envs/validate_viral_library.yml"
         params:
             validations=lambda wc: viral_library_validations[wc.viral_library],
         script:
@@ -180,7 +180,7 @@ if plates:
         log:
             "results/logs/count_barcodes_{sample}.txt",
         conda:
-            "environment.yml"
+            "envs/count_barcodes.yml"
         params:
             viral_barcodes=lambda wc: sorted(
                 viral_libraries[plates[samples[wc.sample]["plate"]]["viral_library"]][
@@ -220,7 +220,7 @@ if plates:
         log:
             "results/logs/process_{plate}.txt",
         conda:
-            "environment.yml"
+            "envs/neutcurve.yml"
         params:
             # pass DataFrames/Series as dict/list for snakemake params rerun triggers
             viral_barcodes=lambda wc: (
@@ -256,7 +256,7 @@ if plates:
         log:
             "results/logs/groups_sera_by_plate.txt",
         conda:
-            "environment.yml"
+            "envs/report.yml"
         params:
             plates=list(plates),
         script:
@@ -285,7 +285,7 @@ if plates:
         log:
             "results/logs/group_serum_titers_{group}_{serum}.txt",
         conda:
-            "environment.yml"
+            "envs/neutcurve.yml"
         params:
             viral_strain_plot_order=viral_strain_plot_order,
             curve_display_method=config["curve_display_method"],
@@ -351,7 +351,7 @@ if plates:
             # of the path would be split at its first '_'
             plate="|".join(re.escape(plate) for plate in plates),
         conda:
-            "environment.yml"
+            "envs/report.yml"
         params:
             plate_date=lambda wc: plates[wc.plate]["date"],
             # keyed by plate in config order, which orders the panels of the plots
@@ -391,7 +391,7 @@ if plates:
         log:
             "results/logs/aggregate_titers.txt",
         conda:
-            "environment.yml"
+            "envs/neutcurve.yml"
         params:
             viral_strain_plot_order=viral_strain_plot_order,
             groups_sera=lambda wc: list(groups_sera_plates()),
@@ -423,7 +423,7 @@ if plates:
         log:
             "results/logs/aggregate_qc_drops.txt",
         conda:
-            "environment.yml"
+            "envs/report.yml"
         params:
             plates=list(plates),
             groups_sera=lambda wc: list(groups_sera_plates()),
@@ -442,7 +442,7 @@ rule miscellaneous_plate_count_barcodes:
     log:
         "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
     conda:
-        "environment.yml"
+        "envs/count_barcodes.yml"
     params:
         viral_barcodes=lambda wc: sorted(
             viral_libraries[miscellaneous_plates[wc.misc_plate]["viral_library"]][
@@ -500,7 +500,7 @@ rule build_docs:
     log:
         "results/logs/build_docs.txt",
     conda:
-        "environment.yml"
+        "envs/build_docs.yml"
     params:
         description=config["description"],
         groups_sera=lambda wc: (list(groups_sera_plates()) if plates else []),

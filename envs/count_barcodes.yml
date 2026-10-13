@@ -1,0 +1,17 @@
+# `conda` environment for the `count_barcodes` and
+# `miscellaneous_plate_count_barcodes` rules of `seqneut-pipeline.smk`.
+# A package pinned here must be pinned identically in ../environment.yml and every other
+# file in this directory, which tests/test_envs.py checks.
+name: seqneut-pipeline-count_barcodes
+
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+
+dependencies:
+  - pandas=2.3
+  - pip
+  - python=3.14
+  - pip:
+    - dms_variants==1.6.0

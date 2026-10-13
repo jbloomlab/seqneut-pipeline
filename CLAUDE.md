@@ -24,6 +24,10 @@ commit of that submodule; update periodically with
   a `get` default: emptying such a key from a `--configfile` override requires setting it
   to null, since `snakemake.utils.update_config` merges recursively and so leaves the
   original value untouched given an empty dict.
+- Each rule runs in the minimal `conda` environment in `envs/` for its script, so a script
+  that gains an import may need that package added to its rule's environment as well as to
+  `environment.yml`. `pytest` does not catch a missing one, as the tests run in
+  `environment.yml`, which holds every package; only running the rule does.
 - Numbers in this pipeline's output CSVs are written to four significant digits
   (`float_format="%.4g"`) unless a different precision is called for explicitly.
   `scripts/count_barcodes.py`'s `counts.csv` and `invalid.csv` are the deliberate exception,
