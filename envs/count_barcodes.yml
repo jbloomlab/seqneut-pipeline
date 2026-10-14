@@ -1,7 +1,8 @@
 # `conda` environment for the `count_barcodes` and
-# `miscellaneous_plate_count_barcodes` rules of `seqneut-pipeline.smk`.
-# A package pinned here must be pinned identically in ../environment.yml and every other
-# file in this directory, which tests/test_envs.py checks.
+# `miscellaneous_plate_count_barcodes` rules of `seqneut-pipeline.smk`. Every other rule
+# runs in ../environment.yml. Counting barcodes is kept apart because it is slow to rerun
+# from the FASTQs, and `snakemake` reruns a rule whenever its environment changes, so this
+# file is left alone when ../environment.yml is updated unless a change is needed here.
 name: seqneut-pipeline-count_barcodes
 
 channels:

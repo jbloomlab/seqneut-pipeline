@@ -1,9 +1,15 @@
 # CHANGELOG
 
 #### version 9.3.0 (unreleased)
-- Each rule now runs in its own minimal `conda` environment, defined in `envs/`, rather than all of them sharing `environment.yml`, so updating a dependency rebuilds only the environments that use it. `environment.yml` remains the environment to activate and run the pipeline from.
+- The barcode-counting rules (`count_barcodes` and `miscellaneous_plate_count_barcodes`) now run in their own `conda` environment, `envs/count_barcodes.yml`, while every other rule still runs in `environment.yml`. `snakemake` reruns a rule whenever its environment changes, and counting is slow to rerun from the FASTQs, so updating `environment.yml` no longer reruns it. Moving the counting rules to the new environment is itself such a change, so the first run after upgrading to this version reruns them once.
 
-- Update `neutcurve`: 2.4.0 -> 2.5.0, which draws large grids of neutralization curves much faster. The curve plots are unchanged, except that panels above an empty spot in the last row now label their x-axis ticks.
+- Update package versions:
+  + `neutcurve`: 2.4.0 -> 2.5.0, which draws large grids of neutralization curves much faster. The curve plots are unchanged, except that panels above an empty spot in the last row now label their x-axis ticks.
+  + `altair`: 6.2 -> 6.3
+  + `markdown`: 3.10 -> 3.11
+  + `snakemake`: 9.25 -> 9.27
+
+- Remove `marimo` from `environment.yml`; the pipeline has not used it since version 9.0.0.
 
 #### version 9.2.2
 - `publish_docs_gh-pages.sh` now publishes documentation of any size, and no longer requires `rsync`. It previously needed as much free temporary disk space as `./results/docs` itself, and so failed with `No space left on device` for a project whose documentation had grown to ~0.9 GB.

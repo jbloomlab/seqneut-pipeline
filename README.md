@@ -51,7 +51,7 @@ So the overall structure will look like this:
 ├── seqneut-pipeline [added as git submodule]
 │   ├── seqneut-pipeline.smk [snakemake rules for pipeline]
 │   ├── environment.yml [conda environment to run the pipeline from]
-│   ├── envs [conda environments for the individual rules]
+│   ├── envs [conda environment for the barcode-counting rules]
 │   └── ... [other contents of seqneut-pipeline]
 ├── README.md [README for your project]
 ├── config.yml [YAML configuration for project]
@@ -102,8 +102,8 @@ conda activate seqneut-pipeline
 snakemake -j <n_jobs> --software-deployment-method conda
 ```
 
-With `--software-deployment-method conda`, each rule runs in its own minimal environment defined in [envs/](envs), so that updating one dependency rebuilds only the environments that use it rather than all of them.
-[environment.yml](environment.yml) holds the union of those environments plus the tools for formatting, linting, and testing, and a package in more than one of these files is pinned identically in each (which `pytest` checks).
+With `--software-deployment-method conda`, the rules that count barcodes from the FASTQ files run in their own environment, [envs/count_barcodes.yml](envs/count_barcodes.yml), and every other rule runs in [environment.yml](environment.yml).
+`snakemake` reruns a rule whenever its environment changes, and counting barcodes is slow to rerun, so keeping it apart means that updating [environment.yml](environment.yml) does not rerun it.
 
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
