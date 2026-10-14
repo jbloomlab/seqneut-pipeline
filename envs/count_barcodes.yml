@@ -1,0 +1,18 @@
+# `conda` environment for the `count_barcodes` and
+# `miscellaneous_plate_count_barcodes` rules of `seqneut-pipeline.smk`. Every other rule
+# runs in ../environment.yml. Counting barcodes is kept apart because it is slow to rerun
+# from the FASTQs, and `snakemake` reruns a rule whenever its environment changes, so this
+# file is left alone when ../environment.yml is updated unless a change is needed here.
+name: seqneut-pipeline-count_barcodes
+
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+
+dependencies:
+  - pandas=2.3
+  - pip
+  - python=3.14
+  - pip:
+    - dms_variants==1.6.0

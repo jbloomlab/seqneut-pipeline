@@ -180,7 +180,7 @@ if plates:
         log:
             "results/logs/count_barcodes_{sample}.txt",
         conda:
-            "environment.yml"
+            "envs/count_barcodes.yml"
         params:
             viral_barcodes=lambda wc: sorted(
                 viral_libraries[plates[samples[wc.sample]["plate"]]["viral_library"]][
@@ -442,7 +442,7 @@ rule miscellaneous_plate_count_barcodes:
     log:
         "results/logs/miscellaneous_plate_count_barcodes_{misc_plate}_{well}.txt",
     conda:
-        "environment.yml"
+        "envs/count_barcodes.yml"
     params:
         viral_barcodes=lambda wc: sorted(
             viral_libraries[miscellaneous_plates[wc.misc_plate]["viral_library"]][
