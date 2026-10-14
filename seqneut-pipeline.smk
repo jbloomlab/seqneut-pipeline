@@ -221,6 +221,10 @@ if plates:
             "results/logs/process_{plate}.txt",
         conda:
             "environment.yml"
+        resources:
+            # generous; a large plate uses ~1.7 GB
+            mem_mb=4096,
+            runtime=60,
         params:
             # pass DataFrames/Series as dict/list for snakemake params rerun triggers
             viral_barcodes=lambda wc: (
@@ -392,6 +396,9 @@ if plates:
             "results/logs/aggregate_titers.txt",
         conda:
             "environment.yml"
+        resources:
+            # generous; grows with number of sera, ~1.2 GB for ~300
+            mem_mb=4096,
         params:
             viral_strain_plot_order=viral_strain_plot_order,
             groups_sera=lambda wc: list(groups_sera_plates()),

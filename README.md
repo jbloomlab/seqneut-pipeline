@@ -105,6 +105,8 @@ snakemake -j <n_jobs> --software-deployment-method conda
 With `--software-deployment-method conda`, the rules that count barcodes from the FASTQ files run in their own environment, [envs/count_barcodes.yml](envs/count_barcodes.yml), and every other rule runs in [environment.yml](environment.yml).
 `snakemake` reruns a rule whenever its environment changes, and counting barcodes is slow to rerun, so keeping it apart means that updating [environment.yml](environment.yml) does not rerun it.
 
+To run on a SLURM cluster with each job submitted as its own cluster job, copy the reference [profile](https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles) [./test_example/profiles/slurm/config.yaml](test_example/profiles/slurm/config.yaml) to `profiles/slurm/config.yaml` in your repo and run `snakemake --profile profiles/slurm`; the `slurm` executor's plugin is in [environment.yml](environment.yml). The profile's `default-resources` cover your own rules and the pipeline's, except those that declare their own `resources` in [seqneut-pipeline.smk](seqneut-pipeline.smk); override those with `set-resources` in your profile if your project needs more.
+
 ## Configuring the pipeline
 The configuration for the pipeline is in a file called `config.yml`.
 An example configuration file is in [./test_example/config.yml](test_example/config.yml) (although some of the QC thresholds are set more leniently to make the test example work for small data as described in the comments in that YAML).

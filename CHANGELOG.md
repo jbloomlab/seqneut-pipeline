@@ -11,6 +11,8 @@
 
 - Remove `marimo` from `environment.yml`; the pipeline has not used it since version 9.0.0.
 
+- Support running on a SLURM cluster with each job submitted as its own cluster job. `environment.yml` adds `snakemake-executor-plugin-slurm` (2.8), `process_plate` and `aggregate_titers`, the rules that need more memory or time than a small default, declare `resources`, and `test_example/profiles/slurm/config.yaml` is a reference profile for a project to copy; see the README.
+
 #### version 9.2.2
 - `publish_docs_gh-pages.sh` now publishes documentation of any size, and no longer requires `rsync`. It previously needed as much free temporary disk space as `./results/docs` itself, and so failed with `No space left on device` for a project whose documentation had grown to ~0.9 GB.
 
