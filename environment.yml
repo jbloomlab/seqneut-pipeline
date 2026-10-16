@@ -21,6 +21,7 @@ dependencies:
   - snakemake=9.27
   - snakemake-executor-plugin-slurm=2.8
   - ruff
+  - vl-convert-python=1.9
   - pip:
     - dms_variants==1.6.0
     - neutcurve==2.5.0

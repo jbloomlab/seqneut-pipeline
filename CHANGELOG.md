@@ -1,6 +1,6 @@
 # CHANGELOG
 
-#### version 9.3.0 (unreleased)
+#### version 9.3.0
 - The barcode-counting rules (`count_barcodes` and `miscellaneous_plate_count_barcodes`) now run in their own `conda` environment, `envs/count_barcodes.yml`, while every other rule still runs in `environment.yml`. `snakemake` reruns a rule whenever its environment changes, and counting is slow to rerun from the FASTQs, so updating `environment.yml` no longer reruns it. Moving the counting rules to the new environment is itself such a change, so the first run after upgrading to this version reruns them once.
 
 - Update package versions:
@@ -8,6 +8,8 @@
   + `altair`: 6.2 -> 6.3
   + `markdown`: 3.10 -> 3.11
   + `snakemake`: 9.25 -> 9.27
+
+- Add `vl-convert-python` 1.9 to `environment.yml` explicitly, rather than relying on it being pulled in by `pip` as a dependency of `tree-annotated-plot`, so that it is pinned and installed from `conda-forge`.
 
 - Remove `marimo` from `environment.yml`; the pipeline has not used it since version 9.0.0.
 
