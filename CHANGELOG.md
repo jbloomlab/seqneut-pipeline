@@ -9,6 +9,8 @@
   + `markdown`: 3.10 -> 3.11
   + `snakemake`: 9.25 -> 9.27
 
+- Add `vl-convert-python` 1.9 to `environment.yml` explicitly, rather than relying on it being pulled in by `pip` as a dependency of `tree-annotated-plot`, so that it is pinned and installed from `conda-forge`.
+
 - Remove `marimo` from `environment.yml`; the pipeline has not used it since version 9.0.0.
 
 - Support running on a SLURM cluster with each job submitted as its own cluster job. `environment.yml` adds `snakemake-executor-plugin-slurm` (2.8), `process_plate` and `aggregate_titers`, the rules that need more memory or time than a small default, declare `resources`, and `test_example/profiles/slurm/config.yaml` is a reference profile for a project to copy; see the README.
