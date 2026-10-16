@@ -1,0 +1,21 @@
+# Reference profile for running on a SLURM cluster, submitting each job as its own
+# cluster job. Copy it to `profiles/slurm/config.yaml` in your repo and run
+# `snakemake --profile profiles/slurm`.
+
+executor: slurm
+
+# maximum jobs at once; suits the Fred Hutch cluster, so adjust for yours
+jobs: 200
+
+# for rules without their own `resources`; every rule is single-threaded
+default-resources:
+  mem_mb: 1024
+  runtime: 30
+
+software-deployment-method: conda
+
+# a shared filesystem can lag behind a job's exit
+latency-wait: 60
+
+rerun-incomplete: true
+keep-going: true

@@ -19,6 +19,7 @@ dependencies:
   - ruamel.yaml=0.19
   - snakefmt
   - snakemake=9.27
+  - snakemake-executor-plugin-slurm=2.8
   - ruff
   - pip:
     - dms_variants==1.6.0
