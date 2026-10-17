@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Correlate the titers on plate11 with those on the other plates of serum</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  margin: 0 auto;
+  max-width: 80em;
+  padding: 1.5em;
+}
+h1, h2, h3 { line-height: 1.25; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code { background: #f4f4f4; border-radius: 3px; padding: 0.1em 0.3em; }
+pre { background: #f4f4f4; border-radius: 4px; overflow-x: auto; padding: 0.6em 0.8em; }
+pre code { background: none; padding: 0; }
+/* a chart is drawn at its natural size, so a wide one scrolls rather than being clipped */
+.chart-block { margin: 1em 0; overflow-x: auto; }
+.scroll-box {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 1em 0;
+  max-height: 80vh;
+  overflow: auto;
+}
+.scroll-box table { border-collapse: collapse; font-size: 0.85em; }
+.scroll-box th, .scroll-box td {
+  border-bottom: 1px solid #eee;
+  padding: 0.25em 0.6em;
+  text-align: right;
+  white-space: nowrap;
+}
+.scroll-box th { background: #fafafa; position: sticky; top: 0; }
+</style>
+</head>
+<body>
+<h1>Correlate the titers on plate11 with those on the other plates of serum</h1>
+<div class="md-block"><p>Correlating the titers on <code>plate11</code> (dated 2023-09-26) of <code>serum</code> with those on the following 2 plate(s), which share at least one serum with it:</p>
+<ul>
+<li><code>plate2</code> (dated 2023-08-01)</li>
+<li><code>plate2_exact_dup</code> (dated 2023-08-01)</li>
+</ul></div>
+<div class="md-block"><h2>Get the per-replicate titers for the sera on this plate</h2>
+<p>Read the per-replicate titers for every serum measured on this plate; each of those
+files holds that serum's titers from all of the plates it was measured on, which is
+what the correlations below need.
+Each replicate has already passed the QC applied when its plate was processed, and
+records its plate and whether its virus was dropped by the per-serum QC on
+replicate-to-replicate variation:</p></div>
+<div class="md-block"><p>Read 768 per-replicate titers for 3 sera measured on <code>plate11</code></p></div>
+<div class="md-block"><h2>Get the titers for each strain on each plate</h2>
+<p>A plate can have several barcodes for a strain, so the titer for a strain against a
+serum on a plate is the median over that plate's barcodes.
+We use the same handling of the bound on a median titer as when medians are taken
+across all replicates of a serum:</p></div>
+<div class="md-block"><p>Got 252 serum-strain titers across the plates, 4 barcodes at most per titer</p></div>
+<div class="md-block"><h2>Correlate the titers on this plate with those on each other plate</h2>
+<p>For each of the other plates, get the titers for every serum measured on both it and
+this plate, and the Pearson correlation of the log titers for each of those sera.
+These per-serum correlations are the ones written to the CSV file at the bottom of
+this report; those annotating the plots are computed from the plotted points instead,
+so that they follow the dropdowns:</p></div>
+<div class="md-block"><p>Comparing <code>plate11</code> with 2 other plate(s), covering 144 plate-serum-strain titer comparison(s)</p></div>
+<div class="md-block"><p>The following 1 sera on <code>plate11</code> have no titers in common with another plate and so are not shown: ['Y044d30']</p></div>
+<div class="md-block"><h2>Plot the plate-to-plate correlations</h2>
+<p>Each point is one strain against one serum, at its titer on this plate (y axis)
+versus on the other plate (x axis), with the dashed <code>y = x</code> line for reference.
+Each panel is annotated with the number of titers, the number of sera, and the
+Pearson correlation of the log titers.</p>
+<p>Points are colored by whether they are retained in the final titers or were dropped
+by the per-serum QC on replicate-to-replicate variation.
+That QC drops a strain for a serum on all of its plates at once, so the color is the
+same in every panel, and a dropped point is not necessarily one that this panel's two
+plates disagreed about.
+Whether they disagreed is the distance from the <code>y = x</code> line, which the tooltip gives
+as the fold difference between the two plates.</p>
+<p>Two dropdowns below the plot restrict what is shown: <code>show strain-serum pairs by QC</code>
+to only the retained or only the dropped points, and <code>show serum</code> to a single serum.
+The annotated numbers are computed from whatever is currently shown, so the
+correlation over just the retained titers, or for one serum, comes from setting a
+dropdown.
+Mousing over a point highlights that strain-serum combination in every panel.</p>
+<p>The per-serum correlations are also in the CSV file at the bottom of this report:</p></div>
+<div class="chart-block">
+<style>
+  #chart_1.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_1.vega-embed details,
+  #chart_1.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_1"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_1") {
+      outputDiv = document.getElementById("chart_1");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false, "labelOverlap": true, "titleFontSize": 13, "titleFontWeight": "normal"}, "title": {"limit": 0}}, "concat": [{"layer": [{"data": {"name": "data-9e83ead2ca46cd8b42802b424f4438c6"}, "mark": {"type": "line", "color": "gray", "strokeDash": [4, 4], "strokeWidth": 1}, "encoding": {"x": {"field": "titer", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": "titer on plate2", "type": "quantitative"}, "y": {"axis": {"labels": true, "ticks": true}, "field": "titer", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": "titer on plate11", "type": "quantitative"}}, "name": "view_43c079ccd2a4cb8c_0"}, {"data": {"name": "data-b3858b98d866670a7f3a6c2cb5c5a86b"}, "mark": {"type": "point", "filled": true, "strokeOpacity": 1}, "encoding": {"color": {"field": "qc_status", "legend": {"symbolLimit": 0, "title": ["strain-serum QC status", "(use the 'show strain-serum", "pairs by QC' dropdown below", "the plot to show only one", "of these)"], "titleLimit": 400}, "scale": {"domain": ["retained in final titers", "dropped by per-serum QC"], "range": ["MediumBlue", "OrangeRed"]}, "type": "nominal"}, "fillOpacity": {"condition": {"param": "strain_serum_hover", "value": 1, "empty": false}, "value": 0.5}, "shape": {"field": "censored", "legend": {"titleLimit": 400}, "title": ["is either median titer", "censored at a bound?"], "type": "nominal"}, "size": {"condition": {"param": "strain_serum_hover", "value": 180, "empty": false}, "value": 60}, "stroke": {"condition": {"param": "strain_serum_hover", "value": "red", "empty": false}, "value": "black"}, "strokeWidth": {"condition": {"param": "strain_serum_hover", "value": 3, "empty": false}, "value": 0.5}, "tooltip": [{"field": "serum", "title": "serum", "type": "nominal"}, {"field": "virus", "title": "strain", "type": "nominal"}, {"field": "titer_y", "format": ".3g", "title": "titer on plate11", "type": "quantitative"}, {"field": "titer_x", "format": ".3g", "title": "titer on plate2", "type": "quantitative"}, {"field": "fold_difference", "format": ".2f", "title": "fold difference between these plates", "type": "quantitative"}, {"field": "n_barcodes_y", "title": "barcodes on plate11", "type": "quantitative"}, {"field": "n_barcodes_x", "title": "barcodes on plate2", "type": "quantitative"}, {"field": "qc_status", "title": "QC status", "type": "nominal"}], "x": {"field": "titer_x", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": "titer on plate2", "type": "quantitative"}, "y": {"axis": {"labels": true, "ticks": true}, "field": "titer_y", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": "titer on plate11", "type": "quantitative"}}, "transform": [{"calculate": "datum.dropped_by_qc ? 'dropped by per-serum QC' : 'retained in final titers'", "as": "qc_status"}, {"filter": {"param": "qc_status_selection"}}, {"filter": {"param": "serum_selection"}}, {"calculate": "datum.titer_y > datum.titer_x ? datum.titer_y / datum.titer_x : datum.titer_x / datum.titer_y", "as": "fold_difference"}]}, {"data": {"name": "data-b3858b98d866670a7f3a6c2cb5c5a86b"}, "mark": {"type": "text", "align": "left", "baseline": "top", "color": "black", "fontSize": 10}, "encoding": {"text": {"field": "label", "type": "nominal"}, "x": {"value": 4}, "y": {"value": 4}}, "transform": [{"calculate": "datum.dropped_by_qc ? 'dropped by per-serum QC' : 'retained in final titers'", "as": "qc_status"}, {"filter": {"param": "qc_status_selection"}}, {"filter": {"param": "serum_selection"}}, {"calculate": "log(datum.titer_x) / LN10", "as": "log_x"}, {"calculate": "log(datum.titer_y) / LN10", "as": "log_y"}, {"joinaggregate": [{"op": "mean", "field": "log_x", "as": "mean_x"}, {"op": "mean", "field": "log_y", "as": "mean_y"}]}, {"calculate": "(datum.log_x - datum.mean_x) * (datum.log_y - datum.mean_y)", "as": "dxdy"}, {"calculate": "pow(datum.log_x - datum.mean_x, 2)", "as": "dx2"}, {"calculate": "pow(datum.log_y - datum.mean_y, 2)", "as": "dy2"}, {"aggregate": [{"op": "sum", "field": "dxdy", "as": "sxy"}, {"op": "sum", "field": "dx2", "as": "sxx"}, {"op": "sum", "field": "dy2", "as": "syy"}, {"op": "count", "as": "n"}, {"op": "distinct", "field": "serum", "as": "n_sera"}]}, {"calculate": "datum.n + (datum.n == 1 ? ' titer, ' : ' titers, ') + datum.n_sera + (datum.n_sera == 1 ? ' serum' : ' sera')", "as": "label"}]}, {"data": {"name": "data-b3858b98d866670a7f3a6c2cb5c5a86b"}, "mark": {"type": "text", "align": "left", "baseline": "top", "color": "black", "fontSize": 10}, "encoding": {"text": {"field": "label", "type": "nominal"}, "x": {"value": 4}, "y": {"value": 16}}, "transform": [{"calculate": "datum.dropped_by_qc ? 'dropped by per-serum QC' : 'retained in final titers'", "as": "qc_status"}, {"filter": {"param": "qc_status_selection"}}, {"filter": {"param": "serum_selection"}}, {"calculate": "log(datum.titer_x) / LN10", "as": "log_x"}, {"calculate": "log(datum.titer_y) / LN10", "as": "log_y"}, {"joinaggregate": [{"op": "mean", "field": "log_x", "as": "mean_x"}, {"op": "mean", "field": "log_y", "as": "mean_y"}]}, {"calculate": "(datum.log_x - datum.mean_x) * (datum.log_y - datum.mean_y)", "as": "dxdy"}, {"calculate": "pow(datum.log_x - datum.mean_x, 2)", "as": "dx2"}, {"calculate": "pow(datum.log_y - datum.mean_y, 2)", "as": "dy2"}, {"aggregate": [{"op": "sum", "field": "dxdy", "as": "sxy"}, {"op": "sum", "field": "dx2", "as": "sxx"}, {"op": "sum", "field": "dy2", "as": "syy"}, {"op": "count", "as": "n"}, {"op": "distinct", "field": "serum", "as": "n_sera"}]}, {"calculate": "datum.n < 3 ? 'R = not computed (< 3 titers)' : (datum.sxx <= 0 || datum.syy <= 0 ? 'R = not computed (no spread in titers)' : 'R = ' + format(datum.sxy / sqrt(datum.sxx * datum.syy), '.2f'))", "as": "label"}]}], "height": 200, "title": {"text": "plate2 (2023-08-01)", "fontSize": 13}, "width": 200}, {"layer": [{"data": {"name": "data-9e83ead2ca46cd8b42802b424f4438c6"}, "mark": {"type": "line", "color": "gray", "strokeDash": [4, 4], "strokeWidth": 1}, "encoding": {"x": {"field": "titer", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": "titer on plate2_exact_dup", "type": "quantitative"}, "y": {"axis": {"labels": false, "ticks": false}, "field": "titer", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": null, "type": "quantitative"}}, "name": "view_10b8c91a35cd8dcc_1"}, {"data": {"name": "data-b3858b98d866670a7f3a6c2cb5c5a86b"}, "mark": {"type": "point", "filled": true, "strokeOpacity": 1}, "encoding": {"color": {"field": "qc_status", "legend": null, "scale": {"domain": ["retained in final titers", "dropped by per-serum QC"], "range": ["MediumBlue", "OrangeRed"]}, "type": "nominal"}, "fillOpacity": {"condition": {"param": "strain_serum_hover", "value": 1, "empty": false}, "value": 0.5}, "shape": {"field": "censored", "legend": null, "title": ["is either median titer", "censored at a bound?"], "type": "nominal"}, "size": {"condition": {"param": "strain_serum_hover", "value": 180, "empty": false}, "value": 60}, "stroke": {"condition": {"param": "strain_serum_hover", "value": "red", "empty": false}, "value": "black"}, "strokeWidth": {"condition": {"param": "strain_serum_hover", "value": 3, "empty": false}, "value": 0.5}, "tooltip": [{"field": "serum", "title": "serum", "type": "nominal"}, {"field": "virus", "title": "strain", "type": "nominal"}, {"field": "titer_y", "format": ".3g", "title": "titer on plate11", "type": "quantitative"}, {"field": "titer_x", "format": ".3g", "title": "titer on plate2_exact_dup", "type": "quantitative"}, {"field": "fold_difference", "format": ".2f", "title": "fold difference between these plates", "type": "quantitative"}, {"field": "n_barcodes_y", "title": "barcodes on plate11", "type": "quantitative"}, {"field": "n_barcodes_x", "title": "barcodes on plate2_exact_dup", "type": "quantitative"}, {"field": "qc_status", "title": "QC status", "type": "nominal"}], "x": {"field": "titer_x", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": "titer on plate2_exact_dup", "type": "quantitative"}, "y": {"axis": {"labels": false, "ticks": false}, "field": "titer_y", "scale": {"domain": [152.9, 6371.0], "nice": false, "type": "log"}, "title": null, "type": "quantitative"}}, "transform": [{"calculate": "datum.dropped_by_qc ? 'dropped by per-serum QC' : 'retained in final titers'", "as": "qc_status"}, {"filter": {"param": "qc_status_selection"}}, {"filter": {"param": "serum_selection"}}, {"calculate": "datum.titer_y > datum.titer_x ? datum.titer_y / datum.titer_x : datum.titer_x / datum.titer_y", "as": "fold_difference"}]}, {"data": {"name": "data-b3858b98d866670a7f3a6c2cb5c5a86b"}, "mark": {"type": "text", "align": "left", "baseline": "top", "color": "black", "fontSize": 10}, "encoding": {"text": {"field": "label", "type": "nominal"}, "x": {"value": 4}, "y": {"value": 4}}, "transform": [{"calculate": "datum.dropped_by_qc ? 'dropped by per-serum QC' : 'retained in final titers'", "as": "qc_status"}, {"filter": {"param": "qc_status_selection"}}, {"filter": {"param": "serum_selection"}}, {"calculate": "log(datum.titer_x) / LN10", "as": "log_x"}, {"calculate": "log(datum.titer_y) / LN10", "as": "log_y"}, {"joinaggregate": [{"op": "mean", "field": "log_x", "as": "mean_x"}, {"op": "mean", "field": "log_y", "as": "mean_y"}]}, {"calculate": "(datum.log_x - datum.mean_x) * (datum.log_y - datum.mean_y)", "as": "dxdy"}, {"calculate": "pow(datum.log_x - datum.mean_x, 2)", "as": "dx2"}, {"calculate": "pow(datum.log_y - datum.mean_y, 2)", "as": "dy2"}, {"aggregate": [{"op": "sum", "field": "dxdy", "as": "sxy"}, {"op": "sum", "field": "dx2", "as": "sxx"}, {"op": "sum", "field": "dy2", "as": "syy"}, {"op": "count", "as": "n"}, {"op": "distinct", "field": "serum", "as": "n_sera"}]}, {"calculate": "datum.n + (datum.n == 1 ? ' titer, ' : ' titers, ') + datum.n_sera + (datum.n_sera == 1 ? ' serum' : ' sera')", "as": "label"}]}, {"data": {"name": "data-b3858b98d866670a7f3a6c2cb5c5a86b"}, "mark": {"type": "text", "align": "left", "baseline": "top", "color": "black", "fontSize": 10}, "encoding": {"text": {"field": "label", "type": "nominal"}, "x": {"value": 4}, "y": {"value": 16}}, "transform": [{"calculate": "datum.dropped_by_qc ? 'dropped by per-serum QC' : 'retained in final titers'", "as": "qc_status"}, {"filter": {"param": "qc_status_selection"}}, {"filter": {"param": "serum_selection"}}, {"calculate": "log(datum.titer_x) / LN10", "as": "log_x"}, {"calculate": "log(datum.titer_y) / LN10", "as": "log_y"}, {"joinaggregate": [{"op": "mean", "field": "log_x", "as": "mean_x"}, {"op": "mean", "field": "log_y", "as": "mean_y"}]}, {"calculate": "(datum.log_x - datum.mean_x) * (datum.log_y - datum.mean_y)", "as": "dxdy"}, {"calculate": "pow(datum.log_x - datum.mean_x, 2)", "as": "dx2"}, {"calculate": "pow(datum.log_y - datum.mean_y, 2)", "as": "dy2"}, {"aggregate": [{"op": "sum", "field": "dxdy", "as": "sxy"}, {"op": "sum", "field": "dx2", "as": "sxx"}, {"op": "sum", "field": "dy2", "as": "syy"}, {"op": "count", "as": "n"}, {"op": "distinct", "field": "serum", "as": "n_sera"}]}, {"calculate": "datum.n < 3 ? 'R = not computed (< 3 titers)' : (datum.sxx <= 0 || datum.syy <= 0 ? 'R = not computed (no spread in titers)' : 'R = ' + format(datum.sxy / sqrt(datum.sxx * datum.syy), '.2f'))", "as": "label"}]}], "height": 200, "title": {"text": "plate2_exact_dup (2023-08-01)", "fontSize": 13}, "width": 200}], "columns": 2, "params": [{"name": "qc_status_selection", "select": {"type": "point", "fields": ["qc_status"]}, "bind": {"input": "select", "options": [null, "retained in final titers", "dropped by per-serum QC"], "labels": ["all", "retained in final titers", "dropped by per-serum QC"], "name": "show strain-serum pairs by QC"}, "views": ["view_43c079ccd2a4cb8c_0", "view_10b8c91a35cd8dcc_0", "view_10b8c91a35cd8dcc_1"]}, {"name": "serum_selection", "select": {"type": "point", "fields": ["serum"]}, "bind": {"input": "select", "options": [null, "M099d0", "M099d30"], "labels": ["all", "M099d0", "M099d30"], "name": "show serum"}, "views": ["view_43c079ccd2a4cb8c_0", "view_10b8c91a35cd8dcc_0", "view_10b8c91a35cd8dcc_1"]}, {"name": "strain_serum_hover", "select": {"type": "point", "fields": ["serum", "virus"], "on": "mouseover"}, "views": ["view_43c079ccd2a4cb8c_0", "view_10b8c91a35cd8dcc_0", "view_10b8c91a35cd8dcc_1"]}], "title": {"text": "plate11 (dated 2023-09-26) versus the other plates of serum", "anchor": "middle", "fontSize": 15, "subtitle": ["each point is a viral strain for one serum; titers are medians over each plate's barcodes", "the y axis of every panel is the titer on plate11, and the x axis that on the plate titling the panel"]}, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-9e83ead2ca46cd8b42802b424f4438c6": [{"titer": 152.9}, {"titer": 6371.0}], "data-b3858b98d866670a7f3a6c2cb5c5a86b": [{"serum": "M099d0", "virus": "A/Bangladesh/2221/2021", "titer_x": 210.2, "titer_y": 531.3, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Bangladesh/3210810034/2021", "titer_x": 202.8, "titer_y": 369.4, "n_barcodes_x": 2, "n_barcodes_y": 2, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Bangladesh/8002/2021", "titer_x": 209.1, "titer_y": 507.7, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": true}, {"serum": "M099d0", "virus": "A/Bangladesh/8036/2021", "titer_x": 220.8, "titer_y": 486.7, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Belgium/H0017/2022", "titer_x": 654.9, "titer_y": 617.3, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Belgium/H0038/2022", "titer_x": 644.2, "titer_y": 1368.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Brisbane/02/2018", "titer_x": 651.9, "titer_y": 707.0, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Brisbane/48/2022", "titer_x": 204.4, "titer_y": 462.8, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/California/07/2009", "titer_x": 943.1, "titer_y": 687.1, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Chester/5355/2022", "titer_x": 199.3, "titer_y": 578.3, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Cote_DIvoire/1448/2021", "titer_x": 608.7, "titer_y": 729.4, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/England/220200318/2022", "titer_x": 569.8, "titer_y": 872.5, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Ghana/138/2020", "titer_x": 627.0, "titer_y": 702.9, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Ghana/2080/2020", "titer_x": 649.6, "titer_y": 672.8, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Hawaii/70/2019", "titer_x": 585.0, "titer_y": 1021.0, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/India-PUN-NIV328484/2021", "titer_x": 218.5, "titer_y": 547.6, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/India-Pune-Nivcov2221170/2022", "titer_x": 181.1, "titer_y": 227.8, "n_barcodes_x": 2, "n_barcodes_y": 2, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/India/Pun-NIV312851/2021", "titer_x": 216.3, "titer_y": 388.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Michigan/19/2021", "titer_x": 214.6, "titer_y": 558.3, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": true}, {"serum": "M099d0", "virus": "A/Michigan/45/2015", "titer_x": 844.5, "titer_y": 1072.0, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Newcastle/2/2022", "titer_x": 215.0, "titer_y": 378.9, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Niger/10217/2021", "titer_x": 785.9, "titer_y": 628.6, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Nimes/871/2021", "titer_x": 643.0, "titer_y": 1636.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Norway/25089/2022", "titer_x": 186.8, "titer_y": 570.5, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": true}, {"serum": "M099d0", "virus": "A/Paris/30353/2021", "titer_x": 654.4, "titer_y": 713.2, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Paris/31196/2021", "titer_x": 857.1, "titer_y": 1046.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Perth/1/2022", "titer_x": 209.3, "titer_y": 517.6, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/SouthAfrica/R14850/2021", "titer_x": 288.4, "titer_y": 575.3, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/SouthAfrica/R16462/2021", "titer_x": 846.9, "titer_y": 814.6, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Sydney/43/2022", "titer_x": 221.8, "titer_y": 243.3, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Togo/0274/2021", "titer_x": 560.8, "titer_y": 996.8, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Togo/0304/2021", "titer_x": 1077.0, "titer_y": 722.9, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Togo/845/2020", "titer_x": 649.7, "titer_y": 1298.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Utah/27/2022", "titer_x": 213.5, "titer_y": 283.4, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Washington/23/2020", "titer_x": 296.4, "titer_y": 524.7, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d0", "virus": "A/Wisconsin/588/2019", "titer_x": 213.2, "titer_y": 439.9, "n_barcodes_x": 3, "n_barcodes_y": 2, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Bangladesh/2221/2021", "titer_x": 1449.0, "titer_y": 1907.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Bangladesh/3210810034/2021", "titer_x": 1496.0, "titer_y": 1258.0, "n_barcodes_x": 2, "n_barcodes_y": 2, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Bangladesh/8002/2021", "titer_x": 1642.0, "titer_y": 1500.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Bangladesh/8036/2021", "titer_x": 1687.0, "titer_y": 1657.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Belgium/H0017/2022", "titer_x": 4235.0, "titer_y": 1908.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Belgium/H0038/2022", "titer_x": 4429.0, "titer_y": 1698.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Brisbane/02/2018", "titer_x": 5378.0, "titer_y": 3449.0, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Brisbane/48/2022", "titer_x": 1362.0, "titer_y": 1137.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/California/07/2009", "titer_x": 5138.0, "titer_y": 2762.0, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Chester/5355/2022", "titer_x": 1421.0, "titer_y": 1576.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Cote_DIvoire/1448/2021", "titer_x": 3839.0, "titer_y": 2347.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/England/220200318/2022", "titer_x": 4124.0, "titer_y": 2150.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Ghana/138/2020", "titer_x": 2065.0, "titer_y": 1790.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Ghana/2080/2020", "titer_x": 4917.0, "titer_y": 2760.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Hawaii/70/2019", "titer_x": 3744.0, "titer_y": 2278.0, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/India-PUN-NIV328484/2021", "titer_x": 2687.0, "titer_y": 1981.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/India-Pune-Nivcov2221170/2022", "titer_x": 1057.0, "titer_y": 928.5, "n_barcodes_x": 2, "n_barcodes_y": 2, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/India/Pun-NIV312851/2021", "titer_x": 1811.0, "titer_y": 1355.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Michigan/19/2021", "titer_x": 1758.0, "titer_y": 1738.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Michigan/45/2015", "titer_x": 5251.0, "titer_y": 4682.0, "n_barcodes_x": 4, "n_barcodes_y": 4, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Newcastle/2/2022", "titer_x": 1777.0, "titer_y": 1182.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Niger/10217/2021", "titer_x": 2102.0, "titer_y": 1694.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Nimes/871/2021", "titer_x": 3338.0, "titer_y": 2935.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Norway/25089/2022", "titer_x": 783.3, "titer_y": 397.0, "n_barcodes_x": 3, "n_barcodes_y": 2, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Paris/30353/2021", "titer_x": 2969.0, "titer_y": 1707.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Paris/31196/2021", "titer_x": 3339.0, "titer_y": 1852.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Perth/1/2022", "titer_x": 1819.0, "titer_y": 1682.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/SouthAfrica/R14850/2021", "titer_x": 1366.0, "titer_y": 700.5, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/SouthAfrica/R16462/2021", "titer_x": 3340.0, "titer_y": 1726.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Sydney/43/2022", "titer_x": 1577.0, "titer_y": 1099.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Togo/0274/2021", "titer_x": 3272.0, "titer_y": 2076.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Togo/0304/2021", "titer_x": 4165.0, "titer_y": 1694.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Togo/845/2020", "titer_x": 2657.0, "titer_y": 1704.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Utah/27/2022", "titer_x": 1586.0, "titer_y": 1226.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}, {"serum": "M099d30", "virus": "A/Washington/23/2020", "titer_x": 3602.0, "titer_y": 1893.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": true}, {"serum": "M099d30", "virus": "A/Wisconsin/588/2019", "titer_x": 3722.0, "titer_y": 1877.0, "n_barcodes_x": 3, "n_barcodes_y": 3, "censored": false, "dropped_by_qc": false}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><h2>Write the correlations to a CSV</h2>
+<p>Write the Pearson correlations for each other plate and serum to a CSV file.
+Note that each pair of plates appears in both plates' files, with the two plates
+swapped:</p></div>
+<div class="md-block"><p>Writing the correlations to <code>results/plate_to_plate_corrs/plate_to_plate_corr_serum_plate11.csv</code></p></div>
+<div class="scroll-box"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>plate</th>
+      <th>date</th>
+      <th>other_plate</th>
+      <th>other_date</th>
+      <th>serum</th>
+      <th>n_strains</th>
+      <th>pearson_r</th>
+      <th>n_strains_retained</th>
+      <th>pearson_r_retained</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>plate11</td>
+      <td>2023-09-26</td>
+      <td>plate2</td>
+      <td>2023-08-01</td>
+      <td>M099d0</td>
+      <td>36</td>
+      <td>0.742278</td>
+      <td>33</td>
+      <td>0.759403</td>
+    </tr>
+    <tr>
+      <td>plate11</td>
+      <td>2023-09-26</td>
+      <td>plate2</td>
+      <td>2023-08-01</td>
+      <td>M099d30</td>
+      <td>36</td>
+      <td>0.823170</td>
+      <td>35</td>
+      <td>0.824867</td>
+    </tr>
+    <tr>
+      <td>plate11</td>
+      <td>2023-09-26</td>
+      <td>plate2_exact_dup</td>
+      <td>2023-08-01</td>
+      <td>M099d0</td>
+      <td>36</td>
+      <td>0.742278</td>
+      <td>33</td>
+      <td>0.759403</td>
+    </tr>
+    <tr>
+      <td>plate11</td>
+      <td>2023-09-26</td>
+      <td>plate2_exact_dup</td>
+      <td>2023-08-01</td>
+      <td>M099d30</td>
+      <td>36</td>
+      <td>0.823170</td>
+      <td>35</td>
+      <td>0.824867</td>
+    </tr>
+  </tbody>
+</table></div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="document.querySelectorAll('.md-block').forEach(
+    (el) => renderMathInElement(el, {delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]})
+  )"></script>
+</body>
+</html>

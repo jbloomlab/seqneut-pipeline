@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aggregate and analyze the drops from QC-ing the plates and sera</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  margin: 0 auto;
+  max-width: 80em;
+  padding: 1.5em;
+}
+h1, h2, h3 { line-height: 1.25; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code { background: #f4f4f4; border-radius: 3px; padding: 0.1em 0.3em; }
+pre { background: #f4f4f4; border-radius: 4px; overflow-x: auto; padding: 0.6em 0.8em; }
+pre code { background: none; padding: 0; }
+/* a chart is drawn at its natural size, so a wide one scrolls rather than being clipped */
+.chart-block { margin: 1em 0; overflow-x: auto; }
+.scroll-box {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 1em 0;
+  max-height: 80vh;
+  overflow: auto;
+}
+.scroll-box table { border-collapse: collapse; font-size: 0.85em; }
+.scroll-box th, .scroll-box td {
+  border-bottom: 1px solid #eee;
+  padding: 0.25em 0.6em;
+  text-align: right;
+  white-space: nowrap;
+}
+.scroll-box th { background: #fafafa; position: sticky; top: 0; }
+</style>
+</head>
+<body>
+<h1>Aggregate and analyze the drops from QC-ing the plates and sera</h1>
+<div class="md-block"><h2>Analyze plate QC drops</h2>
+<p>Read QC drops for individual plates into a merged dictionary, write it to YAML, and
+also convert to a DataFrame.
+If you really want to look into the details of what is being dropped, you will want
+to look at that merged YAML file.</p></div>
+<div class="md-block"><p>Writing merged plate drops to results/qc_drops/plate_qc_drops.yml</p></div>
+<div class="md-block"><p>No plate had any drops of the following types, so they are not plotted below: <code>serum_replicates</code></p></div>
+<div class="md-block"><p>Now plot the number of drops for each plate.
+A plate with no drops at all still gets a row, which is simply empty.
+You should be worried (maybe re-do or discard) any plates with a very large number
+of drops:</p></div>
+<div class="chart-block">
+<style>
+  #chart_1.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_1.vega-embed details,
+  #chart_1.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_1"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_1") {
+      outputDiv = document.getElementById("chart_1");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}}, "data": {"name": "data-ddfde788a27e5d73963445c1fe660ea5"}, "mark": {"type": "bar", "height": {"band": 0.8}, "stroke": "black"}, "encoding": {"color": {"field": "reason", "legend": {"columns": 1, "labelLimit": 230, "orient": "top", "padding": 1, "title": null}, "type": "nominal"}, "column": {"field": "drop type", "header": {"labelFontSize": 12, "labelFontStyle": "bold", "labelPadding": 1}, "spacing": 5, "title": null, "type": "nominal"}, "strokeWidth": {"condition": {"param": "param_721621bb0f0222e0", "value": 3, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "drop type", "type": "nominal"}, {"field": "reason", "type": "nominal"}, {"field": "n_drops", "type": "quantitative"}], "x": {"field": "n_drops", "title": "number of drops", "type": "quantitative"}, "y": {"axis": {"labelFontSize": 11, "labelFontStyle": "bold"}, "field": "plate", "scale": {"domain": ["plate2", "plate2_exact_dup", "plate11", "H3N2_plate", "H3N2_conc_plate"]}, "title": null, "type": "nominal"}}, "height": {"step": 16}, "params": [{"name": "param_721621bb0f0222e0", "select": {"type": "point", "fields": ["plate"], "on": "mouseover"}}], "resolve": {"scale": {"color": "independent", "x": "independent"}}, "title": {"text": "Number of QC drops when processing plates", "anchor": "middle", "dy": -2}, "width": 230, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-ddfde788a27e5d73963445c1fe660ea5": [{"plate": "H3N2_conc_plate", "drop type": "barcode_serum_replicates", "reason": "goodness_of_fit", "n_drops": 46}, {"plate": "H3N2_conc_plate", "drop type": "barcode_wells", "reason": "min_no_serum_count_per_viral_barcode_well", "n_drops": 4}, {"plate": "H3N2_conc_plate", "drop type": "barcodes", "reason": "no_serum_per_viral_barcode_filters", "n_drops": 24}, {"plate": "H3N2_plate", "drop type": "barcode_serum_replicates", "reason": "goodness_of_fit", "n_drops": 46}, {"plate": "H3N2_plate", "drop type": "barcode_wells", "reason": "min_no_serum_count_per_viral_barcode_well", "n_drops": 4}, {"plate": "H3N2_plate", "drop type": "barcodes", "reason": "no_serum_per_viral_barcode_filters", "n_drops": 24}, {"plate": "plate11", "drop type": "barcode_serum_replicates", "reason": "goodness_of_fit", "n_drops": 1}, {"plate": "plate11", "drop type": "barcode_serum_replicates", "reason": "manual_drop", "n_drops": 1}, {"plate": "plate11", "drop type": "barcode_wells", "reason": "max_frac_infectivity_per_viral_barcode_well", "n_drops": 1}, {"plate": "plate11", "drop type": "barcode_wells", "reason": "min_no_serum_count_per_viral_barcode_well", "n_drops": 2}, {"plate": "plate11", "drop type": "barcodes", "reason": "per_neut_standard_barcode_filters", "n_drops": 1}, {"plate": "plate11", "drop type": "wells", "reason": "avg_barcode_counts_per_well", "n_drops": 1}, {"plate": "plate11", "drop type": "wells", "reason": "min_neut_standard_count_per_well", "n_drops": 2}, {"plate": "plate2", "drop type": "barcodes", "reason": "per_neut_standard_barcode_filters", "n_drops": 1}, {"plate": "plate2_exact_dup", "drop type": "barcodes", "reason": "per_neut_standard_barcode_filters", "n_drops": 1}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><h2>Analyze barcode QC drops</h2>
+<p>If a barcode is dropped especially often across plates, that could indicate something
+problematic with that barcode such that it should be removed altogether from the
+library analysis.</p>
+<p>First, write a YAML with this information:</p></div>
+<div class="md-block"><p>Writing merged barcode drops to results/qc_drops/barcode_qc_drops.yml</p></div>
+<div class="md-block"><p>Now make a plot showing how often each barcode is dropped for each reason:</p></div>
+<div class="chart-block">
+<style>
+  #chart_2.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_2.vega-embed details,
+  #chart_2.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_2"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_2") {
+      outputDiv = document.getElementById("chart_2");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}}, "data": {"name": "data-c9713ea704496ed214f50aef445c4909"}, "mark": {"type": "bar", "height": {"band": 0.8}, "stroke": "black"}, "encoding": {"column": {"field": "drop type", "header": {"labelFontSize": 12, "labelFontStyle": "bold", "labelPadding": 1}, "spacing": 8, "title": null, "type": "nominal"}, "strokeWidth": {"condition": {"param": "param_5803177e0db4c896", "value": 3, "empty": false}, "value": 0.5}, "tooltip": [{"field": "drop type", "type": "nominal"}, {"field": "barcode", "type": "nominal"}, {"field": "plates_where_dropped", "type": "quantitative"}, {"field": "total_drops", "type": "quantitative"}], "x": {"field": "total_drops", "title": "times barcode dropped", "type": "quantitative"}, "y": {"axis": {"labelFontSize": 9}, "field": "barcode", "sort": {"field": "total_drops", "order": "descending"}, "type": "nominal"}}, "height": {"step": 10}, "params": [{"name": "param_5803177e0db4c896", "select": {"type": "point", "fields": ["barcode"], "on": "mouseover"}}], "resolve": {"scale": {"color": "independent", "x": "independent", "y": "independent"}}, "title": {"text": "Number of QC drops when processing plates", "anchor": "middle", "dy": -2}, "width": 200, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-c9713ea704496ed214f50aef445c4909": [{"drop type": "barcode_serum_replicates", "barcode": "AAAGATAAATTCAAAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AAATGCTGAGAGGGTA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AACGACACTTACATCC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AATAGGCCCAAATCCA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AATCTTTCCAATCTTG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AATTACGCATAGGCCA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "ACAAAGATAAAAATTT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AGATCATAAGCAATAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AGGGACTTTATTGTCC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AGGTGCGAGCCATCAG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "AGTCCTATCCTCAAAT", "plates_where_dropped": 1, "total_drops": 1}, {"drop type": "barcode_serum_replicates", "barcode": "ATCGAAAAAACTGCAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "ATCGATTCGATTGACG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "ATGGTTATCTTACCTT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "ATTAGATTATAACGTA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CACCGACCAACTCTCT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CACGTTAGTGAGACTT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CATAAAAGACTGTATA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CATAATGCACAAACGC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CCACAAGTTTGAAAAC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CCATCACCTTATACAC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CCGATAAGACGTCGCT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CCTATAAGGCCTTACG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CGCGAACAACAGGGGA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CGGATAAAAATGATAT", "plates_where_dropped": 1, "total_drops": 1}, {"drop type": "barcode_serum_replicates", "barcode": "CGTCAGAAGTTTATAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CTATCTTAATCTACAG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CTGCGAATATTGTGAC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "CTTGAATACACAAACA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "GAAGTAACAAACTATG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "GACCAAAAAGCAGTAT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "GACCAAAGCTGCAGGG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "GATCTGCTTGGAATGT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "GCATTATAATCTTGTG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "GCTGGTGCACAAGATT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "GTTATTATGACTTCAT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TACGAAAATCAAGAGC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TATCAATTCGGTATTA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TATCGCAATATGATAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TCAATGAATGCGGGGT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TCCACACCCCTAGCTA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TCTTAGAGTGAACGAT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TGAGATCAGCCGGGTG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TGCCGATCCAATTGAT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TGTAGTATAAGAATAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TTAGCAGTTAACGTAT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TTATGTTTTAATGGTA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_serum_replicates", "barcode": "TTGACTCACCGAATAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_wells", "barcode": "ACGGAATCCCCTGAGA", "plates_where_dropped": 1, "total_drops": 1}, {"drop type": "barcode_wells", "barcode": "CACCGACCAACTCTCT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_wells", "barcode": "CAGTTCTGCGACCAGC", "plates_where_dropped": 1, "total_drops": 1}, {"drop type": "barcode_wells", "barcode": "CCTATAAGGCCTTACG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_wells", "barcode": "CGGATAAAAATGATAT", "plates_where_dropped": 1, "total_drops": 1}, {"drop type": "barcode_wells", "barcode": "GACCAAAGCTGCAGGG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcode_wells", "barcode": "GATTCACGGCCCACAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "AAAGTAGCAGAGGATT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "AATGACAGCTGTCTAG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "AATGGTCGAGCCATTC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "ACGCAAATAGACCGAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "AGACCATCGCACCCAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "ATAGAAAATTATCCGC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CAAAAGCAGCACGATA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CAATTCGCCGTTCCCC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CATACAGAGTTTGTTG", "plates_where_dropped": 3, "total_drops": 3}, {"drop type": "barcodes", "barcode": "CCAATCCCAGCCTTTA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CCCGCTAACCCTGTCT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CCCTCCTCAAGGGTAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CCGCAATGACAATTTG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CGTACGTATGTCCCAG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CGTCCCTGGCGTGTCG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CGTTAACGGCCTATCC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CTCATTACAGAAATTG", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CTCCAATAGGAGACGA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "CTTCATCTCATTTAAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "TATACTCACGGAGGAT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "TATATGGAATACTAAA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "TCCCCGTGGTTTGACA", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "TCCGCCACTATAACAT", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "TCTCCGATAGCCCTAC", "plates_where_dropped": 2, "total_drops": 2}, {"drop type": "barcodes", "barcode": "TGACAAACACCTGAGG", "plates_where_dropped": 2, "total_drops": 2}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><h2>Analyze the groups/sera QC</h2>
+<p>Analyze the QC performed on the groups/sera, which involves completely dropping
+titers for certain virus-sera pairs.</p>
+<p>Read the QC for different groups/sera into a merged dictionary, write it to YAML, and
+also convert to a DataFrame.
+If you really want to look into the details of what is being dropped, you will want
+to look at that merged YAML file.</p></div>
+<div class="md-block"><p>Writing merged groups/sera drops to results/qc_drops/groups_sera_qc_drops.yml</p></div>
+<div class="md-block"><p>Plot the number of viruses dropped for each group/serum.
+If a group/serum has many missed viruses, then you will lack a lot of titers and so
+it may be worth reviewing the cause of the drops.</p></div>
+<div class="chart-block">
+<style>
+  #chart_3.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_3.vega-embed details,
+  #chart_3.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_3"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_3") {
+      outputDiv = document.getElementById("chart_3");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}}, "data": {"name": "data-82bbfd0f60b02f2961f2a35999683d11"}, "mark": {"type": "bar", "height": {"band": 0.8}}, "encoding": {"color": {"field": "reason", "legend": {"labelLimit": 350}, "title": "reason dropped", "type": "nominal"}, "row": {"field": "group", "type": "nominal"}, "tooltip": [{"field": "group", "type": "nominal"}, {"field": "serum", "type": "nominal"}, {"field": "reason", "type": "nominal"}, {"field": "n_viruses", "type": "quantitative"}], "x": {"field": "n_viruses", "title": "number of viruses dropped", "type": "quantitative"}, "y": {"field": "serum", "type": "nominal"}}, "height": {"step": 13}, "resolve": {"scale": {"x": "independent", "y": "independent"}}, "title": "Number of viruses dropped at serum QC for each serum", "width": 250, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-82bbfd0f60b02f2961f2a35999683d11": [{"group": "abconc", "serum": "A23038d0_r32_75K", "reason": "max_fold_change_from_median", "n_viruses": 8}, {"group": "abconc", "serum": "A23038d0_r32_75K", "reason": "min_replicates", "n_viruses": 12}, {"group": "pilot", "serum": "A23038d0_r32_75K", "reason": "max_fold_change_from_median", "n_viruses": 8}, {"group": "pilot", "serum": "A23038d0_r32_75K", "reason": "min_replicates", "n_viruses": 12}, {"group": "serum", "serum": "M099d0", "reason": "max_fold_change_from_median", "n_viruses": 3}, {"group": "serum", "serum": "M099d30", "reason": "max_fold_change_from_median", "n_viruses": 1}, {"group": "serum", "serum": "Y044d30", "reason": "max_fold_change_from_median", "n_viruses": 1}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><p>Plot the number of sera for which each virus is dropped during serum QC.
+If a virus is dropped for many sera, that may indicate some issue with that virus in
+assays:</p></div>
+<div class="chart-block">
+<style>
+  #chart_4.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_4.vega-embed details,
+  #chart_4.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_4"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_4") {
+      outputDiv = document.getElementById("chart_4");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}}, "data": {"name": "data-6575529b9ed5f01aeb8486217735b0fa"}, "mark": {"type": "bar", "height": {"band": 0.8}}, "encoding": {"color": {"field": "reason", "legend": {"labelLimit": 350}, "title": "reason dropped", "type": "nominal"}, "row": {"field": "group", "type": "nominal"}, "tooltip": [{"field": "group", "type": "nominal"}, {"field": "virus", "type": "nominal"}, {"field": "reason", "type": "nominal"}, {"field": "n_sera", "type": "quantitative"}], "x": {"field": "n_sera", "title": "number of sera for which virus is dropped", "type": "quantitative"}, "y": {"field": "virus", "sort": {"field": "n_sera", "order": "descending"}, "type": "nominal"}}, "height": {"step": 13}, "resolve": {"scale": {"x": "independent", "y": "independent"}}, "title": "Number of sera for which each virus is dropped at serum QC", "width": 250, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-6575529b9ed5f01aeb8486217735b0fa": [{"group": "abconc", "virus": "A/Abu_Dhabi/6753/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Bhutan/0845/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/Cambodia/e0826360/2020", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Finland/391/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Finland/399/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Guangdong-Futian/1980/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/KANAGAWA/AC2316/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/KANAGAWA/IC2239/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Maldives/852/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/Netherlands/01693/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Oman/3011/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Romania/543634/2022", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Samut_Songkhram/THIS061/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/Solwezi/13-NIC-001/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/SouthSudan/642/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/South_Africa/KO56863/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/South_Africa/R07073/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/South_Dakota/22/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "abconc", "virus": "A/Surat_Thani/P152/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "abconc", "virus": "A/YAMAGATA/98/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Abu_Dhabi/6753/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Bhutan/0845/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/Cambodia/e0826360/2020", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Finland/391/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Finland/399/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Guangdong-Futian/1980/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/KANAGAWA/AC2316/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/KANAGAWA/IC2239/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Maldives/852/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/Netherlands/01693/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Oman/3011/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Romania/543634/2022", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Samut_Songkhram/THIS061/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/Solwezi/13-NIC-001/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/SouthSudan/642/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/South_Africa/KO56863/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/South_Africa/R07073/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/South_Dakota/22/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "pilot", "virus": "A/Surat_Thani/P152/2023", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "pilot", "virus": "A/YAMAGATA/98/2023", "reason": "min_replicates", "n_sera": 1}, {"group": "serum", "virus": "A/Bangladesh/8002/2021", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "serum", "virus": "A/India-PUN-NIV328484/2021", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "serum", "virus": "A/Michigan/19/2021", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "serum", "virus": "A/Norway/25089/2022", "reason": "max_fold_change_from_median", "n_sera": 1}, {"group": "serum", "virus": "A/Washington/23/2020", "reason": "max_fold_change_from_median", "n_sera": 1}]}}, {"mode": "vega-lite"});
+</script></div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="document.querySelectorAll('.md-block').forEach(
+    (el) => renderMathInElement(el, {delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]})
+  )"></script>
+</body>
+</html>
