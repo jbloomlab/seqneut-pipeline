@@ -1,5 +1,8 @@
 # CHANGELOG
 
+#### version 9.3.1
+- Add `pyarrow` to `envs/count_barcodes.yml`.
+
 #### version 9.3.0
 - The barcode-counting rules (`count_barcodes` and `miscellaneous_plate_count_barcodes`) now run in their own `conda` environment, `envs/count_barcodes.yml`, while every other rule still runs in `environment.yml`. `snakemake` reruns a rule whenever its environment changes, and counting is slow to rerun from the FASTQs, so updating `environment.yml` no longer reruns it. Moving the counting rules to the new environment is itself such a change, so the first run after upgrading to this version reruns them once.
 
