@@ -13,6 +13,7 @@ channels:
 dependencies:
   - pandas=2.3
   - pip
+  - pyarrow
   - python=3.14
   - pip:
     - dms_variants==1.6.0
