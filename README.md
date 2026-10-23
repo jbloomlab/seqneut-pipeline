@@ -625,6 +625,74 @@ The output is that for each plate, the following files are created:
 A project can consist of nothing but miscellaneous plates, by leaving `plates` empty.
 The docs in `./results/docs` are still built in that case, holding whatever HTML files you add with `add_htmls_to_docs` (see the GitHub Pages section below), which is how to include your own analysis of these counts alongside them.
 
+### discarded_barcodes
+An optional key listing barcodes that are physically in every well but should not be counted, such as a spike-in barcode left out of the neutralization standard set because it sequences badly.
+Each barcode is given with the reason it is discarded:
+
+```yaml
+discarded_barcodes:
+  <barcode>: <reason it is discarded>
+```
+
+The analyses of miscellaneous plates (currently `analyze_single_well_infections`) set aside the reads of these barcodes and their misreads, and list each barcode with its reason in their reports.
+Each barcode must be more than twice `max_sequencing_error_hamming` from every barcode in the viral library and neutralization standard set, so that no read can be a misread of both.
+The neutralization plates do not use this key.
+
+### analyze_single_well_infections
+An optional key that analyzes miscellaneous plates whose wells were each infected with a single virus of the library (plus the neutralization standard) rather than with the pool.
+These plates check that each well holds only what it should and whether virus from one well ends up in another, and give a rough estimate of the titer of each virus.
+If you do not have any such plates, leave this key out or set it to null.
+
+Each entry is one analysis, which can combine several plates and is reported on its own page of the docs under *Library quality-control*:
+
+```yaml
+analyze_single_well_infections:
+
+  <analysis_name>:
+    miscellaneous_plates: [<plate_name_1>, <plate_name_2>]
+    description: <markdown describing the experiment>
+    # the rest are optional, shown with their defaults
+    max_other_library_frac: 0.005
+    max_unmatched_frac: 0.02
+    min_parsed_reads_per_well: 1000
+    min_neut_standard_reads_for_titer: 100
+    max_sequencing_error_hamming: 1
+    max_expected_error_hamming: 1
+    strain_axis: y
+    final_viral_library: null
+    addtl_viral_cols_to_show: []
+```
+
+The keys are:
+
+ - `miscellaneous_plates`: the plates to analyze together, which must share one `viral_library` and one `neut_standard_set`. Contamination is traced across all of them.
+ - `description`: what the experiment was, shown at the top of the report.
+ - `max_other_library_frac`: flag a well when more than this fraction of its non-neutralization-standard reads are library barcodes that do not belong in it.
+ - `max_unmatched_frac`: flag a well when more than this fraction of its non-neutralization-standard reads match neither the viral library nor the neutralization standard.
+ - `min_parsed_reads_per_well`: flag a well with fewer parsed reads than this as `too_shallow`.
+ - `min_neut_standard_reads_for_titer`: flag a well with fewer neutralization-standard reads than this as `titer_imprecise`, as those reads are the denominator of its titer.
+ - `max_sequencing_error_hamming`: how many nucleotides a read can differ from any barcode and still be a misread of it. Misreads of a discarded barcode are discarded with it, and an unmatched barcode this close to a known one is named in the report as a sequencing error of it.
+ - `max_expected_error_hamming`: how many nucleotides an unmatched barcode can differ from one of its well's expected barcodes or a neutralization-standard barcode and still count as a misread of the well's own material.
+ - `strain_axis`: `y` to draw each well as a row of horizontal bars with the panels side by side, or `x` to draw each well as a column of vertical bars with the panels stacked, which can read better for a single plate of few wells.
+ - `final_viral_library`: a key of `viral_libraries` holding the library carried forward after these plates. Wells whose barcodes are all absent from it are marked as dropped; it is not used in any calculation.
+ - `addtl_viral_cols_to_show`: a list of viral library columns to show in the report and the output CSV, each of which must be constant across the barcodes of a strain.
+
+The four thresholds only decide which wells are flagged and warned about, while the two Hamming distances change which reads are counted where.
+
+What each well was infected with is read from the `samples_csv` of its plate, and all plates of an analysis must be of one kind:
+
+ - If there is a `barcode` column, each well was infected with that one barcode, and another barcode of the same strain does not belong in it. If the viral library has a `stock_id` column naming the tube each barcode is in, the well should also hold the other barcodes of that tube; a blank `stock_id` means the barcode is in a tube of its own, and all barcodes of a tube must be of one strain. A `strain` column may be given alongside, but must match the library's strain for each barcode, and a well naming a strain must also name its barcode.
+ - Otherwise the `strain` column gives the strain each well was infected with, and the well should hold every barcode of that strain.
+
+A blank in that column marks an uninfected well, which should hold only the neutralization standard.
+Each strain or barcode can be in at most one well per plate, so that material belonging elsewhere can be traced back to its well.
+An optional `dilution_factor` column must have the same value for every infected well of the analysis, as their titers are compared.
+Strains or barcodes of the library in no well are reported as not assayed.
+
+Each parsed read of a well is assigned to one of: its expected barcodes, the neutralization standard, another barcode of the library, an unmatched barcode within `max_expected_error_hamming` of an expected or neutralization-standard barcode, or another unmatched barcode.
+Fractions are of the reads that are not neutralization standard.
+Material belonging elsewhere is traced to the well it should have come from and how far away that well is, counting a step to any of the eight surrounding wells as one.
+The titer of a well is its expected reads divided by its neutralization-standard reads; it is relative rather than in infectious units, and is not inflated by contamination.
 
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
@@ -671,6 +739,11 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/qc_drops/groups_sera_qc_drops.yml`: YAML file summarizing all group/serum-virus titers dropped during the serum titers QC. You should track this in repo.
     - `./results/qc_drops/aggregate_qc_drops.html`: HTML report summarizing the QC drops. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
       
+  - Outputs related to the analyses of single virus per well infections, if `analyze_single_well_infections` is configured:
+    - `./results/single_well_infections/{analysis_name}_well_composition.csv`: for each well, the reads in each category, the discarded reads, their fractions, the titer, the flags, and the largest contaminant and where it came from. You should track this in the repo.
+    - `./results/single_well_infections/{analysis_name}_expected_barcode_reads.csv`: for each well, the reads of each barcode it was expected to hold, to show whether all of a strain's barcodes turned up. You should track this in the repo.
+    - `./results/single_well_infections/{analysis_name}_analyze_single_well_infections.html`: HTML report of the analysis. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+
   - HTML documentation of results is placed in `./results/docs`. This subdirectory does not need to be tracked in the GitHub repo, but can be display via GitHub Pages as described below.
 
 ### How the fraction infectivity is computed

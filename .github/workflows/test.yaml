@@ -64,6 +64,11 @@ jobs:
         shell: bash -el {0}
         run: cd test_example && python test_titers_as_expected.py && cd ..
 
+      - name: test single-well analyses as expected
+        # the synthetic single-well plates plant a known answer in every well
+        shell: bash -el {0}
+        run: cd test_example && python test_single_well_as_expected.py && cd ..
+
       - name: test the viral libraries were validated
         shell: bash -el {0}
         run: >

@@ -1,0 +1,4 @@
+plate,well,unit,expected,barcode,reads,frac_of_expected
+single_well_plate_4,B2,barcode,GTAGTGCATCATTGAT,CAGCAAAAGCATCACC,1500,0.5
+single_well_plate_4,B2,barcode,GTAGTGCATCATTGAT,GTAGTGCATCATTGAT,1500,0.5
+single_well_plate_4,B3,barcode,GCAATCCCGCAATTTG,GCAATCCCGCAATTTG,3000,1

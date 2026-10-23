@@ -101,6 +101,124 @@ def process_miscellaneous_plates(misc_plates_d):
     return misc_plates
 
 
+def all_htmls_to_docs():
+    """The HTMLs to add to the docs: the project's, with the pipeline's own merged in.
+
+    Merged when called rather than when this file is read, since a project can assign its
+    `add_htmls_to_docs` after including the pipeline. The headings keep the project's order,
+    any the project does not give following them. A heading both give holds the pipeline's
+    entries and then the project's, so that a project can add its own reports under a
+    heading such as *Library quality-control* without displacing the pipeline's.
+
+    """
+    merged = {}
+    for heading in [*add_htmls_to_docs, *pipeline_htmls_to_docs]:
+        if heading in merged:
+            continue
+        pipeline_entries = pipeline_htmls_to_docs.get(heading, {})
+        project_entries = add_htmls_to_docs.get(heading, {})
+        shared = set(pipeline_entries) & set(project_entries)
+        if shared:
+            raise ValueError(
+                f"`add_htmls_to_docs` gives {sorted(shared)} under {heading!r}, which "
+                "the pipeline already adds to the docs"
+            )
+        merged[heading] = {**pipeline_entries, **project_entries}
+    return merged
+
+
+def process_single_well_infections(single_well_d, misc_plates):
+    """Process the ``analyze_single_well_infections`` section of the configuration.
+
+    Checks only what the workflow needs settled before anything runs, which is the keys of
+    each entry, its plates, the one library and neutralization standard set they share, and
+    the final library, all of which name inputs of the analysis. The values themselves are checked by
+    ``scripts/analyze_single_well_infections.py``, which uses them.
+
+    Args:
+        `single_well_d` (dict)
+            The section, keyed by the name of each analysis.
+        `misc_plates` (dict)
+            The processed ``miscellaneous_plates``, from `process_miscellaneous_plates`.
+
+    Returns:
+        dict keyed like `single_well_d`, each entry with every optional key filled in
+        with its default and the shared ``viral_library`` and ``neut_standard_set`` of
+        its plates added.
+
+    """
+    # The optional keys and their defaults, applied here and nowhere else. They are optional
+    # because most analyses want no final library or extra columns, the flag thresholds
+    # only decide which wells are flagged and warned about, and one nucleotide is the usual
+    # allowance for a misread, so a project need only set one it wants to differ; the two
+    # misread distances do change what is computed. `strain_axis` only orients the charts.
+    defaults = {
+        "max_other_library_frac": 0.005,
+        "max_unmatched_frac": 0.02,
+        "min_parsed_reads_per_well": 1000,
+        "min_neut_standard_reads_for_titer": 100,
+        "max_sequencing_error_hamming": 1,
+        "max_expected_error_hamming": 1,
+        "strain_axis": "y",
+        "final_viral_library": None,
+        "addtl_viral_cols_to_show": [],
+    }
+    required = {"miscellaneous_plates", "description"}
+    check_no_whitespace(single_well_d, "analyze_single_well_infections names")
+    processed = {}
+    for name, entry in single_well_d.items():
+        where = f"analyze_single_well_infections {name!r}"
+        if not isinstance(entry, dict):
+            raise ValueError(f"{where} must be a mapping of its configuration keys")
+        unknown = set(entry) - required - set(defaults)
+        if unknown:
+            raise ValueError(
+                f"{where} has unknown keys {sorted(unknown)}; the valid keys are "
+                f"{sorted(required | set(defaults))}"
+            )
+        # A key that is null counts as absent, so an optional one takes its default; a
+        # `--configfile` override can only reset a key by setting it to null.
+        given = {key: value for (key, value) in entry.items() if value is not None}
+        if not required.issubset(given):
+            raise ValueError(f"{where} lacks {sorted(required - set(given))}")
+        d = {**copy.deepcopy(defaults), **given}
+
+        plates = d["miscellaneous_plates"]
+        if not isinstance(plates, list) or not plates:
+            raise ValueError(f"{where} must list at least one miscellaneous plate")
+        if len(plates) != len(set(plates)):
+            raise ValueError(f"{where} lists a plate more than once: {plates}")
+        unknown_plates = sorted(set(plates) - set(misc_plates))
+        if unknown_plates:
+            raise ValueError(
+                f"{where} names plates that are not `miscellaneous_plates`: "
+                f"{unknown_plates}"
+            )
+        # The plates are counted against one whitelist and compared with each other, so
+        # they have to agree on the library and the neutralization standard set, which
+        # are then the rule's inputs.
+        for key in ["viral_library", "neut_standard_set"]:
+            values = sorted({misc_plates[plate][key] for plate in plates})
+            if len(values) != 1:
+                raise ValueError(
+                    f"the plates of {where} have different values of {key!r}, {values}, "
+                    "but are analyzed together and so must share one"
+                )
+            d[key] = values[0]
+
+        if d["final_viral_library"] is not None and (
+            d["final_viral_library"] not in viral_libraries
+        ):
+            raise ValueError(
+                f"{where} 'final_viral_library' {d['final_viral_library']!r} is not a key "
+                f"of `viral_libraries`, {sorted(viral_libraries)}"
+            )
+
+        processed[name] = d
+
+    return processed
+
+
 def process_plate(plate, plate_params):
     """Process a plot from the configuration."""
 

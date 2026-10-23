@@ -33,3 +33,7 @@ The example is also run a second time with the barcodes for each strain collapse
     python test_titers_as_expected.py expected_titers_for_test_collapse_strain_barcodes.csv
 
 That run writes over the results of the standard run, so the GitHub Action does it in a copy of this subdirectory in order to keep both sets of results.
+
+The example also has synthetic miscellaneous plates whose wells were each infected with a single virus, analyzed by the `analyze_single_well_infections` entries of [config.yml](config.yml). Their FASTQs, samples CSVs, the library carried forward past them ([data/viral_libraries/pdmH1N1_lib2023_loes_final.csv](data/viral_libraries/pdmH1N1_lib2023_loes_final.csv)), and what the analysis should find in each well ([expected_single_well_composition.csv](expected_single_well_composition.csv)) are all written by [make_single_well_fastqs.py](make_single_well_fastqs.py), which documents what each well plants and regenerates the files byte for byte. After running the example, check the analysis found what was planted with:
+
+    python test_single_well_as_expected.py

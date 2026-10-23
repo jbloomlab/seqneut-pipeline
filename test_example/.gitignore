@@ -31,3 +31,5 @@ results/**
 
 !results/miscellaneous_plates/*/*counts.csv
 !results/miscellaneous_plates/*/*fates.csv
+
+!results/single_well_infections/*.csv

@@ -143,6 +143,24 @@ try:
 except NameError:  # if not defined
     add_htmls_to_docs = {}
 
+# Optional section; absent or null means no single virus per well infections are analyzed. Named
+# apart from the configuration key, which projects that carried their own analysis also
+# assign at the top level of their own `.smk` files, all of which share this namespace.
+single_well_infection_analyses = process_single_well_infections(
+    config.get("analyze_single_well_infections") or {}, miscellaneous_plates
+)
+# HTMLs of the pipeline's own analyses of miscellaneous plates, merged with the project's
+# `add_htmls_to_docs` only in `build_docs`: a project can assign that dict after including
+# this file, which would discard anything added to it here.
+pipeline_htmls_to_docs = {}
+if single_well_infection_analyses:
+    pipeline_htmls_to_docs["Library quality-control"] = {
+        "Single virus per well infections": {
+            name: f"results/single_well_infections/{name}_analyze_single_well_infections.html"
+            for name in single_well_infection_analyses
+        }
+    }
+
 
 # --- Snakemake rules -------------------------------------------------------------------
 
@@ -468,6 +486,70 @@ rule miscellaneous_plate_count_barcodes:
         "scripts/count_barcodes.py"
 
 
+rule analyze_single_well_infections:
+    """Analyze plates that infect each well with a single virus of the library."""
+    input:
+        **{
+            suffix: lambda wc, suffix=suffix: [
+                f"results/miscellaneous_plates/{plate}/{well}_{suffix}.csv"
+                for plate in single_well_infection_analyses[wc.single_well][
+                    "miscellaneous_plates"
+                ]
+                for well in miscellaneous_plates[plate]["wells"]
+            ]
+            for suffix in ["counts", "fates", "invalid"]
+        },
+        samples_csvs=lambda wc: [
+            config["miscellaneous_plates"][plate]["samples_csv"]
+            for plate in single_well_infection_analyses[wc.single_well][
+                "miscellaneous_plates"
+            ]
+        ],
+        viral_library=lambda wc: config["viral_libraries"][
+            single_well_infection_analyses[wc.single_well]["viral_library"]
+        ],
+        neut_standard_set=lambda wc: config["neut_standard_sets"][
+            single_well_infection_analyses[wc.single_well]["neut_standard_set"]
+        ],
+        # an empty list where the entry sets no final library, the script then reading none
+        final_viral_library=lambda wc: (
+            [
+                config["viral_libraries"][
+                    single_well_infection_analyses[wc.single_well][
+                        "final_viral_library"
+                    ]
+                ]
+            ]
+            if single_well_infection_analyses[wc.single_well]["final_viral_library"]
+            else []
+        ),
+        report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+        funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
+        plate_funcs_module=os.path.join(
+            pipeline_subdir, "scripts/miscellaneous_plate_funcs.py"
+        ),
+        plate_charts_module=os.path.join(
+            pipeline_subdir, "scripts/miscellaneous_plate_charts.py"
+        ),
+    output:
+        html="results/single_well_infections/{single_well}_analyze_single_well_infections.html",
+        well_composition="results/single_well_infections/{single_well}_well_composition.csv",
+        expected_barcode_reads="results/single_well_infections/{single_well}_expected_barcode_reads.csv",
+    log:
+        "results/logs/analyze_single_well_infections_{single_well}.txt",
+    wildcard_constraints:
+        # `(?!)` matches nothing, for when there are no single-well analyses
+        single_well="|".join(map(re.escape, single_well_infection_analyses)) or "(?!)",
+    conda:
+        "environment.yml"
+    params:
+        single_well_config=lambda wc: single_well_infection_analyses[wc.single_well],
+        # optional, and validated by the script
+        discarded_barcodes=config.get("discarded_barcodes") or {},
+    script:
+        "scripts/analyze_single_well_infections.py"
+
+
 rule build_docs:
     """Build the HTML documentation.
 
@@ -480,7 +562,7 @@ rule build_docs:
     input:
         lambda wc: [
             f
-            for d in add_htmls_to_docs.values()
+            for d in all_htmls_to_docs().values()
             for v in d.values()
             for f in (v.values() if isinstance(v, dict) else [v])
         ],
@@ -523,7 +605,7 @@ rule build_docs:
                 )
                 for (key2, val2) in val.items()
             }
-            for (key, val) in add_htmls_to_docs.items()
+            for (key, val) in all_htmls_to_docs().items()
         },
     script:
         "scripts/build_docs.py"
@@ -562,6 +644,11 @@ seqneut_pipeline_outputs = [
         for plate in miscellaneous_plates
         for well in miscellaneous_plates[plate]["wells"]
         for suffix in ["counts.csv", "fates.csv"]
+    ],
+    *[
+        f"results/single_well_infections/{name}_{suffix}.csv"
+        for name in single_well_infection_analyses
+        for suffix in ["well_composition", "expected_barcode_reads"]
     ],
     # the report HTMLs are not listed here, as they are inputs to `build_docs`
     rules.build_docs.output.docs,

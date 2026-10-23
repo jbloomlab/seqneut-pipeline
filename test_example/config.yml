@@ -21,6 +21,12 @@ description: |
 viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
   H3N2_lib2023_Kikawa: data/viral_libraries/2023_H3N2_Kikawa.csv
+  # the strains of `pdmH1N1_lib2023_loes` carried forward past the synthetic single-well
+  # plates below, written by `make_single_well_fastqs.py`
+  pdmH1N1_lib2023_loes_final: data/viral_libraries/pdmH1N1_lib2023_loes_final.csv
+  # the same library recording the tube (`stock_id`) each barcode is in, one tube holding
+  # two barcodes, also written by `make_single_well_fastqs.py`
+  pdmH1N1_lib2023_loes_stocks: data/viral_libraries/pdmH1N1_lib2023_loes_stocks.csv
 
 # Optional checks on each library in `viral_libraries`, one entry per library. These two
 # have only the `barcode` and `strain` that the pipeline itself reads, so there is nothing
@@ -33,6 +39,8 @@ viral_library_validations:
       barcode: {nulls: false, unique: barcode, matches: ['^[ACGT]{16}$']}
       strain: {nulls: false, matches: ['^\S+$']}
   H3N2_lib2023_Kikawa: *library_validations
+  pdmH1N1_lib2023_loes_final: *library_validations
+  pdmH1N1_lib2023_loes_stocks: *library_validations
 
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 
@@ -204,3 +212,62 @@ miscellaneous_plates:
     illumina_barcode_parser_params:
       upstream2: GCTACA
       upstream2_mismatch: 1
+
+  # Synthetic plates whose wells were each infected with a single virus, written by
+  # `make_single_well_fastqs.py` along with what the analysis should find in each well.
+  # The first two hold a strain to a well, the third and fourth a barcode, the fourth
+  # against a library that records which barcodes share a tube.
+  single_well_plate_1: &single_well_plate
+    date: 2023-08-02
+    viral_library: pdmH1N1_lib2023_loes
+    neut_standard_set: loes2023
+    samples_csv: data/miscellaneous_plates/single_well_plate_1.csv
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
+  single_well_plate_2:
+    <<: *single_well_plate
+    samples_csv: data/miscellaneous_plates/single_well_plate_2.csv
+  single_well_plate_3:
+    <<: *single_well_plate
+    samples_csv: data/miscellaneous_plates/single_well_plate_3.csv
+  single_well_plate_4:
+    <<: *single_well_plate
+    viral_library: pdmH1N1_lib2023_loes_stocks
+    samples_csv: data/miscellaneous_plates/single_well_plate_4.csv
+
+# Barcodes in every well that no analysis of the miscellaneous plates counts.
+discarded_barcodes:
+  GGCAGATTTTCATATT: made up for this example, as a barcode in every well
+    that no analysis counts
+
+# Analyses of the plates above, each reported on one page of the docs.
+analyze_single_well_infections:
+  single_well_strains:
+    miscellaneous_plates: [single_well_plate_1, single_well_plate_2]
+    description: |
+      Synthetic plates of one strain per well, built so that each well holds one thing
+      the analysis has to get right; see `make_single_well_fastqs.py`.
+    final_viral_library: pdmH1N1_lib2023_loes_final
+    # The thresholds wells are flagged by, at their defaults but given explicitly, as
+    # `make_single_well_fastqs.py` reads them to write down which wells should be flagged.
+    <<: &single_well_flag_thresholds
+      max_other_library_frac: 0.005
+      max_unmatched_frac: 0.02
+      min_parsed_reads_per_well: 1000
+      min_neut_standard_reads_for_titer: 100
+  single_well_barcodes:
+    miscellaneous_plates: [single_well_plate_3]
+    description: |
+      A synthetic plate of one barcode per well, one well of which holds some of a
+      sibling barcode of its own strain.
+    # charted with the wells along `x`, so that both orientations are exercised
+    strain_axis: x
+    <<: *single_well_flag_thresholds
+  single_well_stocks:
+    miscellaneous_plates: [single_well_plate_4]
+    description: |
+      A synthetic plate of one barcode per well against a library recording stocks: one
+      well is infected from a tube holding two barcodes, and another from a second tube of
+      the same strain.
+    <<: *single_well_flag_thresholds
