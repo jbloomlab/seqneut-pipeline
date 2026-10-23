@@ -9,6 +9,7 @@ measure how far unmatched barcodes are from known ones, and place wells on the p
 
 import contextlib
 import html
+import re
 from pathlib import Path
 
 import numpy
@@ -486,9 +487,10 @@ details.warning[open] .hide { display: inline; }
 # depending on how they wrap, with a line under the header spanning its group.
 #
 # A table or chart wider than the text runs on past its right edge up to the window's,
-# scrolling only beyond that: with the body centered, its left edge is half of what the
-# window has beyond the text's width in from the window's, `(100vw - 100%) / 2`, and the
-# body's padding is kept on the right.
+# scrolling only beyond that, the body's padding being kept on the right. Beside the sidebar
+# the body's left edge is the sidebar's width in from the window's; on a narrow window,
+# where the sidebar is above the body and the body is centered, it is half of what the
+# window has beyond the text's width, `(100vw - 100%) / 2`.
 _TABLE_CSS = """
 .scroll-box td { border-right: 1px solid #ddd; }
 .scroll-box td:last-child { border-right: none; }
@@ -502,9 +504,108 @@ _TABLE_CSS = """
 .scroll-box thead.grouped { position: sticky; top: 0; z-index: 1; }
 .scroll-box thead.grouped th { position: static; }
 .scroll-box, .chart-block {
-  max-width: calc((100vw + 100%) / 2 - 1.5em); width: fit-content;
+  max-width: calc(100vw - var(--sidebar-width) - 3em); width: fit-content;
+}
+@media (max-width: 60em) {
+  .scroll-box, .chart-block { max-width: calc((100vw + 100%) / 2 - 1.5em); }
 }
 """
+
+# A sidebar of the report's sections, fixed at the left of the window and with the section
+# in view picked out, which sits above the body instead on a narrow window. It links back
+# to the docs' index, which `build_docs` puts beside every report it copies there.
+_SIDEBAR_CSS = """
+:root { --sidebar-width: 15rem; }
+body { margin: 0 auto 0 var(--sidebar-width); }
+nav.sidebar {
+  background: #fafafa; border-right: 1px solid #ddd; bottom: 0; box-sizing: border-box;
+  font-size: 0.9rem; left: 0; overflow-y: auto; padding: 1.5rem 1rem; position: fixed;
+  top: 0; width: var(--sidebar-width);
+}
+nav.sidebar a.home {
+  border: 1px solid #ccc; border-radius: 4px; display: inline-block; margin-bottom: 1.2em;
+  padding: 0.25em 0.7em;
+}
+nav.sidebar a.home:hover { background: #eee; text-decoration: none; }
+nav.sidebar .contents {
+  border-bottom: 1px solid #ddd; color: #666; font-size: 0.85em; font-weight: 600;
+  letter-spacing: 0.06em; margin: 0 0 0.6em; padding-bottom: 0.2em;
+  text-transform: uppercase;
+}
+nav.sidebar ul { list-style: none; margin: 0.2em 0; padding-left: 0; }
+nav.sidebar a { color: #245; display: block; padding: 0.16em 0; text-decoration: none; }
+nav.sidebar a:hover { text-decoration: underline; }
+nav.sidebar a.active { color: #111; font-weight: 600; }
+@media (max-width: 60em) {
+  :root { --sidebar-width: 0px; }
+  body { margin: 0 auto; }
+  nav.sidebar {
+    border: 1px solid #ddd; border-radius: 4px; max-height: 40vh; position: static;
+    width: auto;
+  }
+}
+"""
+
+# Picks out the sidebar's entry for the section being read: the last whose heading is above
+# a fifth of the way down the window, or the first before any is, or the last once the page
+# is scrolled to its foot, which a short last section's heading may never get that high.
+# Only the links to sections are followed, not the one back to the index.
+_SIDEBAR_JS = """
+const links = [...document.querySelectorAll("nav.sidebar a[href^='#']")];
+const headings = links.map((a) => document.getElementById(a.hash.slice(1)));
+function pickSection() {
+  const atFoot = window.innerHeight + window.scrollY
+    >= document.documentElement.scrollHeight - 2;
+  let current = 0;
+  headings.forEach((h, i) => {
+    if (h.getBoundingClientRect().top <= window.innerHeight / 5) current = i;
+  });
+  if (atFoot) current = headings.length - 1;
+  links.forEach((a, i) => a.classList.toggle("active", i === current));
+}
+window.addEventListener("scroll", pickSection, { passive: true });
+window.addEventListener("resize", pickSection);
+window.addEventListener("load", pickSection);
+pickSection();
+"""
+
+# The headings the sidebar lists: the report's sections, but not the warnings or anything
+# else headed within one.
+_SIDEBAR_HEADING_RE = re.compile(r"<h2>(.*?)</h2>", re.DOTALL)
+
+
+def _with_sidebar(blocks):
+    """`blocks` with an id on each section's heading, after a sidebar linking to them."""
+    entries = []
+
+    def add_id(match):
+        inner = match.group(1)
+        text = html.unescape(re.sub(r"<[^>]+>", "", inner))
+        base = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "section"
+        # a heading used twice gets the next free id
+        taken = {anchor for (anchor, _) in entries}
+        anchor, n = base, 1
+        while anchor in taken:
+            n += 1
+            anchor = f"{base}-{n}"
+        entries.append((anchor, inner))
+        return f'<h2 id="{anchor}">{inner}</h2>'
+
+    blocks = [_SIDEBAR_HEADING_RE.sub(add_id, block) for block in blocks]
+    toc = "".join(
+        f'<li><a href="#{anchor}">{inner}</a></li>' for (anchor, inner) in entries
+    )
+    sidebar = (
+        f'<style>{_SIDEBAR_CSS}</style><nav class="sidebar">'
+        '<a class="home" href="index.html">&larr; All results</a>'
+        f'<p class="contents">Contents</p><ul>{toc}</ul></nav>'
+    )
+    return [
+        sidebar,
+        *blocks,
+        f"<script>{_SIDEBAR_JS}</script>",
+    ]
+
 
 # A notes block is a link-like line that opens the text under it, closed until clicked.
 _NOTES_CSS = """
@@ -540,7 +641,7 @@ def _warnings_html(warnings):
 
 
 class PlateReport(Report):
-    """A `Report` with its warnings gathered in one slot, and formatted tables.
+    """A `Report` with its warnings gathered in one slot, formatted tables, and a sidebar.
 
     Warnings are found as the analysis runs, but are wanted where they will be read first, so
     each is logged as it is added and they are all written in the slot `reserve_warnings`
@@ -654,9 +755,14 @@ class PlateReport(Report):
         )
 
     def write(self, path):
-        """Write the report to `path`, with the warnings in their slot."""
+        """Write the report to `path`, with the warnings in their slot and a sidebar."""
         if self._warnings:
             if self._warnings_index is None:
                 raise ValueError("there are warnings but no slot was reserved for them")
             self._blocks[self._warnings_index] = _warnings_html(self._warnings)
-        super().write(path)
+        blocks = self._blocks
+        self._blocks = _with_sidebar(blocks)
+        try:
+            super().write(path)
+        finally:
+            self._blocks = blocks

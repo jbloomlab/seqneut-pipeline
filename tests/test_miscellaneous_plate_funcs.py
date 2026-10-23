@@ -203,9 +203,9 @@ def test_report_puts_warnings_at_the_reserved_slot(tmp_path):
     report.warning("off the plate", pd.DataFrame({"plate": ["p1"], "well": ["Z9"]}))
     report.write(out := tmp_path / "r.html")
     html = out.read_text()
-    assert html.index("<h2>First</h2>") < html.index("<h3>Warnings</h3>")
+    assert html.index(">First</h2>") < html.index(">Warnings</h3>")
     assert html.index("<b>1</b> well off the plate") < html.index("Z9")
-    assert html.index("Z9") < html.index("<h2>Second</h2>")
+    assert html.index("Z9") < html.index(">Second</h2>")
 
 
 def test_report_without_warnings_has_no_warnings_section(tmp_path):
@@ -342,6 +342,25 @@ def test_report_stat_tiles(tmp_path):
     assert html.index("12 / 36") < html.index("library: x.csv")
 
 
+def test_report_sidebar(tmp_path):
+    """Sections get ids, linked from a sidebar that leaves out what is headed within one."""
+    report = PlateReport(title="t")
+    report.md("## First &amp; one\n\n### Warnings\n\n## Second\n\n## Second")
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    nav = html[html.index('<nav class="sidebar">') : html.index("</nav>")]
+    for anchor in ["first-one", "second", "second-2"]:
+        assert f'id="{anchor}"' in html
+        assert f'href="#{anchor}"' in nav
+    assert nav.index("first-one") < nav.index('"#second"')
+    assert "<h3>Warnings</h3>" in html
+    assert "Warnings" not in nav
+    assert 'href="index.html"' in nav
+    # writing again gives the same page, rather than ids on ids
+    report.write(again := tmp_path / "r2.html")
+    assert again.read_text() == html
+
+
 def test_report_notes(tmp_path):
     """What is appended within a notes block sits inside a closed details element."""
     report = PlateReport(title="t")
@@ -417,15 +436,15 @@ def test_report_section_warnings(tmp_path):
     report.md("## After")
     report.write(out := tmp_path / "r.html")
     html = out.read_text()
-    assert html.count("<h3>Warnings</h3>") == 1
-    assert html.index("<h2>Titers</h2>") < html.index("<h3>Warnings</h3>")
+    assert html.count(">Warnings</h3>") == 1
+    assert html.index(">Titers</h2>") < html.index(">Warnings</h3>")
     assert html.index("<b>2</b> wells with zero titer") < html.index(
         "absent from &lt;log&gt;"
     )
     assert (
         html.index("absent from &lt;log&gt;")
         < html.index("A1")
-        < html.index("<h2>After</h2>")
+        < html.index(">After</h2>")
     )
     assert len(report.warnings) == 1
 
