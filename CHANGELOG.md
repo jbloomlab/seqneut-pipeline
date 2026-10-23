@@ -1,5 +1,19 @@
 # CHANGELOG
 
+#### version 10.0.0 (unreleased)
+- Add the optional `analyze_single_well_infections` configuration key, which analyzes miscellaneous plates whose wells were each infected with a single virus of the library: what each well holds that it should not, where that material came from on the plate, unmatched barcodes, an estimated titer of each virus, and whether every barcode a well should hold turned up. Each analysis is a page of the docs and writes a per-well composition CSV and a per-well expected-barcode CSV; see the README. Barcode counting and the neutralization-curve analysis are unchanged, so nothing reruns for a project that does not use it.
+
+  This is a major version because it replaces the analyses of single virus per well infections that projects carried themselves: a project defining its own rule named `analyze_single_well_infections` now fails with a duplicate-rule error. To migrate, delete the project's rule and script and reduce each entry of its `analyze_single_well_infections` configuration to the keys in the README:
+  + `well_holds` is no longer set, but read from the samples CSVs: a `barcode` column means one barcode per well, and otherwise the `strain` column names one strain per well.
+  + `max_other_strain_frac` is renamed `max_other_library_frac`, as under one barcode per well a sibling barcode of the same strain is foreign too.
+  + `discarded_barcodes` moves out of each analysis to a top-level key mapping each barcode to the reason it is discarded, which the report shows, so that every analysis of the miscellaneous plates shares one list. It also sets aside reads within one nucleotide of a discarded barcode, its misreads, not just exact matches, so the unmatched fractions of a project that used it go down slightly.
+  + A library strain or barcode in no well is reported as not assayed rather than raising, and `stock_id` in the viral library is optional.
+  + The cutoffs below which a well is warned about as too shallow, or as having too few neutralization-standard reads for a precise titer, were fixed in the projects' scripts and are now the optional keys `min_parsed_reads_per_well` and `min_neut_standard_reads_for_titer`, with the same defaults.
+  + The distances within which a read counts as a misread, of a discarded barcode or a known one and of what belongs in its well, were fixed at one nucleotide in the projects' scripts and are now the optional keys `max_sequencing_error_hamming` and `max_expected_error_hamming`, with that default.
+  + Where each well holds a barcode, a `strain` column in the samples CSV must agree with the library's strain for that barcode.
+  + The outputs are under `results/single_well_infections/`.
+  + Remove the project's own `add_htmls_to_docs` entry for these reports, which the pipeline now adds under *Single virus per well infections* in the *Library quality-control* section. A project's own `add_htmls_to_docs` entries under that heading are listed after the pipeline's rather than replacing them, and its headings keep their order.
+
 #### version 9.3.1
 - Add `pyarrow` to `envs/count_barcodes.yml`.
 
