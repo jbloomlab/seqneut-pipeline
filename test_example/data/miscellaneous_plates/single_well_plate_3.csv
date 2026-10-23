@@ -1,0 +1,4 @@
+well,strain,barcode,fastq,dilution_factor
+B2,A/England/220200318/2022,CGTAATACATTTAAGA,fastqs/single_well/single_well_plate_3/B2.fastq.gz,1
+B3,A/England/220200318/2022,GACCAACTGTGGTACA,fastqs/single_well/single_well_plate_3/B3.fastq.gz,1
+B4,A/Ghana/138/2020,CCAGTTCCCTTCGATG,fastqs/single_well/single_well_plate_3/B4.fastq.gz,1
