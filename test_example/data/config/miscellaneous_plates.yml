@@ -11,3 +11,26 @@ miscellaneous_plates:
     illumina_barcode_parser_params:
       upstream2: GCTACA
       upstream2_mismatch: 1
+
+  # Synthetic plates whose wells were each infected with a single virus, written by
+  # `make_single_well_fastqs.py` along with what the analysis should find in each well.
+  # The first two hold a strain to a well, the third and fourth a barcode, the fourth
+  # against a library that records which barcodes share a tube.
+  single_well_plate_1: &single_well_plate
+    date: 2023-08-02
+    viral_library: pdmH1N1_lib2023_loes
+    neut_standard_set: loes2023
+    samples_csv: data/miscellaneous_plates/single_well_plate_1.csv
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
+  single_well_plate_2:
+    <<: *single_well_plate
+    samples_csv: data/miscellaneous_plates/single_well_plate_2.csv
+  single_well_plate_3:
+    <<: *single_well_plate
+    samples_csv: data/miscellaneous_plates/single_well_plate_3.csv
+  single_well_plate_4:
+    <<: *single_well_plate
+    viral_library: pdmH1N1_lib2023_loes_stocks
+    samples_csv: data/miscellaneous_plates/single_well_plate_4.csv

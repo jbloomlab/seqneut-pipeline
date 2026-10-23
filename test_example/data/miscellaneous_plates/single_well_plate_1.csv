@@ -1,0 +1,12 @@
+well,strain,fastq,dilution_factor
+B2,A/Brisbane/02/2018,fastqs/single_well/single_well_plate_1/B2.fastq.gz,1
+B3,A/California/07/2009,fastqs/single_well/single_well_plate_1/B3.fastq.gz,1
+B4,A/Hawaii/70/2019,fastqs/single_well/single_well_plate_1/B4.fastq.gz,1
+B5,A/Michigan/45/2015,fastqs/single_well/single_well_plate_1/B5.fastq.gz,1
+B6,A/Bangladesh/2221/2021,fastqs/single_well/single_well_plate_1/B6.fastq.gz,1
+B7,,fastqs/single_well/single_well_plate_1/B7.fastq.gz,1
+D7,A/Bangladesh/8002/2021,fastqs/single_well/single_well_plate_1/D7.fastq.gz,1
+C2,A/Bangladesh/8036/2021,fastqs/single_well/single_well_plate_1/C2.fastq.gz,1
+C3,A/Belgium/H0017/2022,fastqs/single_well/single_well_plate_1/C3.fastq.gz,1
+C4,A/Belgium/H0038/2022,fastqs/single_well/single_well_plate_1/C4.fastq.gz,1
+C5,A/Brisbane/48/2022,fastqs/single_well/single_well_plate_1/C5.fastq.gz,1
