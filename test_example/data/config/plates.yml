@@ -1,0 +1,132 @@
+# === Plate configuration for `seqneut-pipeline` =======================================
+
+# Merged into the configuration via `addtl_config_files` in `config.yml`. The defaults
+# below are here rather than in `config.yml` because a YAML alias can only refer to an
+# anchor in the same file.
+
+default_process_plate_qc_thresholds: &default_process_plate_qc_thresholds
+  avg_barcode_counts_per_well: 250  # 250 for this test, typically >= 500 for real experiments
+  min_neut_standard_frac_per_well: 0.005
+  no_serum_per_viral_barcode_filters:
+    min_frac: 0.0005
+    max_fold_change: 3
+    max_wells: 2
+  per_neut_standard_barcode_filters:
+    min_frac: 0.005
+    max_fold_change: 3
+    max_wells: 2
+  min_neut_standard_count_per_well: 500  # 500 for this test, typically >= 1000 for real experiments
+  min_no_serum_count_per_viral_barcode_well: 30
+  max_frac_infectivity_per_viral_barcode_well: 5
+  min_dilutions_per_barcode_serum_replicate: 6
+
+default_process_plate_curvefit_params: &default_process_plate_curvefit_params
+  frac_infectivity_ceiling: 1
+  fixtop: [0.75, 1]
+  fixbottom: 0
+  fixslope: [0.8, 10]
+
+default_process_plate_curvefit_qc:  &default_process_plate_curvefit_qc
+  max_frac_infectivity_at_least: 0
+  goodness_of_fit:  # EITHER R2 must be >= min_R2 or RMSD must be <= max_RMSD
+    min_R2: 0.7
+    max_RMSD: 0.1  # you may be able to increase this to more like 0.1
+  serum_replicates_ignore_curvefit_qc: []
+  barcode_serum_replicates_ignore_curvefit_qc: []
+
+plates:
+
+  plate2:
+    group: serum
+    date: 2023-08-01
+    viral_library: pdmH1N1_lib2023_loes
+    neut_standard_set: loes2023
+    samples_csv: data/plates/plate2_samples.csv
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
+
+  # An exact duplicate of `plate2` (same samples and FASTQs under a different plate
+  # name). This gives the sera on `plate2` a third plate, which tests the multi-panel
+  # plate-to-plate correlation plots. Because it is an exact duplicate, its titers must
+  # correlate perfectly with those from `plate2`, and its correlation with `plate11` must
+  # be identical to that of `plate2` with `plate11`.
+  plate2_exact_dup:
+    group: serum
+    date: 2023-08-01
+    viral_library: pdmH1N1_lib2023_loes
+    neut_standard_set: loes2023
+    samples_csv: data/plates/plate2_samples.csv
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
+
+  plate11:
+    group: serum
+    date: 2023-09-26
+    viral_library: pdmH1N1_lib2023_loes
+    neut_standard_set: loes2023
+    samples_csv: data/plates/plate11_samples.csv
+    manual_drops:
+      barcode_serum_replicates:
+        - [AGTCCTATCCTCAAAT, M099d0]
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
+      barcode_serum_replicates_ignore_curvefit_qc:
+        - [AGGTCAAGACCACAGG, M099d0]
+    illumina_barcode_parser_params:
+      upstream2: ATCGAT
+      upstream2_mismatch: 1
+
+  H3N2_plate:
+    group: pilot
+    date: 2024-03-04
+    viral_library: H3N2_lib2023_Kikawa
+    neut_standard_set: loes2023
+    samples_csv: data/plates/H3N2_samples.csv
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc
+
+  # Same data as `H3N2_plate` but titrated as a `concentration` (set to the
+  # reciprocal of the dilution factor) rather than a `dilution_factor`. Because
+  # concentration == 1 / dilution_factor, the fits are identical to `H3N2_plate`
+  # and the reported IC50 titers are the reciprocal of the `pilot` NT50/midpoint
+  # titers (verified in `test_titers_as_expected.py`).
+  H3N2_conc_plate:
+    group: abconc
+    date: 2024-03-04
+    dilution_factor_or_concentration: concentration
+    concentration_units: ug/ml
+    viral_library: H3N2_lib2023_Kikawa
+    neut_standard_set: loes2023
+    samples_csv: data/plates/H3N2_conc_samples.csv
+    manual_drops: {}
+    qc_thresholds:
+      <<: *default_process_plate_qc_thresholds
+    curvefit_params:
+      <<: *default_process_plate_curvefit_params
+    curvefit_qc:
+      <<: *default_process_plate_curvefit_qc

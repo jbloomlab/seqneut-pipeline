@@ -124,6 +124,17 @@ jobs:
           results/logs/validate_viral_library_pdmH1N1_lib2023_loes.txt
           && cd ..
 
+      - name: dry-run test example with a top-level key repeated across config files
+        # a key in both `config.yml` and one of its `addtl_config_files` is an error
+        shell: bash -el {0}
+        run: >
+          cp -a test_example _test_example_duplicate_config_key
+          && cd _test_example_duplicate_config_key
+          && echo "curve_display_method: svg" >> data/config/miscellaneous_plates.yml
+          && ! snakemake -n > snakemake_dryrun.txt 2>&1
+          && grep -q "key 'curve_display_method' is in both config.yml and" snakemake_dryrun.txt
+          && cd ..
+
       - name: upload results in case of error
         uses: actions/upload-artifact@v7
         if: failure()
@@ -134,4 +145,5 @@ jobs:
             _test_example_collapsed/results
             _test_example_no_plates/results
             _test_example_bad_viral_library/results
+            _test_example_duplicate_config_key/snakemake_dryrun.txt
           retention-days: 7

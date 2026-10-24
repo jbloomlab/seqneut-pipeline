@@ -15,6 +15,8 @@ include: "funcs.smk"  # include functions
 
 # --- Process configuration ------------------------------------------------------------
 
+load_addtl_config_files(workflow, config)  # first, so all later code sees their keys
+
 pipeline_subdir = config["seqneut-pipeline"]
 
 viral_libraries = {
