@@ -194,17 +194,14 @@ def process_single_well_infections(single_well_d, misc_plates):
 
     """
     # The optional keys and their defaults, applied here and nowhere else. They are optional
-    # because most analyses want no final library or extra columns, the flag thresholds
-    # only decide which wells are flagged and warned about, and one nucleotide is the usual
-    # allowance for a misread, so a project need only set one it wants to differ; the two
-    # misread distances do change what is computed. `strain_axis` only orients the charts.
+    # because most analyses want no final library or extra columns, and the flag
+    # thresholds only decide which wells are flagged and warned about, so a project need
+    # only set one it wants to differ. `strain_axis` only orients the charts.
     defaults = {
         "max_other_library_frac": 0.005,
         "max_unmatched_frac": 0.02,
         "min_parsed_reads_per_well": 1000,
         "min_neut_standard_reads_for_titer": 100,
-        "max_sequencing_error_hamming": 1,
-        "max_expected_error_hamming": 1,
         "strain_axis": "y",
         "final_viral_library": None,
         "addtl_viral_cols_to_show": [],

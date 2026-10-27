@@ -28,6 +28,11 @@ PLATE_COLUMNS = 12
 # from five wells away or from nine.
 MAX_NAMED_DISTANCE = 2
 
+# How many nucleotides an unmatched barcode can differ from a barcode and still be a misread
+# of it. Fixed rather than configured, as it is part of what a misread means rather than an
+# experimental choice; it does change which category a read falls in.
+MAX_MISREAD_HAMMING = 1
+
 # where material came from when it is not a distance on the same plate
 ANOTHER_PLATE = "another plate here"
 NOT_ASSAYED = "not assayed here"
@@ -143,14 +148,12 @@ def trace_origin(plate, well, homes):
     return NOT_ASSAYED, None, None, NOT_ASSAYED
 
 
-def check_discarded_barcodes(
-    discarded_barcodes, counted_barcodes, max_sequencing_error_hamming
-):
+def check_discarded_barcodes(discarded_barcodes, counted_barcodes):
     """Check barcodes to discard against the barcodes that are counted.
 
     Each discarded barcode is given with the reason it is discarded, which the reports show.
     A discarded barcode must be in neither the viral library nor the neutralization standard
-    set, and more than twice `max_sequencing_error_hamming` from every barcode of them: reads
+    set, and more than twice `MAX_MISREAD_HAMMING` from every barcode of them: reads
     that close to a discarded barcode are discarded with it, and reads that close to a
     counted one are its misreads, so no read can then be both.
 
@@ -159,8 +162,6 @@ def check_discarded_barcodes(
             The barcodes to discard, each to the reason it is discarded, as configured.
         `counted_barcodes` (list)
             The viral library and neutralization standard barcodes.
-        `max_sequencing_error_hamming` (int)
-            How far a read can be from a barcode and still be a misread of it.
 
     Returns:
         The discarded barcodes upper-cased, as the counted barcodes are compared, each to
@@ -173,7 +174,7 @@ def check_discarded_barcodes(
             f"not be {discarded_barcodes!r}"
         )
     counted = [bc.upper() for bc in counted_barcodes]
-    min_distance = 2 * max_sequencing_error_hamming + 1
+    min_distance = 2 * MAX_MISREAD_HAMMING + 1
     checked = {}
     for barcode, reason in discarded_barcodes.items():
         if not isinstance(barcode, str) or len(barcode) != len(counted[0]):
@@ -314,13 +315,13 @@ def min_hamming(barcodes, targets):
     )
 
 
-def split_discarded(invalid, discarded_barcodes, max_sequencing_error_hamming):
+def split_discarded(invalid, discarded_barcodes):
     """Split unmatched barcodes into those kept and those of discarded barcodes.
 
     A discarded barcode is one physically in every well that no analysis should count, such
     as a spike-in barcode left out of the neutralization standard set because it sequences
     badly. It is in neither whitelist, so its reads are among the unmatched ones, and so are
-    its misreads: both an exact match and one within `max_sequencing_error_hamming` of a
+    its misreads: both an exact match and one within `MAX_MISREAD_HAMMING` of a
     discarded barcode are set aside.
 
     Args:
@@ -329,8 +330,6 @@ def split_discarded(invalid, discarded_barcodes, max_sequencing_error_hamming):
         `discarded_barcodes` (list or dict)
             The barcodes to discard, possibly empty: a dict, as from
             `check_discarded_barcodes`, is taken for its keys.
-        `max_sequencing_error_hamming` (int)
-            How far a read can be from a discarded barcode and still be a misread of it.
 
     Returns:
         `(kept, discarded)`, the rows of `invalid` split in two.
@@ -339,8 +338,7 @@ def split_discarded(invalid, discarded_barcodes, max_sequencing_error_hamming):
     if not discarded_barcodes or not len(invalid):
         return invalid, invalid.iloc[:0]
     is_discarded = (
-        min_hamming(invalid["barcode"], list(discarded_barcodes))
-        <= max_sequencing_error_hamming
+        min_hamming(invalid["barcode"], list(discarded_barcodes)) <= MAX_MISREAD_HAMMING
     )
     return invalid[~is_discarded], invalid[is_discarded]
 

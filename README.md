@@ -661,7 +661,7 @@ discarded_barcodes:
 ```
 
 The analyses of miscellaneous plates (currently `analyze_single_well_infections`) set aside the reads of these barcodes and their misreads, and list each barcode with its reason in their reports.
-Each barcode must be more than twice `max_sequencing_error_hamming` from every barcode in the viral library and neutralization standard set, so that no read can be a misread of both.
+Reads within 1 nt of a barcode are taken as its misreads, so each discarded barcode must be at least 3 nt from every barcode in the viral library and neutralization standard set: no read can then be a misread of both.
 The neutralization plates do not use this key.
 
 ### analyze_single_well_infections
@@ -682,8 +682,6 @@ analyze_single_well_infections:
     max_unmatched_frac: 0.02
     min_parsed_reads_per_well: 1000
     min_neut_standard_reads_for_titer: 100
-    max_sequencing_error_hamming: 1
-    max_expected_error_hamming: 1
     strain_axis: y
     final_viral_library: null
     addtl_viral_cols_to_show: []
@@ -697,13 +695,11 @@ The keys are:
  - `max_unmatched_frac`: flag a well when more than this fraction of its non-neutralization-standard reads match neither the viral library nor the neutralization standard.
  - `min_parsed_reads_per_well`: flag a well with fewer parsed reads than this as `too_shallow`.
  - `min_neut_standard_reads_for_titer`: flag a well with fewer neutralization-standard reads than this as `titer_imprecise`, as those reads are the denominator of its titer.
- - `max_sequencing_error_hamming`: how many nucleotides a read can differ from any barcode and still be a misread of it. Misreads of a discarded barcode are discarded with it, and an unmatched barcode this close to a known one is named in the report as a sequencing error of it.
- - `max_expected_error_hamming`: how many nucleotides an unmatched barcode can differ from one of its well's expected barcodes or a neutralization-standard barcode and still count as a misread of the well's own material.
  - `strain_axis`: `y` to draw each well as a row of horizontal bars with the panels side by side, or `x` to draw each well as a column of vertical bars with the panels stacked, which can read better for a single plate of few wells.
  - `final_viral_library`: a key of `viral_libraries` holding the library carried forward after these plates. Wells whose barcodes are all absent from it are marked as dropped; it is not used in any calculation.
  - `addtl_viral_cols_to_show`: a list of viral library columns to show in the report and the output CSV, each of which must be constant across the barcodes of a strain.
 
-The four thresholds only decide which wells are flagged and warned about, while the two Hamming distances change which reads are counted where.
+The four thresholds only decide which wells are flagged and warned about.
 
 What each well was infected with is read from the `samples_csv` of its plate, and all plates of an analysis must be of one kind:
 
@@ -715,7 +711,7 @@ Each strain or barcode can be in at most one well per plate, so that material be
 An optional `dilution_factor` column must have the same value for every infected well of the analysis, as their titers are compared.
 Strains or barcodes of the library in no well are reported as not assayed.
 
-Each parsed read of a well is assigned to one of: its expected barcodes, the neutralization standard, another barcode of the library, an unmatched barcode within `max_expected_error_hamming` of an expected or neutralization-standard barcode, or another unmatched barcode.
+Each parsed read of a well is assigned to one of: its expected barcodes, the neutralization standard, another barcode of the library, an unmatched barcode within 1 nt of an expected or neutralization-standard barcode, which is taken as a misread of it, or another unmatched barcode.
 Fractions are of the reads that are not neutralization standard.
 Material belonging elsewhere is traced to the well it should have come from and how far away that well is, counting a step to any of the eight surrounding wells as one.
 The titer of a well is its expected reads divided by its neutralization-standard reads; it is relative rather than in infectious units, and is not inflated by contamination.

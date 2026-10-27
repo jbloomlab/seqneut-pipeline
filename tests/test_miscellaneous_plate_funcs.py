@@ -154,21 +154,17 @@ def test_split_discarded_takes_exact_and_near_matches():
             "count": [10, 3, 2, 5],
         }
     )
-    kept, discarded = split_discarded(invalid, ["GGTCCATC"], 1)
+    kept, discarded = split_discarded(invalid, ["GGTCCATC"])
     assert discarded["barcode"].tolist() == ["GGTCCATC", "GGTCCATG"]
     assert kept["barcode"].tolist() == ["GGTCCAAG", "TTTTTTTT"]
-    kept, discarded = split_discarded(invalid, ["GGTCCATC"], 2)
-    assert discarded["barcode"].tolist() == ["GGTCCATC", "GGTCCATG", "GGTCCAAG"]
-    kept, discarded = split_discarded(invalid, ["GGTCCATC"], 0)
-    assert discarded["barcode"].tolist() == ["GGTCCATC"]
 
 
 def test_split_discarded_with_nothing_to_discard():
     """No discarded barcodes, or no unmatched reads, discards nothing."""
     invalid = pd.DataFrame({"barcode": ["AAAA"], "count": [1]})
-    kept, discarded = split_discarded(invalid, [], 1)
+    kept, discarded = split_discarded(invalid, [])
     assert len(kept) == 1 and len(discarded) == 0
-    kept, discarded = split_discarded(invalid.iloc[:0], ["AAAA"], 1)
+    kept, discarded = split_discarded(invalid.iloc[:0], ["AAAA"])
     assert len(kept) == 0 and len(discarded) == 0
 
 
@@ -277,10 +273,10 @@ COUNTED = ["AAAAAAAA", "CCCCCCCC"]
 
 def test_check_discarded_barcodes_upper_cases():
     """A discarded barcode far from every counted one passes, upper-cased."""
-    assert check_discarded_barcodes({"gggggggg": " a reason "}, COUNTED, 1) == {
+    assert check_discarded_barcodes({"gggggggg": " a reason "}, COUNTED) == {
         "GGGGGGGG": "a reason"
     }
-    assert check_discarded_barcodes({}, COUNTED, 1) == {}
+    assert check_discarded_barcodes({}, COUNTED) == {}
 
 
 @pytest.mark.parametrize(
@@ -290,45 +286,32 @@ def test_check_discarded_barcodes_upper_cases():
 def test_check_discarded_barcodes_distance_boundary(barcode, ok):
     """A discarded barcode must be at least 3 nt from every counted barcode."""
     if ok:
-        assert list(check_discarded_barcodes({barcode: "r"}, COUNTED, 1)) == [barcode]
+        assert list(check_discarded_barcodes({barcode: "r"}, COUNTED)) == [barcode]
     else:
         with pytest.raises(ValueError, match="within 2 nucleotides"):
-            check_discarded_barcodes({barcode: "r"}, COUNTED, 1)
-
-
-@pytest.mark.parametrize(
-    "max_hamming, barcode, ok",
-    [(0, "AAAAAAAG", True), (0, "AAAAAAAA", False), (2, "AAAAGGGG", False)],
-)
-def test_check_discarded_barcodes_distance_scales(max_hamming, barcode, ok):
-    """The distance needed is more than twice how far a misread can be."""
-    if ok:
-        assert list(check_discarded_barcodes({barcode: "r"}, COUNTED, max_hamming))
-    else:
-        with pytest.raises(ValueError, match=f"within {2 * max_hamming} nucleotides"):
-            check_discarded_barcodes({barcode: "r"}, COUNTED, max_hamming)
+            check_discarded_barcodes({barcode: "r"}, COUNTED)
 
 
 @pytest.mark.parametrize("barcode", ["GGGG", "GGGGGGGN", 12345678])
 def test_check_discarded_barcodes_rejects_non_barcodes(barcode):
     """A wrong length, a letter other than ACGT, or a non-string raises."""
     with pytest.raises(ValueError):
-        check_discarded_barcodes({barcode: "r"}, COUNTED, 1)
+        check_discarded_barcodes({barcode: "r"}, COUNTED)
 
 
 @pytest.mark.parametrize("reason", [None, "", "  ", 3])
 def test_check_discarded_barcodes_needs_a_reason(reason):
     """Every discarded barcode needs a reason, given as text."""
     with pytest.raises(ValueError, match="needs the reason"):
-        check_discarded_barcodes({"GGGGGGGG": reason}, COUNTED, 1)
+        check_discarded_barcodes({"GGGGGGGG": reason}, COUNTED)
 
 
 def test_check_discarded_barcodes_rejects_a_list_and_repeats():
     """A bare list of barcodes, or one barcode given twice, raises."""
     with pytest.raises(TypeError, match="must map each barcode"):
-        check_discarded_barcodes(["GGGGGGGG"], COUNTED, 1)
+        check_discarded_barcodes(["GGGGGGGG"], COUNTED)
     with pytest.raises(ValueError, match="more than once"):
-        check_discarded_barcodes({"GGGGGGGG": "r", "gggggggg": "r"}, COUNTED, 1)
+        check_discarded_barcodes({"GGGGGGGG": "r", "gggggggg": "r"}, COUNTED)
 
 
 def test_report_stat_tiles(tmp_path):

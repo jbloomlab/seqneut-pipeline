@@ -16,15 +16,15 @@ five categories that partition it:
     expected            one of the well's expected barcodes
     neut standard       a barcode of the neutralization standard
     other library       a library barcode that is not expected here, so it does not belong
-    unmatched, near     matched neither whitelist, but is within
-                        `max_expected_error_hamming` of an expected barcode or of the
-                        neutralization standard, so it is the well's own material misread
+    unmatched, near     matched neither whitelist, but is within `MAX_MISREAD_HAMMING`
+                        of an expected barcode or of the neutralization standard, so it
+                        is the well's own material misread
     unmatched, far      matched neither whitelist and is further than that, so it cannot be
                         attributed to what belongs in the well
 
-Before that, the reads of any `discarded_barcodes`, and those within
-`max_sequencing_error_hamming` of one, are set aside: these are barcodes physically in every
-well that no analysis should count. They are reported but enter no category or fraction.
+Before that, the reads of any `discarded_barcodes`, and those within `MAX_MISREAD_HAMMING`
+of one, are set aside: these are barcodes physically in every well that no analysis should
+count. They are reported but enter no category or fraction.
 
 When each well holds one barcode, another barcode of the well's own strain is *not*
 expected: the well was supposed to hold one variant, so a sibling barcode is material that
@@ -83,6 +83,7 @@ from miscellaneous_plate_charts import (
 from miscellaneous_plate_funcs import (
     ANOTHER_PLATE,
     FATE_EXPLANATIONS,
+    MAX_MISREAD_HAMMING,
     MAX_NAMED_DISTANCE,
     NOT_ASSAYED,
     PlateReport,
@@ -161,24 +162,6 @@ max_unmatched_frac = _thresholds["max_unmatched_frac"]
 min_parsed_reads_per_well = _thresholds["min_parsed_reads_per_well"]
 min_neut_standard_reads_for_titer = _thresholds["min_neut_standard_reads_for_titer"]
 
-# How far a barcode can be from another and still be read as a misread of it. Against the
-# whole whitelist, `max_sequencing_error_hamming` is how close an unmatched barcode must be
-# to a known one to be named as sequencing error off it, and to a discarded one to be
-# discarded with it. Against the barcodes of *one well*, `max_expected_error_hamming` is how
-# close it must be to what belongs there to be that well's own material misread rather
-# than something that does not belong. The two are separate questions, so they are
-# separate keys even at the same value.
-_hammings = {}
-for _key in ["max_sequencing_error_hamming", "max_expected_error_hamming"]:
-    _value = single_well_config[_key]
-    if isinstance(_value, bool) or not isinstance(_value, int) or _value < 0:
-        raise ValueError(
-            f"{_key!r} of {single_well} must be a non-negative integer, not {_value!r}"
-        )
-    _hammings[_key] = _value
-max_sequencing_error_hamming = _hammings["max_sequencing_error_hamming"]
-max_expected_error_hamming = _hammings["max_expected_error_hamming"]
-
 # The four categories that partition the virus in a well: the column each is computed in,
 # mapped to the label it carries in the report, in the order they stack.
 #
@@ -189,12 +172,8 @@ max_expected_error_hamming = _hammings["max_expected_error_hamming"]
 COMPOSITION_CATEGORIES = {
     "expected_reads": "expected",
     "other_library_reads": "other library",
-    "unmatched_near_expected_reads": (
-        f"≤{max_expected_error_hamming} nt from expected/standard"
-    ),
-    "unmatched_far_expected_reads": (
-        f">{max_expected_error_hamming} nt from expected/standard"
-    ),
+    "unmatched_near_expected_reads": f"≤{MAX_MISREAD_HAMMING} nt from expected/standard",
+    "unmatched_far_expected_reads": f">{MAX_MISREAD_HAMMING} nt from expected/standard",
 }
 
 
@@ -367,7 +346,6 @@ if missing_viral_cols:
 discarded_barcodes = check_discarded_barcodes(
     snakemake.params.discarded_barcodes,
     barcode_class["barcode"].tolist(),
-    max_sequencing_error_hamming,
 )
 
 assayed_units = set(samples.loc[~samples["is_empty"], "expected"])
@@ -543,7 +521,6 @@ invalid, discarded = split_discarded(
         plate_wells,
     ),
     discarded_barcodes,
-    max_sequencing_error_hamming,
 )
 
 # --- the wells assayed ---------------------------------------------------------------------
@@ -647,7 +624,7 @@ if has_final_library:
 
 # How far each unmatched barcode is from what belongs in the well it turned up in: the
 # barcodes of the unit infected into it, and those of the neutralization standard spiked into
-# it. Within `max_expected_error_hamming` of either, the read is a misread of something that
+# it. Within `MAX_MISREAD_HAMMING` of either, the read is a misread of something that
 # belongs there; further away it cannot be put down to either. The distance to what the well
 # expects is computed a well at a time, so each barcode is measured against its own well's.
 invalid = invalid.merge(
@@ -713,7 +690,7 @@ def reads_where(frame, mask):
 
 
 _is_expected = counts["barcode_unit"] == counts["expected"]
-_misread = invalid["expected_distance"] <= max_expected_error_hamming
+_misread = invalid["expected_distance"] <= MAX_MISREAD_HAMMING
 well_reads["neut_standard_reads"] = reads_where(counts, counts["neut_standard"])
 well_reads["expected_reads"] = reads_where(counts, _is_expected)
 well_reads["other_library_reads"] = reads_where(
@@ -1105,7 +1082,7 @@ with report.notes("How to read this plot"):
             ),
             "discarded barcode": (
                 "the read contains a barcode present in the discarded barcode set or "
-                f"within {max_sequencing_error_hamming} nt of one."
+                f"within {MAX_MISREAD_HAMMING} nt of one."
             ),
         }
         if discarded_barcodes
@@ -1136,11 +1113,11 @@ with report.notes("How to read this plot"):
             "same tube"}.
          - **{_category_labels[1]}**: the barcode maps to another {well_holds} in the
            library.
-         - **{_category_labels[2]}**: the barcode is within {max_expected_error_hamming} nt
+         - **{_category_labels[2]}**: the barcode is within {MAX_MISREAD_HAMMING} nt
            of an expected barcode or a neutralization standard barcode. These are likely
            sequencing errors as opposed to contamination.
          - **{_category_labels[3]}**: the barcode is further than
-           {max_expected_error_hamming} nt from every expected and neutralization standard
+           {MAX_MISREAD_HAMMING} nt from every expected and neutralization standard
            barcode.
 
         Note that this excludes neutralization standard barcodes{
@@ -1220,11 +1197,11 @@ if discarded_barcodes:
     if not len(_with_discards):
         report.md(
             "No wells contained these barcodes or barcodes within "
-            f"{max_sequencing_error_hamming} nt of them."
+            f"{MAX_MISREAD_HAMMING} nt of them."
         )
     else:
         report.md(f"""
-            Any reads matching these barcodes or within {max_sequencing_error_hamming} nt
+            Any reads matching these barcodes or within {MAX_MISREAD_HAMMING} nt
             were discarded, for a total of {int(well_reads["discarded_reads"].sum())} reads
             across the {len(well_reads)} wells analyzed. A summary table of this is below:
             """)
@@ -1368,8 +1345,7 @@ else:
                 "sequencing error off "
                 + x["strain"].where(~x["neut_standard"].astype(bool), "neut standard")
             ).where(
-                x["closest_valid_barcode_hamming_distance"]
-                <= max_sequencing_error_hamming,
+                x["closest_valid_barcode_hamming_distance"] <= MAX_MISREAD_HAMMING,
                 x["closest_valid_barcode_hamming_distance"].astype(str)
                 + " nt from any known barcode",
             ),
