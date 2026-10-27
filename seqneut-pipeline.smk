@@ -489,7 +489,12 @@ rule miscellaneous_plate_count_barcodes:
 
 
 rule analyze_single_well_infections:
-    """Analyze plates that infect each well with a single virus of the library."""
+    """Analyze plates that infect each well with a single virus of the library.
+
+    Such plates are a QC check on the viral stocks, that each well holds the barcodes it
+    should with minimal contamination.
+
+    """
     input:
         **{
             suffix: lambda wc, suffix=suffix: [

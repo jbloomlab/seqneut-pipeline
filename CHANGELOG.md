@@ -1,14 +1,9 @@
 # CHANGELOG
 
 #### version 10.0.0 (unreleased)
-- Add an optional `analyze_single_well_infections` key that analyzes miscellaneous plates whose wells were each infected with a single virus: what each well holds that it should not and where it came from on the plate, unmatched barcodes, an estimated titer, and whether every expected barcode turned up. Each analysis is a page of the docs, under *Library quality-control*, and writes a per-well composition CSV and expected-barcode CSV to `./results/single_well_infections/`; see the README. Added because projects carried their own version of this analysis, which is better modularized in the pipeline.
+- Add an optional `analyze_single_well_infections` key that analyzes miscellaneous plates whose wells were each infected with a single virus: what each well holds that it should not and where it came from on the plate, unmatched barcodes, an estimated titer, and whether every expected barcode turned up. Each analysis is a page of the docs, under *Library quality-control*, and writes a per-well composition CSV and expected-barcode CSV to `./results/single_well_infections/`; see the README. Added because projects carried their own version of this analysis, which is better modularized in the pipeline. This is a major version because a project that defines its own rule named `analyze_single_well_infections` now fails with a duplicate-rule error.
 
 - Add an optional top-level `discarded_barcodes` key mapping each barcode that should not be counted to the reason why. The single-well analysis sets aside these barcodes' reads and their misreads; the neutralization plates do not use it.
-
-- This is a major version because a project with its own `analyze_single_well_infections` rule now fails with a duplicate-rule error. To migrate, delete the project's rule and script, and its `add_htmls_to_docs` entry for these reports, then reduce its configuration to the keys in the README:
-  + `well_holds` is gone: it is read from the samples CSVs, a `barcode` column meaning one barcode per well and otherwise one strain per well. A blank marks an uninfected well, so a sentinel such as `none` must be blanked.
-  + `max_other_strain_frac` is renamed `max_other_library_frac`.
-  + `discarded_barcodes` moves to the top level, with a reason for each barcode.
 
 #### version 9.4.1
 - Update to latest `bloomlab-coding-standards` submodule.

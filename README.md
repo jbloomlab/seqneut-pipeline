@@ -666,7 +666,7 @@ The neutralization plates do not use this key.
 
 ### analyze_single_well_infections
 An optional key that analyzes miscellaneous plates whose wells were each infected with a single virus of the library (plus the neutralization standard) rather than with the pool.
-These plates check that each well holds only what it should and whether virus from one well ends up in another, and give a rough estimate of the titer of each virus.
+These plates are a QC check on the viral stocks: they check that each stock holds the barcodes it should with little contamination and give a rough estimate of the titer of each virus.
 If you do not have any such plates, leave this key out or set it to null.
 
 Each entry is one analysis, which can combine several plates and is reported on its own page of the docs under *Library quality-control*:

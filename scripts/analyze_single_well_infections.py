@@ -187,13 +187,13 @@ max_expected_error_hamming = _hammings["max_expected_error_hamming"]
 # The standard is a fixed spike rather than part of what a well grew, so including it would
 # make each of these fractions depend on how much virus the well happened to hold.
 COMPOSITION_CATEGORIES = {
-    "expected_reads": "expected barcode",
-    "other_library_reads": "other library barcode",
+    "expected_reads": "expected",
+    "other_library_reads": "other library",
     "unmatched_near_expected_reads": (
-        f"within {max_expected_error_hamming} nt of expected or neut standard barcode"
+        f"≤{max_expected_error_hamming} nt from expected/standard"
     ),
     "unmatched_far_expected_reads": (
-        f"over {max_expected_error_hamming} nt from expected or neut standard barcode"
+        f">{max_expected_error_hamming} nt from expected/standard"
     ),
 }
 
