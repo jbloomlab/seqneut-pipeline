@@ -1,8 +1,9 @@
-"""Test the single-well analyses find what `make_single_well_fastqs.py` planted.
+"""Test the single-well analyses find what was planted in their synthetic plates.
 
-Every read of the synthetic plates was built to parse, so the categories of each well, the
-flags they raise, and where its contaminant came from must match the plan exactly. The
-titer is compared to the precision the composition CSV is written at.
+The plates are written by `fastqs/single_well/make_single_well_fastqs.py`. Every read of
+them was built to parse, so the categories of each well, the flags they raise, and where
+its contaminant came from must match the plan exactly. The titer is compared to the
+precision the composition CSV is written at.
 
 """
 

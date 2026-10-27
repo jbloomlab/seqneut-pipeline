@@ -5,6 +5,7 @@ Writes, from one plan of what each well holds:
   - `fastqs/single_well/<plate>/<well>.fastq.gz`, the reads of each well
   - `data/miscellaneous_plates/<plate>.csv`, the samples CSV of each plate
   - `data/viral_libraries/pdmH1N1_lib2023_loes_final.csv`, the library carried forward
+  - `data/viral_libraries/pdmH1N1_lib2023_loes_stocks.csv`, the library recording tubes
   - `expected_single_well_composition.csv`, what the analysis should find in each well
 
 Each well plants one situation the analysis has to get right: spill from a neighboring
@@ -17,13 +18,15 @@ finds are exactly the counts planted here. A few reads that cannot parse are add
 that the report has more than one fate to draw.
 
 The output is deterministic, so this can be rerun to regenerate the files byte for byte.
-Run it from `test_example`:
+Every path, both those it writes and the FASTQ paths in the samples CSVs, is relative to
+`test_example`, which it runs in wherever it is run from:
 
-    python make_single_well_fastqs.py
+    python fastqs/single_well/make_single_well_fastqs.py
 
 """
 
 import gzip
+import os
 import random
 from pathlib import Path
 
@@ -370,4 +373,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # `test_example`, two levels up from this script
+    os.chdir(Path(__file__).resolve().parents[2])
     main()
