@@ -22,9 +22,9 @@ five categories that partition it:
     unmatched, far      matched neither whitelist and is further than that, so it cannot be
                         attributed to what belongs in the well
 
-Before that, the reads of any `discarded_barcodes`, and those within `MAX_MISREAD_HAMMING`
-of one, are set aside: these are barcodes physically in every well that no analysis should
-count. They are reported but enter no category or fraction.
+Before that, the exact reads of any `discarded_barcodes` are set aside: these are barcodes
+physically in every well that no analysis should count. They are reported but enter no
+category or fraction; a misread of one is an unmatched read like any other.
 
 When each well holds one barcode, another barcode of the well's own strain is *not*
 expected: the well was supposed to hold one variant, so a sibling barcode is material that
@@ -1110,8 +1110,7 @@ with report.notes("How to read this plot"):
                 "the neutralization standard set, or the discarded barcode set."
             ),
             "discarded barcode": (
-                "the read contains a barcode present in the discarded barcode set or "
-                f"within {MAX_MISREAD_HAMMING} nt of one."
+                "the read contains a barcode present in the discarded barcode set."
             ),
         }
         if discarded_barcodes
@@ -1227,14 +1226,10 @@ if discarded_barcodes:
     )
     _with_discards = well_reads[well_reads["discarded_reads"] > 0]
     if not len(_with_discards):
-        report.md(
-            "No wells contained these barcodes or barcodes within "
-            f"{MAX_MISREAD_HAMMING} nt of them."
-        )
+        report.md("No wells contained these barcodes.")
     else:
         report.md(f"""
-            Any reads matching these barcodes or within {MAX_MISREAD_HAMMING} nt
-            were discarded, for a total of {int(well_reads["discarded_reads"].sum())} reads
+            Any reads exactly matching these barcodes were discarded, for a total of {int(well_reads["discarded_reads"].sum())} reads
             across the {len(well_reads)} wells analyzed. A summary table of this is below:
             """)
         report.table(

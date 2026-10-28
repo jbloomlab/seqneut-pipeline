@@ -146,8 +146,8 @@ def test_reads_per_well_counts_a_well_without_rows_as_zero():
     assert reads_per_well(frame, index).tolist() == [4, 0, 5]
 
 
-def test_split_discarded_takes_exact_and_near_matches():
-    """A discarded barcode and its misreads are set aside; anything further is kept."""
+def test_split_discarded_takes_exact_matches_only():
+    """Only a discarded barcode itself is set aside; its misreads are kept."""
     invalid = pd.DataFrame(
         {
             "barcode": ["GGTCCATC", "GGTCCATG", "GGTCCAAG", "TTTTTTTT"],
@@ -155,8 +155,8 @@ def test_split_discarded_takes_exact_and_near_matches():
         }
     )
     kept, discarded = split_discarded(invalid, ["GGTCCATC"])
-    assert discarded["barcode"].tolist() == ["GGTCCATC", "GGTCCATG"]
-    assert kept["barcode"].tolist() == ["GGTCCAAG", "TTTTTTTT"]
+    assert discarded["barcode"].tolist() == ["GGTCCATC"]
+    assert kept["barcode"].tolist() == ["GGTCCATG", "GGTCCAAG", "TTTTTTTT"]
 
 
 def test_split_discarded_with_nothing_to_discard():
@@ -272,24 +272,24 @@ COUNTED = ["AAAAAAAA", "CCCCCCCC"]
 
 
 def test_check_discarded_barcodes_upper_cases():
-    """A discarded barcode far from every counted one passes, upper-cased."""
+    """A discarded barcode passes, upper-cased."""
     assert check_discarded_barcodes({"gggggggg": " a reason "}, COUNTED) == {
         "GGGGGGGG": "a reason"
     }
     assert check_discarded_barcodes({}, COUNTED) == {}
 
 
-@pytest.mark.parametrize(
-    "barcode, ok",
-    [("AAAAAGGG", True), ("AAAAAAGG", False), ("AAAAAAAG", False), ("AAAAAAAA", False)],
-)
-def test_check_discarded_barcodes_distance_boundary(barcode, ok):
-    """A discarded barcode must be at least 3 nt from every counted barcode."""
-    if ok:
-        assert list(check_discarded_barcodes({barcode: "r"}, COUNTED)) == [barcode]
-    else:
-        with pytest.raises(ValueError, match="within 2 nucleotides"):
-            check_discarded_barcodes({barcode: "r"}, COUNTED)
+@pytest.mark.parametrize("barcode", ["AAAAAGGG", "AAAAAAGG", "AAAAAAAG"])
+def test_check_discarded_barcodes_any_distance(barcode):
+    """A discarded barcode can be any distance from a counted one, even 1 nt."""
+    assert list(check_discarded_barcodes({barcode: "r"}, COUNTED)) == [barcode]
+
+
+@pytest.mark.parametrize("barcode", ["AAAAAAAA", "cccccccc"])
+def test_check_discarded_barcodes_rejects_a_counted_barcode(barcode):
+    """A discarded barcode that is itself counted raises."""
+    with pytest.raises(ValueError, match="counted rather than discarded"):
+        check_discarded_barcodes({barcode: "r"}, COUNTED)
 
 
 @pytest.mark.parametrize("barcode", ["GGGG", "GGGGGGGN", 12345678])

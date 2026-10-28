@@ -141,8 +141,9 @@ def main():
 
     whitelist = [*library["barcode"], *neut_barcodes]
     bclen = len(whitelist[0])
-    # More than 2 nt from every barcode counted, as the configuration requires, and its
-    # misread one nt off it is then more than 1 nt from every barcode counted. It starts
+    # More than 2 nt from every barcode counted, so that its misread one nt off it is more
+    # than 1 nt from every barcode counted, and so an unmatched read far from what belongs:
+    # only the exact barcode is discarded. It starts
     # with GG, as the spike-in barcodes that are discarded in practice do: they are the
     # ones that sequence badly beside indices that also hold GGs.
     discarded = random_barcode(rng, bclen, whitelist, 3, prefix="GG")
@@ -326,17 +327,12 @@ def main():
             )
             other_library_reads = sum(library_reads.values()) - expected_reads
             neut_reads = sum(n for bc, n in reads.items() if bc in neut_barcodes)
-            discarded_reads = w.get("discarded", 0) + w.get("discarded_misread", 0)
-            non_neut = (
-                expected_reads + other_library_reads + near_own + w.get("foreign", 0)
-            )
+            discarded_reads = w.get("discarded", 0)
+            far = w.get("foreign", 0) + w.get("discarded_misread", 0)
+            non_neut = expected_reads + other_library_reads + near_own + far
             parsed = non_neut + neut_reads
             frac_other = other_library_reads / non_neut if non_neut else float("nan")
-            frac_unmatched = (
-                (near_own + w.get("foreign", 0)) / non_neut
-                if non_neut
-                else float("nan")
-            )
+            frac_unmatched = (near_own + far) / non_neut if non_neut else float("nan")
             expected.append(
                 {
                     "plate": plate,
@@ -346,7 +342,7 @@ def main():
                     "neut_standard_reads": neut_reads,
                     "other_library_reads": other_library_reads,
                     "unmatched_near_expected_reads": near_own,
-                    "unmatched_far_expected_reads": w.get("foreign", 0),
+                    "unmatched_far_expected_reads": far,
                     "discarded_reads": discarded_reads,
                     "flagged_other_library": frac_other
                     > thresholds["max_other_library_frac"],

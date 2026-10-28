@@ -51,8 +51,7 @@ FATE_EXPLANATIONS = {
         "the neutralization standard set."
     ),
     "discarded barcode": (
-        "the read contains a barcode present in the discarded barcode set or a misread "
-        "of one."
+        "the read contains a barcode present in the discarded barcode set."
     ),
     "low quality barcode": (
         "the read contains poor-quality nucleotide sequencing within the barcode region."
@@ -153,9 +152,8 @@ def check_discarded_barcodes(discarded_barcodes, counted_barcodes):
 
     Each discarded barcode is given with the reason it is discarded, which the reports show.
     A discarded barcode must be in neither the viral library nor the neutralization standard
-    set, and more than twice `MAX_MISREAD_HAMMING` from every barcode of them: reads
-    that close to a discarded barcode are discarded with it, and reads that close to a
-    counted one are its misreads, so no read can then be both.
+    set, whose reads are counted before any could be discarded; it can be any distance from
+    them otherwise, as only its exact reads are discarded.
 
     Args:
         `discarded_barcodes` (dict)
@@ -174,7 +172,6 @@ def check_discarded_barcodes(discarded_barcodes, counted_barcodes):
             f"not be {discarded_barcodes!r}"
         )
     counted = [bc.upper() for bc in counted_barcodes]
-    min_distance = 2 * MAX_MISREAD_HAMMING + 1
     checked = {}
     for barcode, reason in discarded_barcodes.items():
         if not isinstance(barcode, str) or len(barcode) != len(counted[0]):
@@ -194,20 +191,10 @@ def check_discarded_barcodes(discarded_barcodes, counted_barcodes):
             )
         if barcode in checked:
             raise ValueError(f"discarded barcode {barcode} is given more than once")
-        distances = (as_barcode_array(counted) != as_barcode_array([barcode])).sum(
-            axis=1
-        )
-        too_close = sorted(
-            bc
-            for bc, distance in zip(counted, distances, strict=True)
-            if distance < min_distance
-        )
-        if too_close:
+        if barcode in counted:
             raise ValueError(
-                f"discarded barcode {barcode} is within {min_distance - 1} nucleotides of "
-                f"the barcodes {too_close} of the viral library or neutralization standard "
-                "set; a discarded barcode must be in neither and at least "
-                f"{min_distance} nucleotides from all of them"
+                f"discarded barcode {barcode} is in the viral library or neutralization "
+                "standard set, so its reads are counted rather than discarded"
             )
         checked[barcode] = reason.strip()
     return checked
@@ -320,9 +307,9 @@ def split_discarded(invalid, discarded_barcodes):
 
     A discarded barcode is one physically in every well that no analysis should count, such
     as a spike-in barcode left out of the neutralization standard set because it sequences
-    badly. It is in neither whitelist, so its reads are among the unmatched ones, and so are
-    its misreads: both an exact match and one within `MAX_MISREAD_HAMMING` of a
-    discarded barcode are set aside.
+    badly. It is in neither whitelist, so its reads are among the unmatched ones. Only an
+    exact match is set aside, as only an exact match of a counted barcode is counted; a
+    misread of a discarded barcode stays among the unmatched reads.
 
     Args:
         `invalid` (pandas.DataFrame)
@@ -337,9 +324,7 @@ def split_discarded(invalid, discarded_barcodes):
     """
     if not discarded_barcodes or not len(invalid):
         return invalid, invalid.iloc[:0]
-    is_discarded = (
-        min_hamming(invalid["barcode"], list(discarded_barcodes)) <= MAX_MISREAD_HAMMING
-    )
+    is_discarded = invalid["barcode"].isin(list(discarded_barcodes))
     return invalid[~is_discarded], invalid[is_discarded]
 
 

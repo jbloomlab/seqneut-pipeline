@@ -3,7 +3,7 @@ single_well_plate_1,B2,4,3000,400,0,0,0,0,False,False,False,False,7.5,,,4.0,kept
 single_well_plate_1,B3,4,3000,400,60,0,0,0,True,False,False,False,7.5,1 well away,,4.0,kept
 single_well_plate_1,B4,4,3000,400,40,0,0,0,True,False,False,False,7.5,over 2 wells away,,4.0,kept
 single_well_plate_1,B5,4,3000,400,0,30,200,0,False,True,False,False,7.5,,,4.0,kept
-single_well_plate_1,B6,3,3000,400,0,0,0,550,False,False,False,False,7.5,,,3.0,kept
+single_well_plate_1,B6,3,3000,400,0,0,50,500,False,False,False,False,7.5,,,3.0,kept
 single_well_plate_1,B7,0,0,400,20,0,0,0,True,False,True,False,,2 wells away,,,
 single_well_plate_1,D7,3,3000,400,0,0,0,0,False,False,False,False,7.5,,,3.0,kept
 single_well_plate_1,C2,3,3000,400,50,0,0,0,True,False,False,False,7.5,another plate here,,2.0,"kept, some barcodes dropped"

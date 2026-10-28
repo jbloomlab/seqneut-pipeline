@@ -660,8 +660,8 @@ discarded_barcodes:
   <barcode>: <reason it is discarded>
 ```
 
-The analyses of miscellaneous plates (currently `analyze_single_well_infections`) set aside the reads of these barcodes and their misreads, and list each barcode with its reason in their reports.
-Reads within 1 nt of a barcode are taken as its misreads, so each discarded barcode must be at least 3 nt from every barcode in the viral library and neutralization standard set: no read can then be a misread of both.
+The analyses of miscellaneous plates (currently `analyze_single_well_infections`) set aside the reads that exactly match these barcodes, as only exact matches of the viral library and neutralization standard are counted, and list each barcode with its reason in their reports.
+A discarded barcode must be in neither the viral library nor the neutralization standard set.
 The neutralization plates do not use this key.
 
 ### analyze_single_well_infections

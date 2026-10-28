@@ -3,7 +3,7 @@
 #### version 10.0.0 (unreleased)
 - Add an optional `analyze_single_well_infections` key that analyzes miscellaneous plates whose wells were each infected with a single virus: what each well holds that it should not and where it came from on the plate, unmatched barcodes, an estimated titer, and whether every expected barcode turned up. Each analysis is a page of the docs, under *Library quality-control*, and writes a per-well composition CSV and expected-barcode CSV to `./results/single_well_infections/`; see the README. Added because projects carried their own version of this analysis, which is better modularized in the pipeline. This is a major version because a project that defines its own rule named `analyze_single_well_infections` now fails with a duplicate-rule error.
 
-- Add an optional top-level `discarded_barcodes` key mapping each barcode that should not be counted to the reason why. The single-well analysis sets aside these barcodes' reads and their misreads; the neutralization plates do not use it.
+- Add an optional top-level `discarded_barcodes` key mapping each barcode that should not be counted to the reason why. The single-well analysis sets aside the reads exactly matching these barcodes; the neutralization plates do not use it.
 
 #### version 9.4.1
 - Update to latest `bloomlab-coding-standards` submodule.
