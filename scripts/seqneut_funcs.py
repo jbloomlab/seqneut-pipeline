@@ -130,3 +130,25 @@ def pearson_r_log10(df, x_col="titer_x", y_col="titer_y"):
     if len(df) < 3:
         return None
     return float(numpy.corrcoef(numpy.log10(df[x_col]), numpy.log10(df[y_col]))[0, 1])
+
+
+def rma_slope_log10(df, x_col="titer_x", y_col="titer_y"):
+    """Reduced major axis slope of the log-transformed titers, or `None` if not defined.
+
+    The slope is `sign(r) * sd(log y) / sd(log x)`. Unlike a least-squares slope, it
+    treats the two plates alike: swapping them gives exactly the reciprocal, and noise
+    in the x titers does not bias it below one, so plates that agree have a slope near
+    one. It is `None` for the same too-few points as `pearson_r_log10`, and when either
+    plate's titers are all the same, as there is then no line to fit.
+
+    """
+    if len(df) < 3:
+        return None
+    log_x = numpy.log10(df[x_col])
+    log_y = numpy.log10(df[y_col])
+    sd_x = numpy.std(log_x)
+    sd_y = numpy.std(log_y)
+    if sd_x == 0 or sd_y == 0:
+        return None
+    r = numpy.corrcoef(log_x, log_y)[0, 1]
+    return float(numpy.copysign(sd_y / sd_x, r))

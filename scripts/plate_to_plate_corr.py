@@ -8,6 +8,7 @@ from seqneut_funcs import (
     get_median_bound,
     padded_log_domain,
     pearson_r_log10,
+    rma_slope_log10,
     round_sig,
 )
 from seqneut_report import Report
@@ -141,7 +142,10 @@ report.md("""
     this plate, and the Pearson correlation of the log titers for each of those sera.
     These per-serum correlations are the ones written to the CSV file at the bottom of
     this report; those annotating the plots are computed from the plotted points instead,
-    so that they follow the dropdowns:
+    so that they follow the dropdowns.
+    The CSV file also gives the reduced major axis slope of the log titers on this plate
+    against those on the other plate, `sign(r) * sd(log y) / sd(log x)`, which is near
+    one for plates that agree and is the reciprocal when the plates are swapped:
     """)
 
 # This plate's titers get the '_y' suffix and the other plate's the '_x' suffix, as
@@ -215,8 +219,12 @@ for other in comparator_dates:  # config order, which orders the panels
                     "serum": serum,
                     "n_strains": len(serum_df),
                     "pearson_r": pearson_r_log10(serum_df),
+                    "slope": rma_slope_log10(serum_df),
                     "n_strains_retained": int((~serum_df["dropped_by_qc"]).sum()),
                     "pearson_r_retained": pearson_r_log10(
+                        serum_df[~serum_df["dropped_by_qc"]]
+                    ),
+                    "slope_retained": rma_slope_log10(
                         serum_df[~serum_df["dropped_by_qc"]]
                     ),
                 }
@@ -580,8 +588,10 @@ corrs = pd.DataFrame(
         "serum",
         "n_strains",
         "pearson_r",
+        "slope",
         "n_strains_retained",
         "pearson_r_retained",
+        "slope_retained",
     ],
 )
 report.md(f"Writing the correlations to `{corrs_csv}`", log=True)
