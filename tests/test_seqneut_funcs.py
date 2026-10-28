@@ -10,6 +10,7 @@ from seqneut_funcs import (
     narrow_for_altair,
     padded_log_domain,
     pearson_r_log10,
+    rma_slope_log10,
     round_sig,
     viruses_in_plot_order,
     yaml_rt,
@@ -105,6 +106,61 @@ class TestPearsonRLog10:
         """The columns can be named, as the two callers use different frames."""
         df = pd.DataFrame({"a": [1.0, 10.0, 100.0], "b": [1.0, 10.0, 100.0]})
         assert pearson_r_log10(df, x_col="a", y_col="b") == pytest.approx(1.0)
+
+
+class TestRmaSlopeLog10:
+    """Reduced major axis slope of log-transformed titers."""
+
+    def test_is_computed_on_the_logs(self):
+        """`titer_y` is the square of `titer_x`, a line of slope two in log space."""
+        df = pd.DataFrame({"titer_x": [1.0, 10.0, 100.0], "titer_y": [1.0, 100.0, 1e4]})
+        assert rma_slope_log10(df) == pytest.approx(2.0)
+
+    def test_swapping_plates_gives_reciprocal(self):
+        """The two plates are treated alike, unlike a least-squares slope."""
+        df = pd.DataFrame(
+            {"titer_x": [1.0, 10.0, 100.0, 50.0], "titer_y": [3.0, 8.0, 90.0, 20.0]}
+        )
+        assert rma_slope_log10(df, x_col="titer_y", y_col="titer_x") == pytest.approx(
+            1 / rma_slope_log10(df)
+        )
+
+    def test_noise_does_not_bias_below_one(self):
+        """Plates that scatter equally about `y = x` have a slope of one.
+
+        A least-squares slope of the same points is below one.
+        """
+        df = pd.DataFrame(
+            {"log_x": [0.0, 0.5, 1.5, 2.0], "log_y": [0.5, 0.0, 2.0, 1.5]}
+        ).assign(titer_x=lambda x: 10 ** x["log_x"], titer_y=lambda x: 10 ** x["log_y"])
+        assert rma_slope_log10(df) == pytest.approx(1.0)
+        ols_slope = numpy.polyfit(df["log_x"], df["log_y"], 1)[0]
+        assert ols_slope == pytest.approx(0.8)
+
+    def test_negative_correlation_gives_negative_slope(self):
+        """The slope takes the sign of the correlation."""
+        df = pd.DataFrame(
+            {"titer_x": [1.0, 10.0, 100.0], "titer_y": [100.0, 10.0, 1.0]}
+        )
+        assert rma_slope_log10(df) == pytest.approx(-1.0)
+
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    def test_too_few_points_is_none(self, n):
+        """Fewer than three points is not a slope worth reporting."""
+        df = pd.DataFrame({"titer_x": [10.0] * n, "titer_y": [20.0] * n})
+        assert rma_slope_log10(df) is None
+
+    @pytest.mark.parametrize("constant", ["titer_x", "titer_y"])
+    def test_constant_titers_is_none(self, constant):
+        """With all of one plate's titers the same there is no line to fit."""
+        df = pd.DataFrame({"titer_x": [1.0, 10.0, 100.0], "titer_y": [2.0, 8.0, 90.0]})
+        df[constant] = 20.0
+        assert rma_slope_log10(df) is None
+
+    def test_returns_a_plain_float(self):
+        """The value is written to a CSV, so it must not be a numpy scalar."""
+        df = pd.DataFrame({"titer_x": [1.0, 10.0, 100.0], "titer_y": [2.0, 8.0, 90.0]})
+        assert type(rma_slope_log10(df)) is float
 
 
 class TestPaddedLogDomain:

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+#### version 9.4.0
+- The plate-to-plate correlation CSVs (`results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.csv`) add `slope` and `slope_retained` columns: the reduced major axis slope of the log titers on the plate against those on the other plate, over all strains and over just the retained strains. A slope near one means the plates agree in scale as well as in rank, which the Pearson correlation alone does not show. The reduced major axis slope is used rather than a least-squares slope because it treats the plates alike: it is not biased below one by noise in the other plate, and the two files comparing a pair of plates give exactly reciprocal slopes.
+
 #### version 9.3.1
 - Add `pyarrow` to `envs/count_barcodes.yml`.
 
