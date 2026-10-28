@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Single virus per well infections: single_well_barcodes</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  margin: 0 auto;
+  max-width: 80em;
+  padding: 1.5em;
+}
+h1, h2, h3 { line-height: 1.25; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code { background: #f4f4f4; border-radius: 3px; padding: 0.1em 0.3em; }
+pre { background: #f4f4f4; border-radius: 4px; overflow-x: auto; padding: 0.6em 0.8em; }
+pre code { background: none; padding: 0; }
+/* a chart is drawn at its natural size, so a wide one scrolls rather than being clipped */
+.chart-block { margin: 1em 0; overflow-x: auto; }
+.scroll-box {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 1em 0;
+  max-height: 80vh;
+  overflow: auto;
+}
+.scroll-box table { border-collapse: collapse; font-size: 0.85em; }
+.scroll-box th, .scroll-box td {
+  border-bottom: 1px solid #eee;
+  padding: 0.25em 0.6em;
+  text-align: right;
+  white-space: nowrap;
+}
+.scroll-box th { background: #fafafa; position: sticky; top: 0; }
+</style>
+</head>
+<body>
+<h1>Single virus per well infections: single_well_barcodes</h1>
+<style>
+:root { --sidebar-width: 15rem; }
+body { margin: 0 auto 0 var(--sidebar-width); }
+nav.sidebar {
+  background: #fafafa; border-right: 1px solid #ddd; bottom: 0; box-sizing: border-box;
+  font-size: 0.9rem; left: 0; overflow-y: auto; padding: 1.5rem 1rem; position: fixed;
+  top: 0; width: var(--sidebar-width);
+}
+nav.sidebar a.home {
+  border: 1px solid #ccc; border-radius: 4px; display: inline-block; margin-bottom: 1.2em;
+  padding: 0.25em 0.7em;
+}
+nav.sidebar a.home:hover { background: #eee; text-decoration: none; }
+nav.sidebar .contents {
+  border-bottom: 1px solid #ddd; color: #666; font-size: 0.85em; font-weight: 600;
+  letter-spacing: 0.06em; margin: 0 0 0.6em; padding-bottom: 0.2em;
+  text-transform: uppercase;
+}
+nav.sidebar ul { list-style: none; margin: 0.2em 0; padding-left: 0; }
+nav.sidebar a { color: #245; display: block; padding: 0.16em 0; text-decoration: none; }
+nav.sidebar a:hover { text-decoration: underline; }
+nav.sidebar a.active { color: #111; font-weight: 600; }
+@media (max-width: 60em) {
+  :root { --sidebar-width: 0px; }
+  body { margin: 0 auto; }
+  nav.sidebar {
+    border: 1px solid #ddd; border-radius: 4px; max-height: 40vh; position: static;
+    width: auto;
+  }
+}
+</style><nav class="sidebar"><a class="home" href="index.html">&larr; All results</a><p class="contents">Contents</p><ul><li><a href="#overview">Overview</a></li><li><a href="#experimental-summary">Experimental summary</a></li><li><a href="#barcode-composition-of-each-well">Barcode composition of each well</a></li><li><a href="#discarded-barcodes">Discarded barcodes</a></li><li><a href="#wells-with-library-contamination">Wells with library contamination</a></li><li><a href="#wells-with-unknown-barcodes">Wells with unknown barcodes</a></li><li><a href="#estimated-titer-of-each-barcode">Estimated titer of each barcode</a></li><li><a href="#expected-barcode-recovery">Expected barcode recovery</a></li></ul></nav>
+<style>
+.scroll-box td { border-right: 1px solid #ddd; }
+.scroll-box td:last-child { border-right: none; }
+.scroll-box th {
+  border-right: none; box-shadow: inset -1px 0 #ddd, inset 0 -1px #ddd; vertical-align: bottom;
+}
+.scroll-box th:last-child { box-shadow: inset 0 -1px #ddd; }
+.scroll-box th .head {
+  margin-left: auto; max-width: 7em; min-width: min-content; white-space: normal;
+}
+.scroll-box thead.grouped { position: sticky; top: 0; z-index: 1; }
+.scroll-box thead.grouped th { position: static; }
+.scroll-box, .chart-block {
+  max-width: calc(100vw - var(--sidebar-width) - 3em); width: fit-content;
+}
+@media (max-width: 60em) {
+  .scroll-box, .chart-block { max-width: calc((100vw + 100%) / 2 - 1.5em); }
+}
+</style>
+<div class="md-block"><p>This document analyzes the single virus per well infection experiment -
+single_well_barcodes. The purpose of this analysis is a quality control check on the
+individual viral stocks to validate that each stock contains the expected barcode(s)
+and to assess the level of barcode contamination. Additionally, it provides estimates
+of the titer of each viral stock. These titers should be interpreted carefully as they
+assume each infection was performed in the linear range (where there is a linear
+relationship between the amount of input virus and resulting spike-in normalized
+counts), which may not always be true for every virus in these experiments. The plots
+below are interactive: mouse over for details.</p>
+<h2 id="overview">Overview</h2></div>
+<div class="md-block"><p>A synthetic plate of one barcode per well, one well of which holds some of a
+sibling barcode of its own strain.</p></div>
+<div class="md-block"><h2 id="experimental-summary">Experimental summary</h2>
+<p>The tiles below summarize key experimental parameters.</p></div>
+<div style="display: flex; flex-wrap: wrap; gap: 0.6em; margin: 1em 0 0.4em"><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">1</div><div style="color: #555; font-size: 0.85em">plates</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">3</div><div style="color: #555; font-size: 0.85em">infected wells</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">0</div><div style="color: #555; font-size: 0.85em">blank wells</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">1</div><div style="color: #555; font-size: 0.85em">dilution factor</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">3 / 110</div><div style="color: #555; font-size: 0.85em">barcodes assayed</div></div></div><p style="color: #555">Viral library: pdmH1N1_lib2023_loes.csv</p>
+<style>
+details.warning {
+  background: #fff8e1; border-left: 4px solid #f0ad4e; margin: 0.4em 0;
+  padding: 0.4em 0.8em;
+}
+details.warning summary { cursor: pointer; list-style: none; }
+details.warning .scroll-box { background: white; }
+details.warning summary::-webkit-details-marker { display: none; }
+details.warning .toggle {
+  border: 1px solid #0366d6; border-radius: 1em; color: #0366d6; font-size: 0.85em;
+  margin-left: 0.5em; padding: 0.05em 0.6em; white-space: nowrap;
+}
+details.warning summary:hover .toggle { background: #0366d6; color: white; }
+details.warning .toggle::before { content: "\25B8  "; }
+details.warning[open] .toggle::before { content: "\25BE  "; }
+details.warning .hide, details.warning[open] .show { display: none; }
+details.warning[open] .hide { display: inline; }
+</style><h3>Warnings</h3><details class="warning"><summary><b>107</b> barcodes of the viral library not assayed here <span class="toggle"><span class="show">show</span><span class="hide">hide</span> barcodes</span></summary><div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">strain</div></th>
+      <th><div class="head">barcode</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>A/Bangladesh/2221/2021 [bc 1]</td>
+      <td>AAGAGAAATATTCGCT</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/2221/2021 [bc 2]</td>
+      <td>GATAGAAATACCAGGA</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/2221/2021 [bc 3]</td>
+      <td>GACAGCAATGCATACA</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/3210810034/2021 [bc 1]</td>
+      <td>AACTATAGATCTAGAA</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/3210810034/2021 [bc 2]</td>
+      <td>ACAAAAGTACCTCTAC</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/8002/2021 [bc 1]</td>
+      <td>TCTGCTAAACTAAGTA</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/8002/2021 [bc 2]</td>
+      <td>GCAACGCCAAATAATT</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/8002/2021 [bc 3]</td>
+      <td>AGTGTCCCTAAGAGGC</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/8036/2021 [bc 1]</td>
+      <td>ATACCTCAACCTTGAA</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/8036/2021 [bc 2]</td>
+      <td>ACGGGGCCCAGGTAAT</td>
+    </tr>
+    <tr>
+      <td>A/Bangladesh/8036/2021 [bc 3]</td>
+      <td>CAGTTCTGCGACCAGC</td>
+    </tr>
+    <tr>
+      <td>A/Belgium/H0017/2022 [bc 1]</td>
+      <td>AATGAAAGTTAGCATT</td>
+    </tr>
+    <tr>
+      <td>A/Belgium/H0017/2022 [bc 2]</td>
+      <td>ATGTCCATAAAAAATA</td>
+    </tr>
+    <tr>
+      <td>A/Belgium/H0017/2022 [bc 3]</td>
+      <td>GTAAAGCAAATCCATT</td>
+    </tr>
+    <tr>
+      <td>A/Belgium/H0038/2022 [bc 1]</td>
+      <td>TACCGTATAATTAAAA</td>
+    </tr>
+    <tr>
+      <td>A/Belgium/H0038/2022 [bc 2]</td>
+      <td>GCCGGAGGGCATTTTC</td>
+    </tr>
+    <tr>
+      <td>A/Belgium/H0038/2022 [bc 3]</td>
+      <td>GATCCGTACTTTGATT</td>
+    </tr>
+    <tr>
+      <td>A/Brisbane/02/2018 [bc 1]</td>
+      <td>ATCCGATTTAAAGGCA</td>
+    </tr>
+    <tr>
+      <td>A/Brisbane/02/2018 [bc 2]</td>
+      <td>TTGGGCACTAAATTAA</td>
+    </tr>
+    <tr>
+      <td>A/Brisbane/02/2018 [bc 3]</td>
+      <td>TAATAAGCCAGCAAGA</td>
+    </tr>
+    <tr>
+      <td>A/Brisbane/02/2018 [bc 4]</td>
+      <td>ACGACATGATCAAACG</td>
+    </tr>
+    <tr>
+      <td>A/Brisbane/48/2022 [bc 1]</td>
+      <td>GAGCTCTAAAGCAACA</td>
+    </tr>
+    <tr>
+      <td>A/Brisbane/48/2022 [bc 2]</td>
+      <td>TTATGATCTAAACAGA</td>
+    </tr>
+    <tr>
+      <td>A/Brisbane/48/2022 [bc 3]</td>
+      <td>CCCTATGCTGCGTATT</td>
+    </tr>
+    <tr>
+      <td>A/California/07/2009 [bc 1]</td>
+      <td>GACACAGAACCCATGC</td>
+    </tr>
+    <tr>
+      <td>A/California/07/2009 [bc 2]</td>
+      <td>CATGTGAATTCGCCCA</td>
+    </tr>
+    <tr>
+      <td>A/California/07/2009 [bc 3]</td>
+      <td>CCTTTCTCAAAACATA</td>
+    </tr>
+    <tr>
+      <td>A/California/07/2009 [bc 4]</td>
+      <td>CGCCTAATGTTAATAA</td>
+    </tr>
+    <tr>
+      <td>A/Chester/5355/2022 [bc 1]</td>
+      <td>AAAAAACGCATGTAGA</td>
+    </tr>
+    <tr>
+      <td>A/Chester/5355/2022 [bc 2]</td>
+      <td>CCTCAAAATAACAAGC</td>
+    </tr>
+    <tr>
+      <td>A/Chester/5355/2022 [bc 3]</td>
+      <td>TCATATAAAGAAAAGG</td>
+    </tr>
+    <tr>
+      <td>A/Cote_DIvoire/1448/2021 [bc 1]</td>
+      <td>GTCCGTTGATAAAGAG</td>
+    </tr>
+    <tr>
+      <td>A/Cote_DIvoire/1448/2021 [bc 2]</td>
+      <td>GTTAAACGATCTATAG</td>
+    </tr>
+    <tr>
+      <td>A/Cote_DIvoire/1448/2021 [bc 3]</td>
+      <td>TCGAGAACACCCATAA</td>
+    </tr>
+    <tr>
+      <td>A/England/220200318/2022 [bc 3]</td>
+      <td>GCTGCGCCTAACATAA</td>
+    </tr>
+    <tr>
+      <td>A/Ghana/138/2020 [bc 2]</td>
+      <td>GACTATGGTCTAAAAA</td>
+    </tr>
+    <tr>
+      <td>A/Ghana/138/2020 [bc 3]</td>
+      <td>TAAGCCATAAATCAAT</td>
+    </tr>
+    <tr>
+      <td>A/Ghana/2080/2020 [bc 1]</td>
+      <td>GTAGTGCATCATTGAT</td>
+    </tr>
+    <tr>
+      <td>A/Ghana/2080/2020 [bc 2]</td>
+      <td>CAGCAAAAGCATCACC</td>
+    </tr>
+    <tr>
+      <td>A/Ghana/2080/2020 [bc 3]</td>
+      <td>GCAATCCCGCAATTTG</td>
+    </tr>
+    <tr>
+      <td>A/Hawaii/70/2019 [bc 1]</td>
+      <td>ATAGAATCGCAAATTA</td>
+    </tr>
+    <tr>
+      <td>A/Hawaii/70/2019 [bc 2]</td>
+      <td>TGGAATCGTCACCGAT</td>
+    </tr>
+    <tr>
+      <td>A/Hawaii/70/2019 [bc 3]</td>
+      <td>AGTAAACATGCATTGG</td>
+    </tr>
+    <tr>
+      <td>A/Hawaii/70/2019 [bc 4]</td>
+      <td>ACATGAATTCAGACGG</td>
+    </tr>
+    <tr>
+      <td>A/India-PUN-NIV328484/2021 [bc 1]</td>
+      <td>GATCTAATAATACGGC</td>
+    </tr>
+    <tr>
+      <td>A/India-PUN-NIV328484/2021 [bc 2]</td>
+      <td>TTGTCCCGAGACAACA</td>
+    </tr>
+    <tr>
+      <td>A/India-PUN-NIV328484/2021 [bc 3]</td>
+      <td>TCTGTTCCGGCCCGAA</td>
+    </tr>
+    <tr>
+      <td>A/India-Pune-Nivcov2221170/2022 [bc 1]</td>
+      <td>AAATCTACCGCATTAT</td>
+    </tr>
+    <tr>
+      <td>A/India-Pune-Nivcov2221170/2022 [bc 2]</td>
+      <td>CGTTTAAACAATGAAG</td>
+    </tr>
+    <tr>
+      <td>A/India/Pun-NIV312851/2021 [bc 1]</td>
+      <td>ACAGCAAATACTCACA</td>
+    </tr>
+    <tr>
+      <td>A/India/Pun-NIV312851/2021 [bc 2]</td>
+      <td>CAAGAACCCAAATATA</td>
+    </tr>
+    <tr>
+      <td>A/India/Pun-NIV312851/2021 [bc 3]</td>
+      <td>GTAGCTATAACTAATA</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/19/2021 [bc 1]</td>
+      <td>AACGTTAACAAATGAA</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/19/2021 [bc 2]</td>
+      <td>TAATGAGCTTTATGGT</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/19/2021 [bc 3]</td>
+      <td>AGAGAAAAAACAGTGA</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/45/2015 [bc 1]</td>
+      <td>ACAAAGTCTCGAGAAG</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/45/2015 [bc 2]</td>
+      <td>CACCTAGGATCGCACT</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/45/2015 [bc 3]</td>
+      <td>TTGAAAAAATCATAAA</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/45/2015 [bc 4]</td>
+      <td>TGAGGATAATCACAAG</td>
+    </tr>
+    <tr>
+      <td>A/Newcastle/2/2022 [bc 1]</td>
+      <td>CAAATATATCTTCATG</td>
+    </tr>
+    <tr>
+      <td>A/Newcastle/2/2022 [bc 2]</td>
+      <td>GCCCAAGTAGGTGCAA</td>
+    </tr>
+    <tr>
+      <td>A/Newcastle/2/2022 [bc 3]</td>
+      <td>TTCACTAAGATTTCAT</td>
+    </tr>
+    <tr>
+      <td>A/Niger/10217/2021 [bc 1]</td>
+      <td>GAACGATTGTAATTTT</td>
+    </tr>
+    <tr>
+      <td>A/Niger/10217/2021 [bc 2]</td>
+      <td>CATCAACCGCCATTTC</td>
+    </tr>
+    <tr>
+      <td>A/Niger/10217/2021 [bc 3]</td>
+      <td>AAATAAGTACGCAAAT</td>
+    </tr>
+    <tr>
+      <td>A/Nimes/871/2021 [bc 1]</td>
+      <td>ACCTTACTAAATCCTG</td>
+    </tr>
+    <tr>
+      <td>A/Nimes/871/2021 [bc 2]</td>
+      <td>GTTCCTTTAAGCCAAA</td>
+    </tr>
+    <tr>
+      <td>A/Nimes/871/2021 [bc 3]</td>
+      <td>TAATTACATTGCGGTT</td>
+    </tr>
+    <tr>
+      <td>A/Norway/25089/2022 [bc 1]</td>
+      <td>TGGAAAAGATGTAATA</td>
+    </tr>
+    <tr>
+      <td>A/Norway/25089/2022 [bc 2]</td>
+      <td>CGGATAAAAATGATAT</td>
+    </tr>
+    <tr>
+      <td>A/Norway/25089/2022 [bc 3]</td>
+      <td>GACTCAATAATCACAC</td>
+    </tr>
+    <tr>
+      <td>A/Paris/30353/2021 [bc 1]</td>
+      <td>ACATTTCCCTCGATAT</td>
+    </tr>
+    <tr>
+      <td>A/Paris/30353/2021 [bc 2]</td>
+      <td>ACATAAGAACCCTATA</td>
+    </tr>
+    <tr>
+      <td>A/Paris/30353/2021 [bc 3]</td>
+      <td>GTTTGACAATCACTAC</td>
+    </tr>
+    <tr>
+      <td>A/Paris/31196/2021 [bc 1]</td>
+      <td>AAACTAAAAGCAAGGG</td>
+    </tr>
+    <tr>
+      <td>A/Paris/31196/2021 [bc 2]</td>
+      <td>AGCAGCCTGAAAATAT</td>
+    </tr>
+    <tr>
+      <td>A/Paris/31196/2021 [bc 3]</td>
+      <td>AATAAGTATACGGGAT</td>
+    </tr>
+    <tr>
+      <td>A/Perth/1/2022 [bc 1]</td>
+      <td>TTGGGGAAATATATAA</td>
+    </tr>
+    <tr>
+      <td>A/Perth/1/2022 [bc 2]</td>
+      <td>CTGCACGAGAGACTTC</td>
+    </tr>
+    <tr>
+      <td>A/Perth/1/2022 [bc 3]</td>
+      <td>AGCCCCGTGAGAAGCA</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R14850/2021 [bc 1]</td>
+      <td>GAGACGTACGAAATTA</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R14850/2021 [bc 2]</td>
+      <td>TACTCAACAAGATAAA</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R14850/2021 [bc 3]</td>
+      <td>AACTCCGCAGACACTG</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R16462/2021 [bc 1]</td>
+      <td>CACCATTAAAGAGGTA</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R16462/2021 [bc 2]</td>
+      <td>CGGCGTATCGTTCACA</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R16462/2021 [bc 3]</td>
+      <td>CTAGCAGATTGTATAA</td>
+    </tr>
+    <tr>
+      <td>A/Sydney/43/2022 [bc 1]</td>
+      <td>CTATTAATCATGCAAA</td>
+    </tr>
+    <tr>
+      <td>A/Sydney/43/2022 [bc 2]</td>
+      <td>TAGTATAATAGAGCAG</td>
+    </tr>
+    <tr>
+      <td>A/Sydney/43/2022 [bc 3]</td>
+      <td>TACGGACATTCTTAAC</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0274/2021 [bc 1]</td>
+      <td>TAGCAGATGTATCAAT</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0274/2021 [bc 2]</td>
+      <td>GTAACATTATACGATT</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0274/2021 [bc 3]</td>
+      <td>AACGAATGAATTTCTT</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0304/2021 [bc 1]</td>
+      <td>GAAGAATGGTTTTCTG</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0304/2021 [bc 2]</td>
+      <td>AACTCTAAAGATATAA</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0304/2021 [bc 3]</td>
+      <td>AGAGATAATAACAAAA</td>
+    </tr>
+    <tr>
+      <td>A/Togo/845/2020 [bc 1]</td>
+      <td>GCATGGATCCTTTACT</td>
+    </tr>
+    <tr>
+      <td>A/Togo/845/2020 [bc 2]</td>
+      <td>TTACCGTCTACGCATA</td>
+    </tr>
+    <tr>
+      <td>A/Togo/845/2020 [bc 3]</td>
+      <td>AGGTCAAGACCACAGG</td>
+    </tr>
+    <tr>
+      <td>A/Utah/27/2022 [bc 1]</td>
+      <td>TAAATAACTCGTATTT</td>
+    </tr>
+    <tr>
+      <td>A/Utah/27/2022 [bc 2]</td>
+      <td>TCCTTGTAATTCAACT</td>
+    </tr>
+    <tr>
+      <td>A/Utah/27/2022 [bc 3]</td>
+      <td>ACAATGTGACTCACCC</td>
+    </tr>
+    <tr>
+      <td>A/Washington/23/2020 [bc 1]</td>
+      <td>ACGGAATCCCCTGAGA</td>
+    </tr>
+    <tr>
+      <td>A/Washington/23/2020 [bc 2]</td>
+      <td>GAACTGGCGTCAATCA</td>
+    </tr>
+    <tr>
+      <td>A/Washington/23/2020 [bc 3]</td>
+      <td>GGATAAGAAAACTACT</td>
+    </tr>
+    <tr>
+      <td>A/Wisconsin/588/2019 [bc 1]</td>
+      <td>GAAGAAACTATAACCA</td>
+    </tr>
+    <tr>
+      <td>A/Wisconsin/588/2019 [bc 2]</td>
+      <td>AGTCCTATCCTCAAAT</td>
+    </tr>
+    <tr>
+      <td>A/Wisconsin/588/2019 [bc 3]</td>
+      <td>TATATTAGTAACATAA</td>
+    </tr>
+  </tbody>
+</table></div></details>
+<div class="md-block"><h2 id="barcode-composition-of-each-well">Barcode composition of each well</h2>
+<p>The multi-panel plot below can be used to examine the barcode composition of each well
+and help flag any QC issues that may need further attention. Each bar is one infected
+well, labeled by the barcode it was infected with. Hover over a bar to outline
+that well in all four panels.</p></div>
+<div class="chart-block">
+<style>
+  #chart_1.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_1.vega-embed details,
+  #chart_1.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_1"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_1") {
+      outputDiv = document.getElementById("chart_1");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}, "axisY": {"labelOverlap": "greedy"}}, "vconcat": [{"data": {"name": "data-12c28e6d1d5b451db43f2d5b8f6c7b5b"}, "mark": {"type": "bar", "width": {"band": 0.85}}, "encoding": {"fill": {"field": "fate", "legend": {"columns": 1, "orient": "right"}, "scale": {"scheme": "tableau10"}, "sort": ["valid barcode", "low quality barcode", "invalid outer flank"], "type": "nominal"}, "order": {"field": "fate", "sort": "descending", "type": "nominal"}, "stroke": {"value": "black"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "fate", "type": "nominal"}, {"field": "count", "type": "quantitative"}], "x": {"axis": null, "field": "unit_label", "sort": ["A/England/220200318/2022 [bc 1]", "A/England/220200318/2022 [bc 2]", "A/Ghana/138/2020 [bc 1]"], "title": null, "type": "nominal"}, "y": {"field": "count", "scale": {"nice": false, "padding": 3}, "title": "reads", "type": "quantitative"}}, "height": 170, "name": "view_620a13aec017a768_0", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-1380d8c5a38186f885d932b9b59ade16"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain"]}}], "width": {"step": 10}}, {"data": {"name": "data-1fa6810f829dbd0950c29c4f2f908930"}, "mark": {"type": "bar", "width": {"band": 0.85}}, "encoding": {"stroke": {"value": "black"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "viral_fraction", "format": ".3g", "type": "quantitative"}, {"field": "expected_reads", "type": "quantitative"}, {"field": "neut_standard_reads", "type": "quantitative"}, {"field": "valid_reads", "type": "quantitative"}], "x": {"axis": null, "field": "unit_label", "sort": ["A/England/220200318/2022 [bc 1]", "A/England/220200318/2022 [bc 2]", "A/Ghana/138/2020 [bc 1]"], "title": null, "type": "nominal"}, "y": {"axis": {"tickCount": 4}, "field": "viral_fraction", "scale": {"domain": [0, 1], "nice": false}, "title": "viral fraction of valid reads", "type": "quantitative"}}, "height": 100, "name": "view_64eaf33a65808d75_1", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-1380d8c5a38186f885d932b9b59ade16"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain"]}}], "width": {"step": 10}}, {"data": {"name": "data-a59431d177253ebfa056a9b1b7e661e6"}, "mark": {"type": "bar", "width": {"band": 0.85}}, "encoding": {"fill": {"field": "category", "legend": {"columns": 1, "labelLimit": 300, "orient": "right"}, "scale": {"scheme": "dark2"}, "sort": ["expected", "other library", "\u22641 nt from expected/standard", ">1 nt from expected/standard"], "title": "barcode category", "type": "nominal"}, "order": {"field": "category_order", "sort": "ascending", "type": "quantitative"}, "stroke": {"value": "black"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "category", "type": "nominal"}, {"field": "reads", "type": "quantitative"}, {"field": "fraction", "format": ".3g", "type": "quantitative"}], "x": {"axis": null, "field": "unit_label", "sort": ["A/England/220200318/2022 [bc 1]", "A/England/220200318/2022 [bc 2]", "A/Ghana/138/2020 [bc 1]"], "title": null, "type": "nominal"}, "y": {"axis": {"tickCount": 4}, "field": "fraction", "scale": {"domain": [0, 1], "nice": false}, "stack": true, "title": "fraction of the non-neut-standard reads", "type": "quantitative"}}, "height": 200, "name": "view_b870446767a21fc3_2", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-1380d8c5a38186f885d932b9b59ade16"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain"]}}], "width": {"step": 10}}, {"data": {"name": "data-a40439c8cc1b3f1faa49e607fcb826b8"}, "mark": {"type": "bar", "width": {"band": 0.85}}, "encoding": {"fill": {"field": "origin", "legend": {"columns": 1, "labelLimit": 300, "orient": "right"}, "scale": {"scheme": "set1"}, "sort": ["1 well away"], "title": "came from", "type": "nominal"}, "order": {"field": "origin_order", "sort": "ascending", "type": "quantitative"}, "stroke": {"value": "black"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "origin", "type": "nominal"}, {"field": "reads", "type": "quantitative"}, {"field": "fraction_of_reads", "format": ".3g", "type": "quantitative"}], "x": {"axis": {"labelAngle": -90, "labelLimit": 300}, "field": "unit_label", "sort": ["A/England/220200318/2022 [bc 1]", "A/England/220200318/2022 [bc 2]", "A/Ghana/138/2020 [bc 1]"], "title": null, "type": "nominal"}, "y": {"axis": {"tickCount": 3}, "field": "fraction_of_reads", "scale": {"nice": false, "padding": 3}, "stack": true, "title": "fraction from elsewhere in the library", "type": "quantitative"}}, "height": 130, "name": "view_3fe91faeffde60b3_3", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-1380d8c5a38186f885d932b9b59ade16"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain"]}}], "width": {"step": 10}}], "params": [{"name": "well_hover", "select": {"type": "point", "clear": "pointerout", "fields": ["unit_label"], "on": "pointerover"}, "views": ["view_620a13aec017a768_0", "view_64eaf33a65808d75_1", "view_b870446767a21fc3_2", "view_3fe91faeffde60b3_3"]}], "resolve": {"scale": {"fill": "independent", "x": "shared"}}, "spacing": 20, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-12c28e6d1d5b451db43f2d5b8f6c7b5b": [{"unit_label": "A/England/220200318/2022 [bc 2]", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/England/220200318/2022 [bc 2]", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/England/220200318/2022 [bc 2]", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/England/220200318/2022 [bc 1]", "fate": "valid barcode", "count": 3460}, {"unit_label": "A/England/220200318/2022 [bc 1]", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/England/220200318/2022 [bc 1]", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "fate": "low quality barcode", "count": 1}], "data-1380d8c5a38186f885d932b9b59ade16": [{"unit_label": "A/England/220200318/2022 [bc 2]", "plate": "single_well_plate_3", "well": "B2", "expected": "CGTAATACATTTAAGA", "strain": "A/England/220200318/2022"}, {"unit_label": "A/England/220200318/2022 [bc 1]", "plate": "single_well_plate_3", "well": "B3", "expected": "GACCAACTGTGGTACA", "strain": "A/England/220200318/2022"}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "plate": "single_well_plate_3", "well": "B4", "expected": "CCAGTTCCCTTCGATG", "strain": "A/Ghana/138/2020"}], "data-1fa6810f829dbd0950c29c4f2f908930": [{"unit_label": "A/England/220200318/2022 [bc 2]", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}, {"unit_label": "A/England/220200318/2022 [bc 1]", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3460, "viral_fraction": 0.8671}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}], "data-a59431d177253ebfa056a9b1b7e661e6": [{"unit_label": "A/England/220200318/2022 [bc 2]", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/England/220200318/2022 [bc 1]", "category": "expected", "reads": 3000, "fraction": 0.9803921568627451, "category_order": 0}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/England/220200318/2022 [bc 2]", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/England/220200318/2022 [bc 1]", "category": "other library", "reads": 60, "fraction": 0.0196078431372549, "category_order": 1}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/England/220200318/2022 [bc 2]", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/England/220200318/2022 [bc 1]", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/England/220200318/2022 [bc 2]", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/England/220200318/2022 [bc 1]", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}], "data-a40439c8cc1b3f1faa49e607fcb826b8": [{"unit_label": "A/England/220200318/2022 [bc 1]", "origin": "1 well away", "origin_order": 0, "reads": 60, "fraction_of_reads": 0.0196078431372549}]}}, {"mode": "vega-lite"});
+</script></div>
+<style>
+details.notes { border-left: 4px solid #ddd; margin: 0.6em 0; padding: 0.2em 0.8em; }
+details.notes summary { color: #0366d6; cursor: pointer; list-style: none; }
+details.notes summary::-webkit-details-marker { display: none; }
+details.notes summary::before { content: "\25B8  "; }
+details.notes[open] summary::before { content: "\25BE  "; }
+</style><details class="notes"><summary>How to read this plot</summary>
+<div class="md-block"><p>The <strong>first panel</strong> classifies every read sequenced for the well into
+the following categories:</p></div>
+<div class="md-block"><ul>
+<li><strong>valid barcode</strong>: the read contains a valid barcode present in either the viral library or the neutralization standard set.</li>
+<li><strong>low quality barcode</strong>: the read contains poor-quality nucleotide sequencing within the barcode region.</li>
+<li><strong>invalid outer flank</strong>: the read contains a different outer flanking sequence than specified. This outer barcode is used to separate samples on a shared sequencing run, so reads belonging to other samples on a multiplexed run are counted here and are expected in this sequencing regime.</li>
+</ul></div>
+<div class="md-block"><p>The <strong>second panel</strong> takes every valid barcode read (from the "valid barcode"
+category in the first panel) and plots the fraction of these that map to the
+expected barcode. This is a rough proxy for the titer of the expected virus and
+can help with further QC interpretation, especially for low titer strains.</p></div>
+<div class="md-block"><p>The <strong>third panel</strong> classifies every barcode found in the well into
+the following categories:</p>
+<ul>
+<li><strong>expected</strong>: the barcode is the infecting barcode, or another barcode carried in the same tube.</li>
+<li><strong>other library</strong>: the barcode maps to another barcode in the
+   library.</li>
+<li><strong>≤1 nt from expected/standard</strong>: the barcode is within 1 nt
+   of an expected barcode or a neutralization standard barcode. These are likely
+   sequencing errors as opposed to contamination.</li>
+<li><strong>&gt;1 nt from expected/standard</strong>: the barcode is further than
+   1 nt from every expected and neutralization standard
+   barcode.</li>
+</ul>
+<p>Note that this excludes neutralization standard barcodes and discarded barcodes, and values are plotted
+as the fraction of non-neutralization-standard reads.</p>
+<p>The <strong>fourth panel</strong> takes every barcode in the "other library"
+category of the third panel and classifies it into the following categories:</p></div>
+<div class="md-block"><ul>
+<li><strong>1 well away</strong>: the barcode is expected in a well one well away in any direction on the same plate, including diagonally.</li>
+</ul></div>
+</details>
+<div class="md-block"><h2 id="discarded-barcodes">Discarded barcodes</h2>
+<p>The following barcodes were intentionally marked for discard:</p></div>
+<div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">barcode</div></th>
+      <th><div class="head">reason</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GGCAGATTTTCATATT</td>
+      <td>made up for this example</td>
+    </tr>
+  </tbody>
+</table></div>
+<div class="md-block"><p>No wells contained these barcodes or barcodes within 1 nt of them.</p></div>
+<div class="md-block"><h2 id="wells-with-library-contamination">Wells with library contamination</h2>
+<p>Below is a table showing wells where more than 0.5% of
+the non-neutralization-standard reads are unexpected library barcodes. Read counts are
+included and should be considered, especially in cases where the expected barcode
+failed to grow.</p></div>
+<div class="scroll-box" style="width: fit-content"><table class="dataframe"><thead class="grouped"><tr><th rowspan="2"><div class="head">plate</div></th><th rowspan="2"><div class="head">well</div></th><th rowspan="2"><div class="head">barcode</div></th><th rowspan="2"><div class="head">non&#8209;neut&#8209;standard reads</div></th><th rowspan="2"><div class="head">expected reads</div></th><th rowspan="2"><div class="head">other library reads</div></th><th rowspan="2"><div class="head">fraction unexpected library barcodes</div></th><th colspan="4" style="text-align: center">top other barcodes</th></tr><tr><th><div class="head">barcode</div></th><th><div class="head">fraction of non&#8209;neut&#8209;standard reads</div></th><th><div class="head">well</div></th><th><div class="head">distance</div></th></tr></thead><tbody><tr><td rowspan="1" style="vertical-align: top">single_well_plate_3</td><td rowspan="1" style="vertical-align: top">B3</td><td rowspan="1" style="vertical-align: top">A/England/220200318/2022 [bc 1]</td><td rowspan="1" style="vertical-align: top">3060</td><td rowspan="1" style="vertical-align: top">3000</td><td rowspan="1" style="vertical-align: top">60</td><td rowspan="1" style="vertical-align: top">0.01961</td><td>A/England/220200318/2022 [bc 2]</td><td>0.01961</td><td>B2</td><td>1 well away</td></tr></tbody></table></div>
+<div class="md-block"><h2 id="wells-with-unknown-barcodes">Wells with unknown barcodes</h2>
+<p>Below is a table showing every well where more than 2% of
+the non-neutralization-standard reads contain barcodes not specified in the library, the discarded barcode set, or the
+neutralization standard set.</p></div>
+<div class="md-block"><p>No well is over the threshold.</p></div>
+<div class="md-block"><h2 id="estimated-titer-of-each-barcode">Estimated titer of each barcode</h2>
+<p>These single virus per well infection experiments allow for an estimated titer of each
+barcode. This is simply computed as the ratio of reads containing the expected
+barcode to the neutralization standard reads in a well. The titer is relative, in arbitrary units rather than infectious units.
+These titers should be
+interpreted carefully as they assume each infection was performed in the linear range
+(where there is a linear relationship between the amount of input virus and resulting
+spike-in normalized counts), which may not always be true for every virus in these
+experiments. Additionally, the total counts for both the expected barcode and the
+neutralization standard are displayed when hovering over points. These can be used to
+help assess the precision of these estimates.</p></div>
+<div class="chart-block">
+<style>
+  #chart_2.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_2.vega-embed details,
+  #chart_2.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_2"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_2") {
+      outputDiv = document.getElementById("chart_2");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}, "axisY": {"labelOverlap": "greedy"}}, "vconcat": [{"mark": {"type": "point", "fill": "gray", "filled": true, "size": 25}, "encoding": {"stroke": {"value": "black"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 3, "empty": false}, "value": 1.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "titer", "format": ".3g", "type": "quantitative"}, {"field": "expected_reads", "type": "quantitative"}, {"field": "neut_standard_reads", "type": "quantitative"}, {"field": "parsed_reads", "type": "quantitative"}, {"field": "n_expected_barcodes", "type": "quantitative"}, {"field": "too_shallow", "type": "nominal"}, {"field": "titer_imprecise", "type": "nominal"}, {"field": "flagged_other_library", "type": "nominal"}, {"field": "flagged_unmatched", "type": "nominal"}], "x": {"axis": null, "field": "unit_label", "sort": ["A/England/220200318/2022 [bc 1]", "A/England/220200318/2022 [bc 2]", "A/Ghana/138/2020 [bc 1]"], "title": null, "type": "nominal"}, "y": {"field": "titer", "scale": {"type": "linear"}, "title": "estimated titer, linear scale", "type": "quantitative"}}, "height": 220, "name": "view_65c83c5f7b05f8a1_0", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-1380d8c5a38186f885d932b9b59ade16"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain"]}}], "width": {"step": 10}}, {"mark": {"type": "point", "fill": "gray", "filled": true, "size": 25}, "encoding": {"stroke": {"value": "black"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 3, "empty": false}, "value": 1.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "titer", "format": ".3g", "type": "quantitative"}, {"field": "expected_reads", "type": "quantitative"}, {"field": "neut_standard_reads", "type": "quantitative"}, {"field": "parsed_reads", "type": "quantitative"}, {"field": "n_expected_barcodes", "type": "quantitative"}, {"field": "too_shallow", "type": "nominal"}, {"field": "titer_imprecise", "type": "nominal"}, {"field": "flagged_other_library", "type": "nominal"}, {"field": "flagged_unmatched", "type": "nominal"}], "x": {"axis": {"labelAngle": -90, "labelLimit": 300}, "field": "unit_label", "sort": ["A/England/220200318/2022 [bc 1]", "A/England/220200318/2022 [bc 2]", "A/Ghana/138/2020 [bc 1]"], "title": null, "type": "nominal"}, "y": {"field": "titer", "scale": {"type": "log"}, "title": "estimated titer, log scale", "type": "quantitative"}}, "height": 220, "name": "view_20bb89afbafb369a_1", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-1380d8c5a38186f885d932b9b59ade16"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain"]}}, {"filter": "datum.titer > 0"}], "width": {"step": 10}}], "data": {"name": "data-d004430743738165df29d1114503a01c"}, "params": [{"name": "well_hover", "select": {"type": "point", "clear": "pointerout", "fields": ["unit_label"], "on": "pointerover"}, "views": ["view_65c83c5f7b05f8a1_0", "view_20bb89afbafb369a_1"]}], "resolve": {"scale": {"x": "shared"}}, "spacing": 20, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-d004430743738165df29d1114503a01c": [{"unit_label": "A/England/220200318/2022 [bc 2]", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 1, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}, {"unit_label": "A/England/220200318/2022 [bc 1]", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3460, "n_expected_barcodes": 1, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": true, "flagged_unmatched": false}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 1, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}], "data-1380d8c5a38186f885d932b9b59ade16": [{"unit_label": "A/England/220200318/2022 [bc 2]", "plate": "single_well_plate_3", "well": "B2", "expected": "CGTAATACATTTAAGA", "strain": "A/England/220200318/2022"}, {"unit_label": "A/England/220200318/2022 [bc 1]", "plate": "single_well_plate_3", "well": "B3", "expected": "GACCAACTGTGGTACA", "strain": "A/England/220200318/2022"}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "plate": "single_well_plate_3", "well": "B4", "expected": "CCAGTTCCCTTCGATG", "strain": "A/Ghana/138/2020"}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><h2 id="expected-barcode-recovery">Expected barcode recovery</h2>
+<p>This section examines the expected barcode recovery in each well. This can be helpful
+to examine the representation of each barcode in the viral stock when there are
+multiple barcodes mapping to an individual strain.</p></div>
+<div class="chart-block">
+<style>
+  #chart_3.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_3.vega-embed details,
+  #chart_3.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_3"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_3") {
+      outputDiv = document.getElementById("chart_3");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}, "axisY": {"labelOverlap": "greedy"}}, "data": {"name": "data-8e424f38b34de6221b3dd237dd5cc340"}, "mark": {"type": "bar", "width": {"band": 0.85}}, "encoding": {"fill": {"field": "rank", "legend": {"orient": "right"}, "scale": {"scheme": "tableau10"}, "title": "barcode rank in well", "type": "ordinal"}, "order": {"field": "rank", "sort": "ascending", "type": "ordinal"}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "barcode", "type": "nominal"}, {"field": "reads", "type": "quantitative"}, {"field": "frac_of_expected", "format": ".3g", "type": "quantitative"}], "x": {"axis": {"labelAngle": -90, "labelLimit": 300}, "field": "unit_label", "sort": ["A/England/220200318/2022 [bc 1]", "A/England/220200318/2022 [bc 2]", "A/Ghana/138/2020 [bc 1]"], "title": null, "type": "nominal"}, "y": {"field": "frac_of_expected", "title": "fraction of the well's expected reads", "type": "quantitative"}}, "height": 300, "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-1380d8c5a38186f885d932b9b59ade16"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain"]}}], "width": {"step": 10}, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-8e424f38b34de6221b3dd237dd5cc340": [{"unit_label": "A/England/220200318/2022 [bc 2]", "barcode": "CGTAATACATTTAAGA", "rank": 1, "reads": 3000, "frac_of_expected": 1.0}, {"unit_label": "A/England/220200318/2022 [bc 1]", "barcode": "GACCAACTGTGGTACA", "rank": 1, "reads": 3000, "frac_of_expected": 1.0}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "barcode": "CCAGTTCCCTTCGATG", "rank": 1, "reads": 3000, "frac_of_expected": 1.0}], "data-1380d8c5a38186f885d932b9b59ade16": [{"unit_label": "A/England/220200318/2022 [bc 2]", "plate": "single_well_plate_3", "well": "B2", "expected": "CGTAATACATTTAAGA", "strain": "A/England/220200318/2022"}, {"unit_label": "A/England/220200318/2022 [bc 1]", "plate": "single_well_plate_3", "well": "B3", "expected": "GACCAACTGTGGTACA", "strain": "A/England/220200318/2022"}, {"unit_label": "A/Ghana/138/2020 [bc 1]", "plate": "single_well_plate_3", "well": "B4", "expected": "CCAGTTCCCTTCGATG", "strain": "A/Ghana/138/2020"}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><p>Every barcode a well should hold produced at least one read.</p></div>
+<script>
+const links = [...document.querySelectorAll("nav.sidebar a[href^='#']")];
+const headings = links.map((a) => document.getElementById(a.hash.slice(1)));
+function pickSection() {
+  const atFoot = window.innerHeight + window.scrollY
+    >= document.documentElement.scrollHeight - 2;
+  let current = 0;
+  headings.forEach((h, i) => {
+    if (h.getBoundingClientRect().top <= window.innerHeight / 5) current = i;
+  });
+  if (atFoot) current = headings.length - 1;
+  links.forEach((a, i) => a.classList.toggle("active", i === current));
+}
+window.addEventListener("scroll", pickSection, { passive: true });
+window.addEventListener("resize", pickSection);
+window.addEventListener("load", pickSection);
+pickSection();
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="document.querySelectorAll('.md-block').forEach(
+    (el) => renderMathInElement(el, {delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]})
+  )"></script>
+</body>
+</html>

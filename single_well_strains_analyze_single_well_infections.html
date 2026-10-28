@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Single virus per well infections: single_well_strains</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  margin: 0 auto;
+  max-width: 80em;
+  padding: 1.5em;
+}
+h1, h2, h3 { line-height: 1.25; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code { background: #f4f4f4; border-radius: 3px; padding: 0.1em 0.3em; }
+pre { background: #f4f4f4; border-radius: 4px; overflow-x: auto; padding: 0.6em 0.8em; }
+pre code { background: none; padding: 0; }
+/* a chart is drawn at its natural size, so a wide one scrolls rather than being clipped */
+.chart-block { margin: 1em 0; overflow-x: auto; }
+.scroll-box {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 1em 0;
+  max-height: 80vh;
+  overflow: auto;
+}
+.scroll-box table { border-collapse: collapse; font-size: 0.85em; }
+.scroll-box th, .scroll-box td {
+  border-bottom: 1px solid #eee;
+  padding: 0.25em 0.6em;
+  text-align: right;
+  white-space: nowrap;
+}
+.scroll-box th { background: #fafafa; position: sticky; top: 0; }
+</style>
+</head>
+<body>
+<h1>Single virus per well infections: single_well_strains</h1>
+<style>
+:root { --sidebar-width: 15rem; }
+body { margin: 0 auto 0 var(--sidebar-width); }
+nav.sidebar {
+  background: #fafafa; border-right: 1px solid #ddd; bottom: 0; box-sizing: border-box;
+  font-size: 0.9rem; left: 0; overflow-y: auto; padding: 1.5rem 1rem; position: fixed;
+  top: 0; width: var(--sidebar-width);
+}
+nav.sidebar a.home {
+  border: 1px solid #ccc; border-radius: 4px; display: inline-block; margin-bottom: 1.2em;
+  padding: 0.25em 0.7em;
+}
+nav.sidebar a.home:hover { background: #eee; text-decoration: none; }
+nav.sidebar .contents {
+  border-bottom: 1px solid #ddd; color: #666; font-size: 0.85em; font-weight: 600;
+  letter-spacing: 0.06em; margin: 0 0 0.6em; padding-bottom: 0.2em;
+  text-transform: uppercase;
+}
+nav.sidebar ul { list-style: none; margin: 0.2em 0; padding-left: 0; }
+nav.sidebar a { color: #245; display: block; padding: 0.16em 0; text-decoration: none; }
+nav.sidebar a:hover { text-decoration: underline; }
+nav.sidebar a.active { color: #111; font-weight: 600; }
+@media (max-width: 60em) {
+  :root { --sidebar-width: 0px; }
+  body { margin: 0 auto; }
+  nav.sidebar {
+    border: 1px solid #ddd; border-radius: 4px; max-height: 40vh; position: static;
+    width: auto;
+  }
+}
+</style><nav class="sidebar"><a class="home" href="index.html">&larr; All results</a><p class="contents">Contents</p><ul><li><a href="#overview">Overview</a></li><li><a href="#experimental-summary">Experimental summary</a></li><li><a href="#barcode-composition-of-each-well">Barcode composition of each well</a></li><li><a href="#discarded-barcodes">Discarded barcodes</a></li><li><a href="#wells-with-library-contamination">Wells with library contamination</a></li><li><a href="#wells-with-unknown-barcodes">Wells with unknown barcodes</a></li><li><a href="#estimated-titer-of-each-strain">Estimated titer of each strain</a></li><li><a href="#expected-barcode-recovery">Expected barcode recovery</a></li></ul></nav>
+<style>
+.scroll-box td { border-right: 1px solid #ddd; }
+.scroll-box td:last-child { border-right: none; }
+.scroll-box th {
+  border-right: none; box-shadow: inset -1px 0 #ddd, inset 0 -1px #ddd; vertical-align: bottom;
+}
+.scroll-box th:last-child { box-shadow: inset 0 -1px #ddd; }
+.scroll-box th .head {
+  margin-left: auto; max-width: 7em; min-width: min-content; white-space: normal;
+}
+.scroll-box thead.grouped { position: sticky; top: 0; z-index: 1; }
+.scroll-box thead.grouped th { position: static; }
+.scroll-box, .chart-block {
+  max-width: calc(100vw - var(--sidebar-width) - 3em); width: fit-content;
+}
+@media (max-width: 60em) {
+  .scroll-box, .chart-block { max-width: calc((100vw + 100%) / 2 - 1.5em); }
+}
+</style>
+<div class="md-block"><p>This document analyzes the single virus per well infection experiment -
+single_well_strains. The purpose of this analysis is a quality control check on the
+individual viral stocks to validate that each stock contains the expected barcode(s)
+and to assess the level of barcode contamination. Additionally, it provides estimates
+of the titer of each viral stock. These titers should be interpreted carefully as they
+assume each infection was performed in the linear range (where there is a linear
+relationship between the amount of input virus and resulting spike-in normalized
+counts), which may not always be true for every virus in these experiments. The plots
+below are interactive: mouse over for details.</p>
+<h2 id="overview">Overview</h2></div>
+<div class="md-block"><p>Synthetic plates of one strain per well, built so that each well holds one thing
+the analysis has to get right.</p></div>
+<div class="md-block"><h2 id="experimental-summary">Experimental summary</h2>
+<p>The tiles below summarize key experimental parameters.</p></div>
+<div style="display: flex; flex-wrap: wrap; gap: 0.6em; margin: 1em 0 0.4em"><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">2</div><div style="color: #555; font-size: 0.85em">plates</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">13</div><div style="color: #555; font-size: 0.85em">infected wells</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">1</div><div style="color: #555; font-size: 0.85em">blank wells</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">1</div><div style="color: #555; font-size: 0.85em">dilution factor</div></div><div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; padding: 0.5em 1em; text-align: center"><div style="font-size: 1.6em; font-weight: bold">12 / 36</div><div style="color: #555; font-size: 0.85em">strains assayed</div></div></div><p style="color: #555">Viral library: pdmH1N1_lib2023_loes.csv</p>
+<style>
+details.warning {
+  background: #fff8e1; border-left: 4px solid #f0ad4e; margin: 0.4em 0;
+  padding: 0.4em 0.8em;
+}
+details.warning summary { cursor: pointer; list-style: none; }
+details.warning .scroll-box { background: white; }
+details.warning summary::-webkit-details-marker { display: none; }
+details.warning .toggle {
+  border: 1px solid #0366d6; border-radius: 1em; color: #0366d6; font-size: 0.85em;
+  margin-left: 0.5em; padding: 0.05em 0.6em; white-space: nowrap;
+}
+details.warning summary:hover .toggle { background: #0366d6; color: white; }
+details.warning .toggle::before { content: "\25B8  "; }
+details.warning[open] .toggle::before { content: "\25BE  "; }
+details.warning .hide, details.warning[open] .show { display: none; }
+details.warning[open] .hide { display: inline; }
+</style><h3>Warnings</h3><details class="warning"><summary><b>2</b> wells with fewer than 1000 parsed reads <span class="toggle"><span class="show">show</span><span class="hide">hide</span> wells</span></summary><div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">plate</div></th>
+      <th><div class="head">well</div></th>
+      <th><div class="head">strain</div></th>
+      <th><div class="head">parsed reads</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>single_well_plate_1</td>
+      <td>C5</td>
+      <td>A/Brisbane/48/2022</td>
+      <td>500</td>
+    </tr>
+    <tr>
+      <td>single_well_plate_1</td>
+      <td>B7</td>
+      <td>(empty) single_well_plate_1:B7</td>
+      <td>420</td>
+    </tr>
+  </tbody>
+</table></div></details><details class="warning"><summary><b>1</b> well with fewer than 100 neutralization standard reads <span class="toggle"><span class="show">show</span><span class="hide">hide</span> well</span></summary><div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">plate</div></th>
+      <th><div class="head">well</div></th>
+      <th><div class="head">strain</div></th>
+      <th><div class="head">neut standard reads</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>single_well_plate_1</td>
+      <td>C5</td>
+      <td>A/Brisbane/48/2022</td>
+      <td>50</td>
+    </tr>
+  </tbody>
+</table></div></details><details class="warning"><summary><b>1</b> barcode with no reads in expected well <span class="toggle"><span class="show">show</span><span class="hide">hide</span> barcode</span></summary><div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">barcode</div></th>
+      <th><div class="head">plate</div></th>
+      <th><div class="head">well</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GATCCGTACTTTGATT</td>
+      <td>single_well_plate_1</td>
+      <td>C4</td>
+    </tr>
+  </tbody>
+</table></div></details><details class="warning"><summary><b>24</b> strains of the viral library not assayed here <span class="toggle"><span class="show">show</span><span class="hide">hide</span> strains</span></summary><div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">strain</div></th>
+      <th><div class="head">final library</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>A/Bangladesh/3210810034/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/England/220200318/2022</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Ghana/138/2020</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Ghana/2080/2020</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/India-PUN-NIV328484/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/India-Pune-Nivcov2221170/2022</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/India/Pun-NIV312851/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Michigan/19/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Newcastle/2/2022</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Niger/10217/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Nimes/871/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Norway/25089/2022</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Paris/30353/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Paris/31196/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Perth/1/2022</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R14850/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/SouthAfrica/R16462/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Sydney/43/2022</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0274/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Togo/0304/2021</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Togo/845/2020</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Utah/27/2022</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Washington/23/2020</td>
+      <td>kept</td>
+    </tr>
+    <tr>
+      <td>A/Wisconsin/588/2019</td>
+      <td>kept</td>
+    </tr>
+  </tbody>
+</table></div></details><details class="warning"><summary><b>1</b> strain assayed here not carried through to pdmH1N1_lib2023_loes_final.csv <span class="toggle"><span class="show">show</span><span class="hide">hide</span> strain</span></summary><div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">strain</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>A/Belgium/H0038/2022</td>
+    </tr>
+  </tbody>
+</table></div></details><details class="warning"><summary><b>1</b> strain carried through to pdmH1N1_lib2023_loes_final.csv with fewer barcodes than expected here <span class="toggle"><span class="show">show</span><span class="hide">hide</span> strain</span></summary><div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">strain</div></th>
+      <th><div class="head">barcodes expected here</div></th>
+      <th><div class="head">barcodes carried through</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>A/Bangladesh/8036/2021</td>
+      <td>3</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table></div></details>
+<div class="md-block"><h2 id="barcode-composition-of-each-well">Barcode composition of each well</h2>
+<p>The multi-panel plot below can be used to examine the barcode composition of each well
+and help flag any QC issues that may need further attention. Each bar is one infected
+well, labeled by the strain it was infected with. Hover over a bar to outline
+that well in all four panels.</p></div>
+<div class="chart-block">
+<style>
+  #chart_1.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_1.vega-embed details,
+  #chart_1.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_1"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_1") {
+      outputDiv = document.getElementById("chart_1");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}, "axisX": {"labelOverlap": "greedy"}}, "hconcat": [{"data": {"name": "data-59535305124ffcaf1fe9d7eafd49ef6a"}, "mark": {"type": "bar", "height": {"band": 0.85}}, "encoding": {"fill": {"field": "fate", "legend": {"columns": 1, "orient": "top"}, "scale": {"scheme": "tableau10"}, "sort": ["valid barcode", "low quality barcode", "invalid outer flank", "invalid barcode", "discarded barcode"], "type": "nominal"}, "order": {"field": "fate", "sort": "descending", "type": "nominal"}, "stroke": {"field": "carried_forward", "legend": {"columns": 1, "orient": "top"}, "scale": {"domain": ["carried forward", "dropped"], "range": ["black", "#cc00cc"]}, "title": "in the library carried forward", "type": "nominal"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "final_library", "type": "nominal"}, {"field": "fate", "type": "nominal"}, {"field": "count", "type": "quantitative"}], "x": {"field": "count", "scale": {"nice": false, "padding": 3}, "title": "reads", "type": "quantitative"}, "y": {"axis": {"labelAngle": 0, "labelLimit": 300}, "field": "unit_label", "sort": ["A/Michigan/45/2015", "A/California/07/2009", "A/Bangladesh/8036/2021", "A/Cote_DIvoire/1448/2021", "A/Hawaii/70/2019", "A/Belgium/H0017/2022", "A/Bangladesh/2221/2021", "A/Bangladesh/8002/2021", "A/Belgium/H0038/2022", "A/Brisbane/02/2018 (single_well_plate_1)", "A/Brisbane/02/2018 (single_well_plate_2)", "A/Brisbane/48/2022", "A/Chester/5355/2022"], "title": null, "type": "nominal"}}, "height": {"step": 10}, "name": "view_d401dd9c21105216_0", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-8adde56514d879e4ff0c9f5578ecd224"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain", "n_expected_barcodes_final", "final_library", "carried_forward"]}}], "width": 170}, {"data": {"name": "data-99802f16f8f4fc4003019f12e22f53aa"}, "mark": {"type": "bar", "height": {"band": 0.85}}, "encoding": {"stroke": {"field": "carried_forward", "legend": {"columns": 1, "orient": "top"}, "scale": {"domain": ["carried forward", "dropped"], "range": ["black", "#cc00cc"]}, "title": "in the library carried forward", "type": "nominal"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "final_library", "type": "nominal"}, {"field": "viral_fraction", "format": ".3g", "type": "quantitative"}, {"field": "expected_reads", "type": "quantitative"}, {"field": "neut_standard_reads", "type": "quantitative"}, {"field": "valid_reads", "type": "quantitative"}], "x": {"axis": {"tickCount": 4}, "field": "viral_fraction", "scale": {"domain": [0, 1], "nice": false}, "title": "viral fraction of valid reads", "type": "quantitative"}, "y": {"axis": null, "field": "unit_label", "sort": ["A/Michigan/45/2015", "A/California/07/2009", "A/Bangladesh/8036/2021", "A/Cote_DIvoire/1448/2021", "A/Hawaii/70/2019", "A/Belgium/H0017/2022", "A/Bangladesh/2221/2021", "A/Bangladesh/8002/2021", "A/Belgium/H0038/2022", "A/Brisbane/02/2018 (single_well_plate_1)", "A/Brisbane/02/2018 (single_well_plate_2)", "A/Brisbane/48/2022", "A/Chester/5355/2022"], "title": null, "type": "nominal"}}, "height": {"step": 10}, "name": "view_3c4332ff74e99713_1", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-8adde56514d879e4ff0c9f5578ecd224"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain", "n_expected_barcodes_final", "final_library", "carried_forward"]}}], "width": 100}, {"data": {"name": "data-61b52fd0aca332f37af450963dbcdb69"}, "mark": {"type": "bar", "height": {"band": 0.85}}, "encoding": {"fill": {"field": "category", "legend": {"columns": 1, "labelLimit": 300, "orient": "top"}, "scale": {"scheme": "dark2"}, "sort": ["expected", "other library", "\u22641 nt from expected/standard", ">1 nt from expected/standard"], "title": "barcode category", "type": "nominal"}, "order": {"field": "category_order", "sort": "ascending", "type": "quantitative"}, "stroke": {"field": "carried_forward", "legend": {"columns": 1, "orient": "top"}, "scale": {"domain": ["carried forward", "dropped"], "range": ["black", "#cc00cc"]}, "title": "in the library carried forward", "type": "nominal"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "final_library", "type": "nominal"}, {"field": "category", "type": "nominal"}, {"field": "reads", "type": "quantitative"}, {"field": "fraction", "format": ".3g", "type": "quantitative"}], "x": {"axis": {"tickCount": 4}, "field": "fraction", "scale": {"domain": [0, 1], "nice": false}, "stack": true, "title": "fraction of the non-neut-standard reads", "type": "quantitative"}, "y": {"axis": null, "field": "unit_label", "sort": ["A/Michigan/45/2015", "A/California/07/2009", "A/Bangladesh/8036/2021", "A/Cote_DIvoire/1448/2021", "A/Hawaii/70/2019", "A/Belgium/H0017/2022", "A/Bangladesh/2221/2021", "A/Bangladesh/8002/2021", "A/Belgium/H0038/2022", "A/Brisbane/02/2018 (single_well_plate_1)", "A/Brisbane/02/2018 (single_well_plate_2)", "A/Brisbane/48/2022", "A/Chester/5355/2022"], "title": null, "type": "nominal"}}, "height": {"step": 10}, "name": "view_2c320b765bb1d8b8_2", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-8adde56514d879e4ff0c9f5578ecd224"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain", "n_expected_barcodes_final", "final_library", "carried_forward"]}}], "width": 200}, {"data": {"name": "data-db525cf85fb3cce298411ca92f7c5498"}, "mark": {"type": "bar", "height": {"band": 0.85}}, "encoding": {"fill": {"field": "origin", "legend": {"columns": 1, "labelLimit": 300, "orient": "top"}, "scale": {"scheme": "set1"}, "sort": ["1 well away", "2 wells away", "over 2 wells away", "another plate here", "not assayed here"], "title": "came from", "type": "nominal"}, "order": {"field": "origin_order", "sort": "ascending", "type": "quantitative"}, "stroke": {"field": "carried_forward", "legend": {"columns": 1, "orient": "top"}, "scale": {"domain": ["carried forward", "dropped"], "range": ["black", "#cc00cc"]}, "title": "in the library carried forward", "type": "nominal"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 2.5, "empty": false}, "value": 0.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "final_library", "type": "nominal"}, {"field": "origin", "type": "nominal"}, {"field": "reads", "type": "quantitative"}, {"field": "fraction_of_reads", "format": ".3g", "type": "quantitative"}], "x": {"axis": {"tickCount": 3}, "field": "fraction_of_reads", "scale": {"nice": false, "padding": 3}, "stack": true, "title": "fraction from elsewhere in the library", "type": "quantitative"}, "y": {"axis": null, "field": "unit_label", "sort": ["A/Michigan/45/2015", "A/California/07/2009", "A/Bangladesh/8036/2021", "A/Cote_DIvoire/1448/2021", "A/Hawaii/70/2019", "A/Belgium/H0017/2022", "A/Bangladesh/2221/2021", "A/Bangladesh/8002/2021", "A/Belgium/H0038/2022", "A/Brisbane/02/2018 (single_well_plate_1)", "A/Brisbane/02/2018 (single_well_plate_2)", "A/Brisbane/48/2022", "A/Chester/5355/2022"], "title": null, "type": "nominal"}}, "height": {"step": 10}, "name": "view_dd5db61c9b994a25_3", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-8adde56514d879e4ff0c9f5578ecd224"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain", "n_expected_barcodes_final", "final_library", "carried_forward"]}}], "width": 130}], "params": [{"name": "well_hover", "select": {"type": "point", "clear": "pointerout", "fields": ["unit_label"], "on": "pointerover"}, "views": ["view_d401dd9c21105216_0", "view_3c4332ff74e99713_1", "view_2c320b765bb1d8b8_2", "view_dd5db61c9b994a25_3"]}], "resolve": {"scale": {"fill": "independent", "y": "shared"}}, "spacing": 20, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-59535305124ffcaf1fe9d7eafd49ef6a": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/California/07/2009", "fate": "valid barcode", "count": 3460}, {"unit_label": "A/California/07/2009", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/California/07/2009", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Hawaii/70/2019", "fate": "valid barcode", "count": 3440}, {"unit_label": "A/Hawaii/70/2019", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Hawaii/70/2019", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Michigan/45/2015", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Michigan/45/2015", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Michigan/45/2015", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Bangladesh/2221/2021", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Bangladesh/2221/2021", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Bangladesh/2221/2021", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Bangladesh/8002/2021", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Bangladesh/8002/2021", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Bangladesh/8002/2021", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Bangladesh/8036/2021", "fate": "valid barcode", "count": 3450}, {"unit_label": "A/Bangladesh/8036/2021", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Bangladesh/8036/2021", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Belgium/H0017/2022", "fate": "valid barcode", "count": 3430}, {"unit_label": "A/Belgium/H0017/2022", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Belgium/H0017/2022", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Belgium/H0038/2022", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Belgium/H0038/2022", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Belgium/H0038/2022", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Brisbane/48/2022", "fate": "valid barcode", "count": 500}, {"unit_label": "A/Brisbane/48/2022", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Brisbane/48/2022", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Chester/5355/2022", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Chester/5355/2022", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Chester/5355/2022", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Cote_DIvoire/1448/2021", "fate": "valid barcode", "count": 3440}, {"unit_label": "A/Cote_DIvoire/1448/2021", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Cote_DIvoire/1448/2021", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "fate": "valid barcode", "count": 3400}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "fate": "invalid outer flank", "count": 15}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "fate": "low quality barcode", "count": 1}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Bangladesh/8036/2021", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/California/07/2009", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Belgium/H0017/2022", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Hawaii/70/2019", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Belgium/H0038/2022", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Michigan/45/2015", "fate": "invalid barcode", "count": 230}, {"unit_label": "A/Brisbane/48/2022", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Bangladesh/2221/2021", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Bangladesh/8002/2021", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Chester/5355/2022", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Cote_DIvoire/1448/2021", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "fate": "invalid barcode", "count": 0}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Bangladesh/8036/2021", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/California/07/2009", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Belgium/H0017/2022", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Hawaii/70/2019", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Belgium/H0038/2022", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Michigan/45/2015", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Brisbane/48/2022", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Bangladesh/2221/2021", "fate": "discarded barcode", "count": 550}, {"unit_label": "A/Bangladesh/8002/2021", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Chester/5355/2022", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Cote_DIvoire/1448/2021", "fate": "discarded barcode", "count": 0}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "fate": "discarded barcode", "count": 0}], "data-8adde56514d879e4ff0c9f5578ecd224": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "plate": "single_well_plate_1", "well": "B2", "expected": "A/Brisbane/02/2018", "strain": "A/Brisbane/02/2018", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Bangladesh/8036/2021", "plate": "single_well_plate_1", "well": "C2", "expected": "A/Bangladesh/8036/2021", "strain": "A/Bangladesh/8036/2021", "n_expected_barcodes_final": 2.0, "final_library": "kept, some barcodes dropped", "carried_forward": "carried forward"}, {"unit_label": "A/California/07/2009", "plate": "single_well_plate_1", "well": "B3", "expected": "A/California/07/2009", "strain": "A/California/07/2009", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Belgium/H0017/2022", "plate": "single_well_plate_1", "well": "C3", "expected": "A/Belgium/H0017/2022", "strain": "A/Belgium/H0017/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Hawaii/70/2019", "plate": "single_well_plate_1", "well": "B4", "expected": "A/Hawaii/70/2019", "strain": "A/Hawaii/70/2019", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Belgium/H0038/2022", "plate": "single_well_plate_1", "well": "C4", "expected": "A/Belgium/H0038/2022", "strain": "A/Belgium/H0038/2022", "n_expected_barcodes_final": 0.0, "final_library": "dropped from the library", "carried_forward": "dropped"}, {"unit_label": "A/Michigan/45/2015", "plate": "single_well_plate_1", "well": "B5", "expected": "A/Michigan/45/2015", "strain": "A/Michigan/45/2015", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Brisbane/48/2022", "plate": "single_well_plate_1", "well": "C5", "expected": "A/Brisbane/48/2022", "strain": "A/Brisbane/48/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Bangladesh/2221/2021", "plate": "single_well_plate_1", "well": "B6", "expected": "A/Bangladesh/2221/2021", "strain": "A/Bangladesh/2221/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "(empty) single_well_plate_1:B7", "plate": "single_well_plate_1", "well": "B7", "expected": null, "strain": null, "n_expected_barcodes_final": null, "final_library": null, "carried_forward": null}, {"unit_label": "A/Bangladesh/8002/2021", "plate": "single_well_plate_1", "well": "D7", "expected": "A/Bangladesh/8002/2021", "strain": "A/Bangladesh/8002/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Chester/5355/2022", "plate": "single_well_plate_2", "well": "B2", "expected": "A/Chester/5355/2022", "strain": "A/Chester/5355/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Cote_DIvoire/1448/2021", "plate": "single_well_plate_2", "well": "B3", "expected": "A/Cote_DIvoire/1448/2021", "strain": "A/Cote_DIvoire/1448/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "plate": "single_well_plate_2", "well": "B5", "expected": "A/Brisbane/02/2018", "strain": "A/Brisbane/02/2018", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}], "data-99802f16f8f4fc4003019f12e22f53aa": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}, {"unit_label": "A/Bangladesh/8036/2021", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3450, "viral_fraction": 0.8696}, {"unit_label": "A/California/07/2009", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3460, "viral_fraction": 0.8671}, {"unit_label": "A/Belgium/H0017/2022", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3430, "viral_fraction": 0.8746}, {"unit_label": "A/Hawaii/70/2019", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3440, "viral_fraction": 0.8721}, {"unit_label": "A/Belgium/H0038/2022", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}, {"unit_label": "A/Michigan/45/2015", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}, {"unit_label": "A/Brisbane/48/2022", "expected_reads": 450, "neut_standard_reads": 50, "valid_reads": 500, "viral_fraction": 0.9}, {"unit_label": "A/Bangladesh/2221/2021", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}, {"unit_label": "A/Bangladesh/8002/2021", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}, {"unit_label": "A/Chester/5355/2022", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}, {"unit_label": "A/Cote_DIvoire/1448/2021", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3440, "viral_fraction": 0.8721}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "expected_reads": 3000, "neut_standard_reads": 400, "valid_reads": 3400, "viral_fraction": 0.8824}], "data-61b52fd0aca332f37af450963dbcdb69": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/Bangladesh/8036/2021", "category": "expected", "reads": 3000, "fraction": 0.9836, "category_order": 0}, {"unit_label": "A/California/07/2009", "category": "expected", "reads": 3000, "fraction": 0.9804, "category_order": 0}, {"unit_label": "A/Belgium/H0017/2022", "category": "expected", "reads": 3000, "fraction": 0.9901, "category_order": 0}, {"unit_label": "A/Hawaii/70/2019", "category": "expected", "reads": 3000, "fraction": 0.9868, "category_order": 0}, {"unit_label": "A/Belgium/H0038/2022", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/Michigan/45/2015", "category": "expected", "reads": 3000, "fraction": 0.9288, "category_order": 0}, {"unit_label": "A/Brisbane/48/2022", "category": "expected", "reads": 450, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/Bangladesh/2221/2021", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/Bangladesh/8002/2021", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/Chester/5355/2022", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/Cote_DIvoire/1448/2021", "category": "expected", "reads": 3000, "fraction": 0.9868, "category_order": 0}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "category": "expected", "reads": 3000, "fraction": 1.0, "category_order": 0}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Bangladesh/8036/2021", "category": "other library", "reads": 50, "fraction": 0.01639, "category_order": 1}, {"unit_label": "A/California/07/2009", "category": "other library", "reads": 60, "fraction": 0.01961, "category_order": 1}, {"unit_label": "A/Belgium/H0017/2022", "category": "other library", "reads": 30, "fraction": 0.009901, "category_order": 1}, {"unit_label": "A/Hawaii/70/2019", "category": "other library", "reads": 40, "fraction": 0.01316, "category_order": 1}, {"unit_label": "A/Belgium/H0038/2022", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Michigan/45/2015", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Brisbane/48/2022", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Bangladesh/2221/2021", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Bangladesh/8002/2021", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Chester/5355/2022", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Cote_DIvoire/1448/2021", "category": "other library", "reads": 40, "fraction": 0.01316, "category_order": 1}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "category": "other library", "reads": 0, "fraction": 0.0, "category_order": 1}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Bangladesh/8036/2021", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/California/07/2009", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Belgium/H0017/2022", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Hawaii/70/2019", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Belgium/H0038/2022", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Michigan/45/2015", "category": "\u22641 nt from expected/standard", "reads": 30, "fraction": 0.009288, "category_order": 2}, {"unit_label": "A/Brisbane/48/2022", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Bangladesh/2221/2021", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Bangladesh/8002/2021", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Chester/5355/2022", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Cote_DIvoire/1448/2021", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "category": "\u22641 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 2}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Bangladesh/8036/2021", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/California/07/2009", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Belgium/H0017/2022", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Hawaii/70/2019", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Belgium/H0038/2022", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Michigan/45/2015", "category": ">1 nt from expected/standard", "reads": 200, "fraction": 0.06192, "category_order": 3}, {"unit_label": "A/Brisbane/48/2022", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Bangladesh/2221/2021", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Bangladesh/8002/2021", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Chester/5355/2022", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Cote_DIvoire/1448/2021", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "category": ">1 nt from expected/standard", "reads": 0, "fraction": 0.0, "category_order": 3}], "data-db525cf85fb3cce298411ca92f7c5498": [{"unit_label": "A/California/07/2009", "origin": "1 well away", "origin_order": 0, "reads": 60, "fraction_of_reads": 0.01961}, {"unit_label": "A/Hawaii/70/2019", "origin": "over 2 wells away", "origin_order": 2, "reads": 40, "fraction_of_reads": 0.01316}, {"unit_label": "A/Bangladesh/8036/2021", "origin": "another plate here", "origin_order": 3, "reads": 50, "fraction_of_reads": 0.01639}, {"unit_label": "A/Belgium/H0017/2022", "origin": "not assayed here", "origin_order": 4, "reads": 30, "fraction_of_reads": 0.009901}, {"unit_label": "A/Cote_DIvoire/1448/2021", "origin": "another plate here", "origin_order": 3, "reads": 40, "fraction_of_reads": 0.01316}]}}, {"mode": "vega-lite"});
+</script></div>
+<style>
+details.notes { border-left: 4px solid #ddd; margin: 0.6em 0; padding: 0.2em 0.8em; }
+details.notes summary { color: #0366d6; cursor: pointer; list-style: none; }
+details.notes summary::-webkit-details-marker { display: none; }
+details.notes summary::before { content: "\25B8  "; }
+details.notes[open] summary::before { content: "\25BE  "; }
+</style><details class="notes"><summary>How to read this plot</summary>
+<div class="md-block"><p>The <strong>first panel</strong> classifies every read sequenced for the well into
+the following categories:</p></div>
+<div class="md-block"><ul>
+<li><strong>valid barcode</strong>: the read contains a valid barcode present in either the viral library or the neutralization standard set.</li>
+<li><strong>low quality barcode</strong>: the read contains poor-quality nucleotide sequencing within the barcode region.</li>
+<li><strong>invalid outer flank</strong>: the read contains a different outer flanking sequence than specified. This outer barcode is used to separate samples on a shared sequencing run, so reads belonging to other samples on a multiplexed run are counted here and are expected in this sequencing regime.</li>
+<li><strong>invalid barcode</strong>: the read contains a barcode sequence not present in the viral library, the neutralization standard set, or the discarded barcode set.</li>
+<li><strong>discarded barcode</strong>: the read contains a barcode present in the discarded barcode set or within 1 nt of one.</li>
+</ul></div>
+<div class="md-block"><p>The <strong>second panel</strong> takes every valid barcode read (from the "valid barcode"
+category in the first panel) and plots the fraction of these that map to the
+expected strain. This is a rough proxy for the titer of the expected virus and
+can help with further QC interpretation, especially for low titer strains.</p></div>
+<div class="md-block"><p>The <strong>third panel</strong> classifies every barcode found in the well into
+the following categories:</p>
+<ul>
+<li><strong>expected</strong>: the barcode maps correctly to the infecting strain.</li>
+<li><strong>other library</strong>: the barcode maps to another strain in the
+   library.</li>
+<li><strong>≤1 nt from expected/standard</strong>: the barcode is within 1 nt
+   of an expected barcode or a neutralization standard barcode. These are likely
+   sequencing errors as opposed to contamination.</li>
+<li><strong>&gt;1 nt from expected/standard</strong>: the barcode is further than
+   1 nt from every expected and neutralization standard
+   barcode.</li>
+</ul>
+<p>Note that this excludes neutralization standard barcodes and discarded barcodes, and values are plotted
+as the fraction of non-neutralization-standard reads.</p>
+<p>The <strong>fourth panel</strong> takes every barcode in the "other library"
+category of the third panel and classifies it into the following categories:</p></div>
+<div class="md-block"><ul>
+<li><strong>1 well away</strong>: the barcode belongs to a strain expected in a well one well away in any direction on the same plate, including diagonally.</li>
+<li><strong>over 2 wells away</strong>: the barcode belongs to a strain expected in a well on the same plate but over 2 wells away.</li>
+<li><strong>another plate here</strong>: the barcode belongs to a strain expected in a well on a different plate.</li>
+<li><strong>not assayed here</strong>: the barcode belongs to a strain in the library but not assayed on the plates measured here.</li>
+</ul></div>
+<div class="md-block"><p>Empty wells are not plotted but appear in the tables below if over a threshold of 0.5% (library contamination) or 2% (unknown barcodes).</p></div>
+</details>
+<div class="md-block"><h2 id="discarded-barcodes">Discarded barcodes</h2>
+<p>The following barcodes were intentionally marked for discard:</p></div>
+<div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">barcode</div></th>
+      <th><div class="head">reason</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GGCAGATTTTCATATT</td>
+      <td>made up for this example</td>
+    </tr>
+  </tbody>
+</table></div>
+<div class="md-block"><p>Any reads matching these barcodes or within 1 nt
+were discarded, for a total of 550 reads
+across the 14 wells analyzed. A summary table of this is below:</p></div>
+<div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">plate</div></th>
+      <th><div class="head">well</div></th>
+      <th><div class="head">strain</div></th>
+      <th><div class="head">discarded reads</div></th>
+      <th><div class="head">fraction of all parsed reads</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>single_well_plate_1</td>
+      <td>B6</td>
+      <td>A/Bangladesh/2221/2021</td>
+      <td>550</td>
+      <td>0.1392</td>
+    </tr>
+  </tbody>
+</table></div>
+<div class="md-block"><h2 id="wells-with-library-contamination">Wells with library contamination</h2>
+<p>Below is a table showing wells where more than 0.5% of
+the non-neutralization-standard reads are unexpected library barcodes. Read counts are
+included and should be considered, especially in cases where the expected strain
+failed to grow.</p></div>
+<div class="scroll-box" style="width: fit-content"><table class="dataframe"><thead class="grouped"><tr><th rowspan="2"><div class="head">plate</div></th><th rowspan="2"><div class="head">well</div></th><th rowspan="2"><div class="head">strain</div></th><th rowspan="2"><div class="head">non&#8209;neut&#8209;standard reads</div></th><th rowspan="2"><div class="head">expected reads</div></th><th rowspan="2"><div class="head">other library reads</div></th><th rowspan="2"><div class="head">fraction unexpected library barcodes</div></th><th colspan="4" style="text-align: center">top other strains</th></tr><tr><th><div class="head">strain</div></th><th><div class="head">fraction of non&#8209;neut&#8209;standard reads</div></th><th><div class="head">well</div></th><th><div class="head">distance</div></th></tr></thead><tbody><tr><td rowspan="1" style="vertical-align: top">single_well_plate_1</td><td rowspan="1" style="vertical-align: top">B7</td><td rowspan="1" style="vertical-align: top">(empty) single_well_plate_1:B7</td><td rowspan="1" style="vertical-align: top">20</td><td rowspan="1" style="vertical-align: top">0</td><td rowspan="1" style="vertical-align: top">20</td><td rowspan="1" style="vertical-align: top">1</td><td>A/Michigan/45/2015</td><td>1</td><td>B5</td><td>2 wells away</td></tr><tr><td rowspan="1" style="vertical-align: top">single_well_plate_1</td><td rowspan="1" style="vertical-align: top">B3</td><td rowspan="1" style="vertical-align: top">A/California/07/2009</td><td rowspan="1" style="vertical-align: top">3060</td><td rowspan="1" style="vertical-align: top">3000</td><td rowspan="1" style="vertical-align: top">60</td><td rowspan="1" style="vertical-align: top">0.01961</td><td>A/Brisbane/02/2018</td><td>0.01961</td><td>B2</td><td>1 well away</td></tr><tr><td rowspan="1" style="vertical-align: top">single_well_plate_1</td><td rowspan="1" style="vertical-align: top">C2</td><td rowspan="1" style="vertical-align: top">A/Bangladesh/8036/2021</td><td rowspan="1" style="vertical-align: top">3050</td><td rowspan="1" style="vertical-align: top">3000</td><td rowspan="1" style="vertical-align: top">50</td><td rowspan="1" style="vertical-align: top">0.01639</td><td>A/Chester/5355/2022</td><td>0.01639</td><td>B2 of single_well_plate_2</td><td>another plate here</td></tr><tr><td rowspan="1" style="vertical-align: top">single_well_plate_1</td><td rowspan="1" style="vertical-align: top">B4</td><td rowspan="1" style="vertical-align: top">A/Hawaii/70/2019</td><td rowspan="1" style="vertical-align: top">3040</td><td rowspan="1" style="vertical-align: top">3000</td><td rowspan="1" style="vertical-align: top">40</td><td rowspan="1" style="vertical-align: top">0.01316</td><td>A/Bangladesh/8002/2021</td><td>0.01316</td><td>D7</td><td>over 2 wells away</td></tr><tr><td rowspan="1" style="vertical-align: top">single_well_plate_2</td><td rowspan="1" style="vertical-align: top">B3</td><td rowspan="1" style="vertical-align: top">A/Cote_DIvoire/1448/2021</td><td rowspan="1" style="vertical-align: top">3040</td><td rowspan="1" style="vertical-align: top">3000</td><td rowspan="1" style="vertical-align: top">40</td><td rowspan="1" style="vertical-align: top">0.01316</td><td>A/California/07/2009</td><td>0.01316</td><td>B3 of single_well_plate_1</td><td>another plate here</td></tr><tr><td rowspan="1" style="vertical-align: top">single_well_plate_1</td><td rowspan="1" style="vertical-align: top">C3</td><td rowspan="1" style="vertical-align: top">A/Belgium/H0017/2022</td><td rowspan="1" style="vertical-align: top">3030</td><td rowspan="1" style="vertical-align: top">3000</td><td rowspan="1" style="vertical-align: top">30</td><td rowspan="1" style="vertical-align: top">0.009901</td><td>A/Niger/10217/2021</td><td>0.009901</td><td></td><td>not assayed here</td></tr></tbody></table></div>
+<div class="md-block"><h2 id="wells-with-unknown-barcodes">Wells with unknown barcodes</h2>
+<p>Below is a table showing every well where more than 2% of
+the non-neutralization-standard reads contain barcodes not specified in the library, the discarded barcode set, or the
+neutralization standard set.</p></div>
+<div class="scroll-box" style="width: fit-content"><table class="dataframe"><thead class="grouped"><tr><th rowspan="2"><div class="head">plate</div></th><th rowspan="2"><div class="head">well</div></th><th rowspan="2"><div class="head">strain in well</div></th><th rowspan="2"><div class="head">non&#8209;neut&#8209;standard reads</div></th><th rowspan="2"><div class="head">fraction of well unknown</div></th><th colspan="3" style="text-align: center">top unknown barcodes</th></tr><tr><th><div class="head">barcode</div></th><th><div class="head">fraction of non&#8209;neut&#8209;standard reads</div></th><th><div class="head">relation to closest barcode</div></th></tr></thead><tbody><tr><td rowspan="2" style="vertical-align: top">single_well_plate_1</td><td rowspan="2" style="vertical-align: top">B5</td><td rowspan="2" style="vertical-align: top">A/Michigan/45/2015</td><td rowspan="2" style="vertical-align: top">3230</td><td rowspan="2" style="vertical-align: top">0.07121</td><td>ATGCAGAAAATCTACT</td><td>0.06192</td><td>6 nt from any known barcode</td></tr><tr><td>ACACAGTCTCGAGAAG</td><td>0.009288</td><td>sequencing error off A/Michigan/45/2015</td></tr></tbody></table></div>
+<div class="md-block"><h2 id="estimated-titer-of-each-strain">Estimated titer of each strain</h2>
+<p>These single virus per well infection experiments allow for an estimated titer of each
+strain. This is simply computed as the ratio of reads containing the expected
+barcode to the neutralization standard reads in a well, summed over all of the strain's barcodes (the number of barcodes is shown when hovering over points). The titer is relative, in arbitrary units rather than infectious units.
+These titers should be
+interpreted carefully as they assume each infection was performed in the linear range
+(where there is a linear relationship between the amount of input virus and resulting
+spike-in normalized counts), which may not always be true for every virus in these
+experiments. Additionally, the total counts for both the expected strain and the
+neutralization standard are displayed when hovering over points. These can be used to
+help assess the precision of these estimates.</p></div>
+<div class="chart-block">
+<style>
+  #chart_2.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_2.vega-embed details,
+  #chart_2.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_2"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_2") {
+      outputDiv = document.getElementById("chart_2");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}, "axisX": {"labelOverlap": "greedy"}}, "hconcat": [{"mark": {"type": "point", "fill": "gray", "filled": true, "size": 25}, "encoding": {"stroke": {"field": "carried_forward", "legend": {"columns": 1, "orient": "top"}, "scale": {"domain": ["carried forward", "dropped"], "range": ["black", "#cc00cc"]}, "title": "in the library carried forward", "type": "nominal"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 3, "empty": false}, "value": 1.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "final_library", "type": "nominal"}, {"field": "titer", "format": ".3g", "type": "quantitative"}, {"field": "expected_reads", "type": "quantitative"}, {"field": "neut_standard_reads", "type": "quantitative"}, {"field": "parsed_reads", "type": "quantitative"}, {"field": "n_expected_barcodes", "type": "quantitative"}, {"field": "too_shallow", "type": "nominal"}, {"field": "titer_imprecise", "type": "nominal"}, {"field": "flagged_other_library", "type": "nominal"}, {"field": "flagged_unmatched", "type": "nominal"}], "x": {"field": "titer", "scale": {"type": "linear"}, "title": "estimated titer, linear scale", "type": "quantitative"}, "y": {"axis": {"labelAngle": 0, "labelLimit": 300}, "field": "unit_label", "sort": ["A/Brisbane/48/2022", "A/Bangladesh/2221/2021", "A/Bangladesh/8002/2021", "A/Bangladesh/8036/2021", "A/Belgium/H0017/2022", "A/Belgium/H0038/2022", "A/Brisbane/02/2018 (single_well_plate_1)", "A/Brisbane/02/2018 (single_well_plate_2)", "A/California/07/2009", "A/Chester/5355/2022", "A/Cote_DIvoire/1448/2021", "A/Hawaii/70/2019", "A/Michigan/45/2015"], "title": null, "type": "nominal"}}, "height": {"step": 10}, "name": "view_5eebeae3c21236a5_0", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-8adde56514d879e4ff0c9f5578ecd224"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain", "n_expected_barcodes_final", "final_library", "carried_forward"]}}], "width": 220}, {"mark": {"type": "point", "fill": "gray", "filled": true, "size": 25}, "encoding": {"stroke": {"field": "carried_forward", "legend": {"columns": 1, "orient": "top"}, "scale": {"domain": ["carried forward", "dropped"], "range": ["black", "#cc00cc"]}, "title": "in the library carried forward", "type": "nominal"}, "strokeWidth": {"condition": {"param": "well_hover", "value": 3, "empty": false}, "value": 1.5}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "final_library", "type": "nominal"}, {"field": "titer", "format": ".3g", "type": "quantitative"}, {"field": "expected_reads", "type": "quantitative"}, {"field": "neut_standard_reads", "type": "quantitative"}, {"field": "parsed_reads", "type": "quantitative"}, {"field": "n_expected_barcodes", "type": "quantitative"}, {"field": "too_shallow", "type": "nominal"}, {"field": "titer_imprecise", "type": "nominal"}, {"field": "flagged_other_library", "type": "nominal"}, {"field": "flagged_unmatched", "type": "nominal"}], "x": {"field": "titer", "scale": {"type": "log"}, "title": "estimated titer, log scale", "type": "quantitative"}, "y": {"axis": null, "field": "unit_label", "sort": ["A/Brisbane/48/2022", "A/Bangladesh/2221/2021", "A/Bangladesh/8002/2021", "A/Bangladesh/8036/2021", "A/Belgium/H0017/2022", "A/Belgium/H0038/2022", "A/Brisbane/02/2018 (single_well_plate_1)", "A/Brisbane/02/2018 (single_well_plate_2)", "A/California/07/2009", "A/Chester/5355/2022", "A/Cote_DIvoire/1448/2021", "A/Hawaii/70/2019", "A/Michigan/45/2015"], "title": null, "type": "nominal"}}, "height": {"step": 10}, "name": "view_80bae076e49f2b67_1", "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-8adde56514d879e4ff0c9f5578ecd224"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain", "n_expected_barcodes_final", "final_library", "carried_forward"]}}, {"filter": "datum.titer > 0"}], "width": 220}], "data": {"name": "data-0b8337e6343da8413e776831dc3dad11"}, "params": [{"name": "well_hover", "select": {"type": "point", "clear": "pointerout", "fields": ["unit_label"], "on": "pointerover"}, "views": ["view_5eebeae3c21236a5_0", "view_80bae076e49f2b67_1"]}], "resolve": {"scale": {"y": "shared"}}, "spacing": 20, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-0b8337e6343da8413e776831dc3dad11": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 4, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}, {"unit_label": "A/Bangladesh/8036/2021", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3450, "n_expected_barcodes": 3, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": true, "flagged_unmatched": false}, {"unit_label": "A/California/07/2009", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3460, "n_expected_barcodes": 4, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": true, "flagged_unmatched": false}, {"unit_label": "A/Belgium/H0017/2022", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3430, "n_expected_barcodes": 3, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": true, "flagged_unmatched": false}, {"unit_label": "A/Hawaii/70/2019", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3440, "n_expected_barcodes": 4, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": true, "flagged_unmatched": false}, {"unit_label": "A/Belgium/H0038/2022", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 3, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}, {"unit_label": "A/Michigan/45/2015", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3630, "n_expected_barcodes": 4, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": true}, {"unit_label": "A/Brisbane/48/2022", "titer": 9.0, "expected_reads": 450, "neut_standard_reads": 50, "parsed_reads": 500, "n_expected_barcodes": 3, "too_shallow": true, "titer_imprecise": true, "flagged_other_library": false, "flagged_unmatched": false}, {"unit_label": "A/Bangladesh/2221/2021", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 3, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}, {"unit_label": "A/Bangladesh/8002/2021", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 3, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}, {"unit_label": "A/Chester/5355/2022", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 3, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}, {"unit_label": "A/Cote_DIvoire/1448/2021", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3440, "n_expected_barcodes": 3, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": true, "flagged_unmatched": false}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "titer": 7.5, "expected_reads": 3000, "neut_standard_reads": 400, "parsed_reads": 3400, "n_expected_barcodes": 4, "too_shallow": false, "titer_imprecise": false, "flagged_other_library": false, "flagged_unmatched": false}], "data-8adde56514d879e4ff0c9f5578ecd224": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "plate": "single_well_plate_1", "well": "B2", "expected": "A/Brisbane/02/2018", "strain": "A/Brisbane/02/2018", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Bangladesh/8036/2021", "plate": "single_well_plate_1", "well": "C2", "expected": "A/Bangladesh/8036/2021", "strain": "A/Bangladesh/8036/2021", "n_expected_barcodes_final": 2.0, "final_library": "kept, some barcodes dropped", "carried_forward": "carried forward"}, {"unit_label": "A/California/07/2009", "plate": "single_well_plate_1", "well": "B3", "expected": "A/California/07/2009", "strain": "A/California/07/2009", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Belgium/H0017/2022", "plate": "single_well_plate_1", "well": "C3", "expected": "A/Belgium/H0017/2022", "strain": "A/Belgium/H0017/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Hawaii/70/2019", "plate": "single_well_plate_1", "well": "B4", "expected": "A/Hawaii/70/2019", "strain": "A/Hawaii/70/2019", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Belgium/H0038/2022", "plate": "single_well_plate_1", "well": "C4", "expected": "A/Belgium/H0038/2022", "strain": "A/Belgium/H0038/2022", "n_expected_barcodes_final": 0.0, "final_library": "dropped from the library", "carried_forward": "dropped"}, {"unit_label": "A/Michigan/45/2015", "plate": "single_well_plate_1", "well": "B5", "expected": "A/Michigan/45/2015", "strain": "A/Michigan/45/2015", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Brisbane/48/2022", "plate": "single_well_plate_1", "well": "C5", "expected": "A/Brisbane/48/2022", "strain": "A/Brisbane/48/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Bangladesh/2221/2021", "plate": "single_well_plate_1", "well": "B6", "expected": "A/Bangladesh/2221/2021", "strain": "A/Bangladesh/2221/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "(empty) single_well_plate_1:B7", "plate": "single_well_plate_1", "well": "B7", "expected": null, "strain": null, "n_expected_barcodes_final": null, "final_library": null, "carried_forward": null}, {"unit_label": "A/Bangladesh/8002/2021", "plate": "single_well_plate_1", "well": "D7", "expected": "A/Bangladesh/8002/2021", "strain": "A/Bangladesh/8002/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Chester/5355/2022", "plate": "single_well_plate_2", "well": "B2", "expected": "A/Chester/5355/2022", "strain": "A/Chester/5355/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Cote_DIvoire/1448/2021", "plate": "single_well_plate_2", "well": "B3", "expected": "A/Cote_DIvoire/1448/2021", "strain": "A/Cote_DIvoire/1448/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "plate": "single_well_plate_2", "well": "B5", "expected": "A/Brisbane/02/2018", "strain": "A/Brisbane/02/2018", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><h2 id="expected-barcode-recovery">Expected barcode recovery</h2>
+<p>This section examines the expected barcode recovery in each well. This can be helpful
+to examine the representation of each barcode in the viral stock when there are
+multiple barcodes mapping to an individual strain.</p></div>
+<div class="chart-block">
+<style>
+  #chart_3.vega-embed {
+    width: 100%;
+    display: flex;
+  }
+
+  #chart_3.vega-embed details,
+  #chart_3.vega-embed details summary {
+    position: relative;
+  }
+</style>
+<div id="chart_3"></div>
+<script type="text/javascript">
+  var VEGA_DEBUG = (typeof VEGA_DEBUG == "undefined") ? {} : VEGA_DEBUG;
+  (function(spec, embedOpt){
+    let outputDiv = document.currentScript.previousElementSibling;
+    if (outputDiv.id !== "chart_3") {
+      outputDiv = document.getElementById("chart_3");
+    }
+
+    const paths = {
+      "vega": "https://cdn.jsdelivr.net/npm/vega@6?noext",
+      "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+      "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@6.4.1?noext",
+      "vega-embed": "https://cdn.jsdelivr.net/npm/vega-embed@7?noext",
+    };
+
+    function maybeLoadScript(lib, version) {
+      var key = `${lib.replace("-", "")}_version`;
+      return (VEGA_DEBUG[key] == version) ?
+        Promise.resolve(paths[lib]) :
+        new Promise(function(resolve, reject) {
+          var s = document.createElement('script');
+          document.getElementsByTagName("head")[0].appendChild(s);
+          s.async = true;
+          s.onload = () => {
+            VEGA_DEBUG[key] = version;
+            return resolve(paths[lib]);
+          };
+          s.onerror = () => reject(`Error loading script: ${paths[lib]}`);
+          s.src = paths[lib];
+        });
+    }
+
+    function showError(err) {
+      outputDiv.innerHTML = `<div class="error" style="color:red;">${err}</div>`;
+      throw err;
+    }
+
+    function displayChart(vegaEmbed) {
+      vegaEmbed(outputDiv, spec, embedOpt)
+        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));
+    }
+
+    if(typeof define === "function" && define.amd) {
+      requirejs.config({paths});
+      let deps = ["vega-embed"];
+      require(deps, displayChart, err => showError(`Error loading script: ${err.message}`));
+    } else {
+      maybeLoadScript("vega", "6")
+        .then(() => maybeLoadScript("vega-lite", "6.4.1"))
+        .then(() => maybeLoadScript("vega-embed", "7"))
+        .catch(showError)
+        .then(() => displayChart(vegaEmbed));
+    }
+  })({"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}, "axis": {"grid": false}, "axisX": {"labelOverlap": "greedy"}}, "data": {"name": "data-7a0fa9376e5d647aae077ca026dbdb91"}, "mark": {"type": "bar", "height": {"band": 0.85}}, "encoding": {"fill": {"field": "rank", "legend": {"orient": "top"}, "scale": {"scheme": "tableau10"}, "title": "barcode rank in well", "type": "ordinal"}, "order": {"field": "rank", "sort": "ascending", "type": "ordinal"}, "tooltip": [{"field": "plate", "type": "nominal"}, {"field": "well", "type": "nominal"}, {"field": "expected", "type": "nominal"}, {"field": "strain", "type": "nominal"}, {"field": "final_library", "type": "nominal"}, {"field": "barcode", "type": "nominal"}, {"field": "reads", "type": "quantitative"}, {"field": "frac_of_expected", "format": ".3g", "type": "quantitative"}], "x": {"field": "frac_of_expected", "title": "fraction of the well's expected reads", "type": "quantitative"}, "y": {"axis": {"labelAngle": 0, "labelLimit": 300}, "field": "unit_label", "sort": ["A/Michigan/45/2015", "A/California/07/2009", "A/Bangladesh/8036/2021", "A/Cote_DIvoire/1448/2021", "A/Hawaii/70/2019", "A/Belgium/H0017/2022", "A/Bangladesh/2221/2021", "A/Bangladesh/8002/2021", "A/Belgium/H0038/2022", "A/Brisbane/02/2018 (single_well_plate_1)", "A/Brisbane/02/2018 (single_well_plate_2)", "A/Brisbane/48/2022", "A/Chester/5355/2022"], "title": null, "type": "nominal"}}, "height": {"step": 10}, "transform": [{"lookup": "unit_label", "from": {"data": {"name": "data-8adde56514d879e4ff0c9f5578ecd224"}, "key": "unit_label", "fields": ["plate", "well", "expected", "strain", "n_expected_barcodes_final", "final_library", "carried_forward"]}}], "width": 300, "$schema": "https://vega.github.io/schema/vega-lite/v6.4.1.json", "datasets": {"data-7a0fa9376e5d647aae077ca026dbdb91": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "barcode": "ACGACATGATCAAACG", "rank": 1, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "barcode": "ATCCGATTTAAAGGCA", "rank": 2, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "barcode": "TAATAAGCCAGCAAGA", "rank": 3, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "barcode": "TTGGGCACTAAATTAA", "rank": 4, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/California/07/2009", "barcode": "CATGTGAATTCGCCCA", "rank": 1, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/California/07/2009", "barcode": "CCTTTCTCAAAACATA", "rank": 2, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/California/07/2009", "barcode": "CGCCTAATGTTAATAA", "rank": 3, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/California/07/2009", "barcode": "GACACAGAACCCATGC", "rank": 4, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Hawaii/70/2019", "barcode": "ACATGAATTCAGACGG", "rank": 1, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Hawaii/70/2019", "barcode": "AGTAAACATGCATTGG", "rank": 2, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Hawaii/70/2019", "barcode": "ATAGAATCGCAAATTA", "rank": 3, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Hawaii/70/2019", "barcode": "TGGAATCGTCACCGAT", "rank": 4, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Michigan/45/2015", "barcode": "ACAAAGTCTCGAGAAG", "rank": 1, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Michigan/45/2015", "barcode": "CACCTAGGATCGCACT", "rank": 2, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Michigan/45/2015", "barcode": "TGAGGATAATCACAAG", "rank": 3, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Michigan/45/2015", "barcode": "TTGAAAAAATCATAAA", "rank": 4, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Bangladesh/2221/2021", "barcode": "AAGAGAAATATTCGCT", "rank": 1, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/2221/2021", "barcode": "GACAGCAATGCATACA", "rank": 2, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/2221/2021", "barcode": "GATAGAAATACCAGGA", "rank": 3, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/8036/2021", "barcode": "ACGGGGCCCAGGTAAT", "rank": 1, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/8036/2021", "barcode": "ATACCTCAACCTTGAA", "rank": 2, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/8036/2021", "barcode": "CAGTTCTGCGACCAGC", "rank": 3, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Belgium/H0017/2022", "barcode": "AATGAAAGTTAGCATT", "rank": 1, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Belgium/H0017/2022", "barcode": "ATGTCCATAAAAAATA", "rank": 2, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Belgium/H0017/2022", "barcode": "GTAAAGCAAATCCATT", "rank": 3, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Belgium/H0038/2022", "barcode": "GATCCGTACTTTGATT", "rank": 3, "reads": 0, "frac_of_expected": 0.0}, {"unit_label": "A/Belgium/H0038/2022", "barcode": "GCCGGAGGGCATTTTC", "rank": 1, "reads": 1500, "frac_of_expected": 0.5}, {"unit_label": "A/Belgium/H0038/2022", "barcode": "TACCGTATAATTAAAA", "rank": 2, "reads": 1500, "frac_of_expected": 0.5}, {"unit_label": "A/Brisbane/48/2022", "barcode": "CCCTATGCTGCGTATT", "rank": 1, "reads": 150, "frac_of_expected": 0.3333}, {"unit_label": "A/Brisbane/48/2022", "barcode": "GAGCTCTAAAGCAACA", "rank": 2, "reads": 150, "frac_of_expected": 0.3333}, {"unit_label": "A/Brisbane/48/2022", "barcode": "TTATGATCTAAACAGA", "rank": 3, "reads": 150, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/8002/2021", "barcode": "AGTGTCCCTAAGAGGC", "rank": 1, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/8002/2021", "barcode": "GCAACGCCAAATAATT", "rank": 2, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Bangladesh/8002/2021", "barcode": "TCTGCTAAACTAAGTA", "rank": 3, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Chester/5355/2022", "barcode": "AAAAAACGCATGTAGA", "rank": 1, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Chester/5355/2022", "barcode": "CCTCAAAATAACAAGC", "rank": 2, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Chester/5355/2022", "barcode": "TCATATAAAGAAAAGG", "rank": 3, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Cote_DIvoire/1448/2021", "barcode": "GTCCGTTGATAAAGAG", "rank": 1, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Cote_DIvoire/1448/2021", "barcode": "GTTAAACGATCTATAG", "rank": 2, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Cote_DIvoire/1448/2021", "barcode": "TCGAGAACACCCATAA", "rank": 3, "reads": 1000, "frac_of_expected": 0.3333}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "barcode": "ACGACATGATCAAACG", "rank": 1, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "barcode": "ATCCGATTTAAAGGCA", "rank": 2, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "barcode": "TAATAAGCCAGCAAGA", "rank": 3, "reads": 750, "frac_of_expected": 0.25}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "barcode": "TTGGGCACTAAATTAA", "rank": 4, "reads": 750, "frac_of_expected": 0.25}], "data-8adde56514d879e4ff0c9f5578ecd224": [{"unit_label": "A/Brisbane/02/2018 (single_well_plate_1)", "plate": "single_well_plate_1", "well": "B2", "expected": "A/Brisbane/02/2018", "strain": "A/Brisbane/02/2018", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Bangladesh/8036/2021", "plate": "single_well_plate_1", "well": "C2", "expected": "A/Bangladesh/8036/2021", "strain": "A/Bangladesh/8036/2021", "n_expected_barcodes_final": 2.0, "final_library": "kept, some barcodes dropped", "carried_forward": "carried forward"}, {"unit_label": "A/California/07/2009", "plate": "single_well_plate_1", "well": "B3", "expected": "A/California/07/2009", "strain": "A/California/07/2009", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Belgium/H0017/2022", "plate": "single_well_plate_1", "well": "C3", "expected": "A/Belgium/H0017/2022", "strain": "A/Belgium/H0017/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Hawaii/70/2019", "plate": "single_well_plate_1", "well": "B4", "expected": "A/Hawaii/70/2019", "strain": "A/Hawaii/70/2019", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Belgium/H0038/2022", "plate": "single_well_plate_1", "well": "C4", "expected": "A/Belgium/H0038/2022", "strain": "A/Belgium/H0038/2022", "n_expected_barcodes_final": 0.0, "final_library": "dropped from the library", "carried_forward": "dropped"}, {"unit_label": "A/Michigan/45/2015", "plate": "single_well_plate_1", "well": "B5", "expected": "A/Michigan/45/2015", "strain": "A/Michigan/45/2015", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Brisbane/48/2022", "plate": "single_well_plate_1", "well": "C5", "expected": "A/Brisbane/48/2022", "strain": "A/Brisbane/48/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Bangladesh/2221/2021", "plate": "single_well_plate_1", "well": "B6", "expected": "A/Bangladesh/2221/2021", "strain": "A/Bangladesh/2221/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "(empty) single_well_plate_1:B7", "plate": "single_well_plate_1", "well": "B7", "expected": null, "strain": null, "n_expected_barcodes_final": null, "final_library": null, "carried_forward": null}, {"unit_label": "A/Bangladesh/8002/2021", "plate": "single_well_plate_1", "well": "D7", "expected": "A/Bangladesh/8002/2021", "strain": "A/Bangladesh/8002/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Chester/5355/2022", "plate": "single_well_plate_2", "well": "B2", "expected": "A/Chester/5355/2022", "strain": "A/Chester/5355/2022", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Cote_DIvoire/1448/2021", "plate": "single_well_plate_2", "well": "B3", "expected": "A/Cote_DIvoire/1448/2021", "strain": "A/Cote_DIvoire/1448/2021", "n_expected_barcodes_final": 3.0, "final_library": "kept", "carried_forward": "carried forward"}, {"unit_label": "A/Brisbane/02/2018 (single_well_plate_2)", "plate": "single_well_plate_2", "well": "B5", "expected": "A/Brisbane/02/2018", "strain": "A/Brisbane/02/2018", "n_expected_barcodes_final": 4.0, "final_library": "kept", "carried_forward": "carried forward"}]}}, {"mode": "vega-lite"});
+</script></div>
+<div class="md-block"><p>Additionally, the following table shows barcodes with no reads in the expected well:</p></div>
+<div class="scroll-box" style="width: fit-content"><table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th><div class="head">plate</div></th>
+      <th><div class="head">well</div></th>
+      <th><div class="head">strain</div></th>
+      <th><div class="head">barcode</div></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span style="color: #cc00cc">single_well_plate_1</span></td>
+      <td><span style="color: #cc00cc">C4</span></td>
+      <td><span style="color: #cc00cc">A/Belgium/H0038/2022</span></td>
+      <td><span style="color: #cc00cc">GATCCGTACTTTGATT</span></td>
+    </tr>
+  </tbody>
+</table></div>
+<script>
+const links = [...document.querySelectorAll("nav.sidebar a[href^='#']")];
+const headings = links.map((a) => document.getElementById(a.hash.slice(1)));
+function pickSection() {
+  const atFoot = window.innerHeight + window.scrollY
+    >= document.documentElement.scrollHeight - 2;
+  let current = 0;
+  headings.forEach((h, i) => {
+    if (h.getBoundingClientRect().top <= window.innerHeight / 5) current = i;
+  });
+  if (atFoot) current = headings.length - 1;
+  links.forEach((a, i) => a.classList.toggle("active", i === current));
+}
+window.addEventListener("scroll", pickSection, { passive: true });
+window.addEventListener("resize", pickSection);
+window.addEventListener("load", pickSection);
+pickSection();
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="document.querySelectorAll('.md-block').forEach(
+    (el) => renderMathInElement(el, {delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]})
+  )"></script>
+</body>
+</html>
