@@ -122,25 +122,24 @@ def trace_origin(plate, well, homes):
         `plate`, `well` (str)
             Where the material was found.
         `homes` (list)
-            The (plate, well) pairs the material belongs in, at most one per plate; empty
-            for material that no well was infected with.
+            The (plate, well) pairs the material belongs in; empty for material that no
+            well was infected with.
 
     Returns:
         `(origin, source_well, wells_away, came_from)`: the origin, one of `all_origins`;
         the well the material belongs in, or null if it belongs in none; how many wells
         away that is on the same plate, or null if it is not on this plate; and a short
-        description of the source for tables.
+        description of the source for tables. Of several homes on this plate the source
+        is the nearest, as the likeliest to have spilled, and the first given of those
+        equally near; of homes only on other plates it is the first given.
 
     """
     same_plate = [w for (p, w) in homes if p == plate]
-    if len(same_plate) > 1:
-        raise ValueError(
-            f"material has more than one home well on {plate}: {same_plate}"
-        )
     if same_plate:
-        distance = wells_apart(well, same_plate[0])
+        source = min(same_plate, key=lambda w: wells_apart(well, w))
+        distance = wells_apart(well, source)
         origin = distance_origin(distance)
-        return origin, same_plate[0], distance, f"{same_plate[0]}, {origin}"
+        return origin, source, distance, f"{source}, {origin}"
     if homes:
         home_plate, home_well = homes[0]
         return ANOTHER_PLATE, home_well, None, f"{home_well} of {home_plate}"

@@ -38,8 +38,10 @@ Because `well` is the physical position on the plate, contamination can be trace
 than only counted: a read that belongs to another well is attributed to that well and to how
 far away it is, counting a step onto a diagonal neighbor as one. Material from a neighboring
 well is spillover; material from far away, from a well on another plate of the group, or of
-a unit that no well here was infected with, arrived some other way. This works because each
-unit has at most one home well per plate, which is checked below.
+a unit that no well here was infected with, arrived some other way. A unit infected into
+more than one well of a plate is traced to the nearest of them, so its material spilled
+between those wells is counted as expected, and a read that came from a farther one is put
+down to the nearer.
 
 Two things to hold on to when reading the report:
 
@@ -277,11 +279,6 @@ samples[["row", "column"]] = [well_position(well) for well in samples["well"]]
 
 if samples.duplicated(["plate", "well"]).any():
     raise ValueError("a plate has two samples in the same well")
-if samples[~samples["is_empty"]].duplicated(["plate", "expected"]).any():
-    raise ValueError(
-        f"a plate has the same {well_holds} in more than one well, so a read of that "
-        f"{well_holds} cannot be traced back to the well it came from"
-    )
 
 # Where each well falls in the order the plate was filled, down each column and then across.
 # The charts order their rows by what they are about, so this is for the output CSV.
@@ -306,7 +303,8 @@ viral_library = pd.read_csv(
 )
 # A stock is one tube, which can carry more than one barcode. Where the library does not
 # record stocks, each barcode is its own.
-if "stock_id" not in viral_library.columns:
+records_stocks = "stock_id" in viral_library.columns
+if not records_stocks:
     viral_library["stock_id"] = viral_library["barcode"]
 viral_library["stock_id"] = viral_library["stock_id"].fillna(viral_library["barcode"])
 # A tube holds virus of one strain, and a well infected from it is labeled by that strain.
@@ -417,7 +415,8 @@ n_expected_barcodes = pd.Series({u: len(bs) for (u, bs) in unit_barcodes.items()
 
 # How a well is labeled on the charts' shared axis. When wells hold strains the label is the
 # strain; when they hold barcodes the strain names the well too, a strain with several
-# stocks being told apart by the stock's position among its strain's in library order.
+# stocks being told apart by the stock's position among its strain's in library order,
+# which is a barcode's unless the library records stocks.
 if well_holds == "strain":
     unit_label = {strain: strain for strain in viral_library["strain"]}
 else:
@@ -425,8 +424,9 @@ else:
         viral_library[["strain", "stock_id"]].drop_duplicates().reset_index(drop=True)
     )
     _by_strain = _stocks.groupby("strain")
+    stock_word = "stock" if records_stocks else "bc"
     _stock_label = {
-        stock_id: strain if n_stocks == 1 else f"{strain} [bc {number}]"
+        stock_id: strain if n_stocks == 1 else f"{strain} [{stock_word} {number}]"
         for (stock_id, strain, n_stocks, number) in zip(
             _stocks["stock_id"],
             _stocks["strain"],
@@ -682,11 +682,16 @@ well_reads = (
     )
 )
 # Every chart puts one well on each step of the shared axis, so two wells sharing a label
-# would be drawn on one step. The same unit can be in a well of more than one plate, so
-# those labels say which plate.
+# would be drawn on one step. The same unit can be in more than one well, so those labels
+# say which plate, and which well too if it is in more than one well of a plate.
 _repeated = well_reads["unit_label"].duplicated(keep=False)
+_repeated_on_plate = well_reads.duplicated(["plate", "unit_label"], keep=False)
 well_reads.loc[_repeated, "unit_label"] = (
-    well_reads["unit_label"] + " (" + well_reads["plate"] + ")"
+    well_reads["unit_label"]
+    + " ("
+    + well_reads["plate"]
+    + (":" + well_reads["well"]).where(_repeated_on_plate, "")
+    + ")"
 )
 if well_reads["unit_label"].nunique() != len(well_reads):
     raise ValueError("two wells of the group have the same label for the charts' axis")
@@ -774,8 +779,8 @@ well_reads["flagged_unmatched"] = well_reads["frac_unmatched"] > max_unmatched_f
 
 # --- trace where material that belongs elsewhere came from --------------------------------
 
-# The wells each unit was grown in, at most one per plate, which is what lets a read that
-# belongs elsewhere be traced back to where it was.
+# The wells each unit was grown in, which is what lets a read that belongs elsewhere be
+# traced back to where it was.
 _unit_homes = {}
 for _row in samples[~samples["is_empty"]].itertuples():
     _unit_homes.setdefault(_row.expected, []).append((_row.plate, _row.well))
@@ -796,7 +801,7 @@ _other_unit_reads[["origin", "source_well", "wells_away", "came_from"]] = pd.Dat
 # The reads of each foreign unit in each well, with where that unit was grown and its share
 # of the well. Grouped by the unit rather than by where it came from, since `wells_away` is
 # null for a unit not grown on this plate and pandas drops rows with a null grouping key: the
-# origin columns are constant within a (well, unit) as a unit has one home well per plate.
+# origin columns are constant within a (well, unit) as they follow from the well alone.
 other_unit_totals = (
     _other_unit_reads.groupby(["plate", "well", "barcode_unit"], as_index=False)
     .aggregate(

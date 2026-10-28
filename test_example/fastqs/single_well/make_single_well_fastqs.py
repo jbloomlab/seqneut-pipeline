@@ -203,8 +203,10 @@ def main():
     # One barcode per well again, against a copy of the library that records stocks: the
     # first two barcodes of s[15] in library order share one tube and its third is a
     # second tube, every other barcode being a tube of its own. The well infected from the
-    # shared tube should hold both of its barcodes, and the two wells of s[15] are labeled
-    # by which of its tubes they hold.
+    # shared tube should hold both of its barcodes, and the wells of s[15] are labeled by
+    # which of its tubes they hold. The shared tube is in a second well of the plate too,
+    # which is first in the order the plate was filled but farther from the well its
+    # spill is found in, so that spill has to be traced to the nearer of the two.
     stocks_library = library.assign(stock_id=library["barcode"])
     in_library_order = library.loc[library["strain"] == s[15], "barcode"].tolist()
     stocks_library.loc[
@@ -224,6 +226,8 @@ def main():
                 "other_barcodes": {in_library_order[0]: 60},
                 "origin": "1 well away",
             },
+            # last, so that adding it left the other wells unchanged
+            "A1": {"unit": in_library_order[0], "strain": s[15]},
         },
     }
     stock_of = dict(zip(stocks_library["barcode"], stocks_library["stock_id"]))

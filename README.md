@@ -707,7 +707,7 @@ What each well was infected with is read from the `samples_csv` of its plate, an
  - Otherwise the `strain` column gives the strain each well was infected with, and the well should hold every barcode of that strain.
 
 A blank in that column marks an uninfected well, which should hold only the neutralization standard.
-Each strain or barcode can be in at most one well per plate, so that material belonging elsewhere can be traced back to its well.
+A strain or barcode can be in more than one well, of one plate or several. Each such well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of its plate that it belongs in, so material spilled between two wells of the same strain or barcode is counted as expected.
 An optional `dilution_factor` column must have the same value for every infected well of the analysis, as their titers are compared.
 Strains or barcodes of the library in no well are reported as not assayed.
 

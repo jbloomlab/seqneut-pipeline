@@ -18,3 +18,4 @@ single_well_plate_3,B3,1,3000,400,60,0,0,0,True,False,False,False,7.5,1 well awa
 single_well_plate_3,B4,1,3000,400,0,0,0,0,False,False,False,False,7.5,,,,
 single_well_plate_4,B2,2,3000,400,0,0,0,0,False,False,False,False,7.5,,,,
 single_well_plate_4,B3,1,3000,400,60,0,0,0,True,False,False,False,7.5,1 well away,,,
+single_well_plate_4,A1,2,3000,400,0,0,0,0,False,False,False,False,7.5,,,,

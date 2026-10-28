@@ -106,7 +106,7 @@ analyze_single_well_infections:
   single_well_stocks:
     miscellaneous_plates: [single_well_plate_4]
     description: |
-      A synthetic plate of one barcode per well against a library recording stocks: one
-      well is infected from a tube holding two barcodes, and another from a second tube of
-      the same strain.
+      A synthetic plate of one barcode per well against a library recording stocks: two
+      wells are infected from a tube holding two barcodes, and another from a second tube
+      of the same strain.
     <<: *single_well_flag_thresholds

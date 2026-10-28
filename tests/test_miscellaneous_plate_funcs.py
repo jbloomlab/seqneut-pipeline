@@ -251,10 +251,11 @@ def test_trace_origin(homes, expected):
     assert trace_origin("p1", "B3", homes) == expected
 
 
-def test_trace_origin_rejects_two_homes_on_a_plate():
-    """Material with two home wells on one plate cannot be traced to either."""
-    with pytest.raises(ValueError, match="more than one home well"):
-        trace_origin("p1", "B3", [("p1", "B2"), ("p1", "B4")])
+def test_trace_origin_takes_the_nearest_home_on_a_plate():
+    """Of several homes on this plate, the nearest is the source, the first of a tie."""
+    nearest = ("1 well away", "B4", 1, "B4, 1 well away")
+    assert trace_origin("p1", "B3", [("p1", "F9"), ("p1", "B4")]) == nearest
+    assert trace_origin("p1", "B3", [("p1", "B4"), ("p1", "B2")]) == nearest
 
 
 def test_all_origins_covers_every_traced_origin():

@@ -80,14 +80,26 @@ absent_planted = {
 }
 assert absent_found == absent_planted, f"{absent_found=} but {absent_planted=}"
 
-# The two wells of one strain on the plate recording stocks hold different tubes of it, so
-# the charts must tell them apart by tube.
+# The wells of one strain on the plate recording stocks hold different tubes of it, so the
+# charts must tell them apart by tube, and two of them hold the same tube, so by well too.
 with open(
     "results/single_well_infections/single_well_stocks_analyze_single_well_infections.html"
 ) as f:
     stocks_html = f.read()
-for label in ["[bc 1]", "[bc 2]"]:
+for label in [
+    "[stock 1] (single_well_plate_4:A1)",
+    "[stock 1] (single_well_plate_4:B2)",
+    "[stock 2]",
+]:
     assert label in stocks_html, f"{label} is not a label of the stocks report"
+
+# Against a library recording no stocks, each barcode is a stock of its own and is labeled so.
+with open(
+    "results/single_well_infections/single_well_barcodes_analyze_single_well_infections.html"
+) as f:
+    barcodes_html = f.read()
+for label in ["[bc 1]", "[bc 2]"]:
+    assert label in barcodes_html, f"{label} is not a label of the barcodes report"
 
 numpy.testing.assert_allclose(
     merged["titer_actual"], merged["titer_expected"], rtol=1e-3, equal_nan=True
