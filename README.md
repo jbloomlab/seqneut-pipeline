@@ -111,10 +111,36 @@ To run on a SLURM cluster with each job submitted as its own cluster job, copy t
 The configuration for the pipeline is in a file called `config.yml`.
 An example configuration file is in [./test_example/config.yml](test_example/config.yml) (although some of the QC thresholds are set more leniently to make the test example work for small data as described in the comments in that YAML).
 
-Here we describe the required keys in this YAML file (you can also add additional information specific to your repo, but we advise adding comments in the YAML to separate project-specific and `seqneut-pipeline` configuration).
+Below we describe the required keys in this YAML file (you can also add additional information specific to your repo, but we advise adding comments in the YAML to separate project-specific and `seqneut-pipeline` configuration).
 For background on YAML format, including on the anchor (`&`) and merge (`<<: *`) operators that can be helpful to simplify the YAML file, see [here](https://spacelift.io/blog/yaml) and [here](https://ktomk.github.io/writing/yaml-anchor-alias-and-merge-key.html).
 
-The top-level keys in the YAML are:
+Note that you can split the configuration across multiple files using [`addtl_config_files`](#addtl_config_files).
+
+The top-level keys in the configuration YAML are:
+
+### addtl_config_files
+This is an optional key that can be used if you have lengthy configuration and you want to split among multiple files.
+In this case, your top-level `config.yml` might read:
+
+```yaml
+# Potentially some keys in this main YAML file
+seqneut-pipeline: seqneut-pipeline
+description: Test example
+
+# Additional YAML files that are merged into the configuration
+addtl_config_files:
+  - data/config/plates.yml
+  - data/config/miscellaneous_plates.yml
+```
+
+In this case, the configuration read by the pipeline will be the union of the configuration in `config.yml` and in the other YAML files listed under `addtl_config_files`, as [./test_example/config.yml](test_example/config.yml) does.
+We suggest putting these files in `./data/config/`, but they can be anywhere; their paths are relative to the top-level repo.
+Note that an error will be raised if any top-level keys are duplicated across configuration files, so each top-level key comes from exactly one file.
+Any `--config` or `--configfile` overrides on the command line still take precedence over all of these files.
+
+Some things to note when splitting the configuration:
+ - A YAML alias (`*`) can only refer to an anchor (`&`) in the same file, so keep defaults such as `default_process_plate_qc_thresholds` in the same file as the `plates` that merge them.
+ - `seqneut-pipeline` must be in `config.yml` itself, as your `Snakefile` reads it to find the pipeline. The keys in the additional files only get added to `config` when the pipeline is included, so if your `Snakefile` reads any of them it must do so after the `include:`.
 
 ### seqneut-pipeline
 Location of the `seqneut-pipeline` relative to the top-level repo.

@@ -6,7 +6,7 @@ Note that this is a small example designed to run quickly, so the datasets are s
 
 Also, note that the FASTQ files for the test example are contained in [./fastqs/](fastqs) to make it self contained---for real experiments, you would **not** track the FASTQ files in the repo.
 
-The configuration for the test example is in [config.yml](config.yml), but if using this for real experiments note the comments for QC thresholds that are set to more lenient values than is ideal for real experiments.
+The configuration for the test example is in [config.yml](config.yml), with the plates in the files under [./data/config/](data/config) that it lists in `addtl_config_files`. If using this for real experiments, note the comments for QC thresholds that are set to more lenient values than is ideal for real experiments.
 
 The input data for the test example are in [./data/](data).
 

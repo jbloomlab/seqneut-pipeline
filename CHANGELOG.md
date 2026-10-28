@@ -3,6 +3,8 @@
 #### version 9.4.0
 - The plate-to-plate correlation CSVs (`results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.csv`) add `slope` and `slope_retained` columns: the reduced major axis slope of the log titers on the plate against those on the other plate, over all strains and over just the retained strains. A slope near one means the plates agree in scale as well as in rank, which the Pearson correlation alone does not show. The reduced major axis slope is used rather than a least-squares slope because it treats the plates alike: it is not biased below one by noise in the other plate, and the two files comparing a pair of plates give exactly reciprocal slopes.
 
+- Add an optional `addtl_config_files` key that lists more YAML files to merge into the configuration, so that a lengthy configuration (typically `plates`) can be split across several files, which we suggest putting in `./data/config/`. A top-level key may be in only one of the configuration files, and it is an error otherwise. `--config` and `--configfile` overrides still take precedence over the additional files. A YAML alias cannot refer to an anchor in another file, so defaults merged into `plates` have to be in the same file as them. The test example uses this to put `plates` and `miscellaneous_plates` in their own files.
+
 #### version 9.3.1
 - Add `pyarrow` to `envs/count_barcodes.yml`.
 

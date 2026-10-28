@@ -10,6 +10,52 @@ import copy
 import functools
 import os
 
+from snakemake.common.configfile import load_configfile
+
+
+def load_addtl_config_files(workflow, config):
+    """Merge the files listed under optional ``addtl_config_files`` key into ``config``.
+
+    Each file is loaded as a ``configfile:`` directive would load it, so ``--config``
+    and ``--configfile`` overrides still take precedence over its values. A top-level
+    key can be in only one of the main configuration files and the additional ones.
+
+    """
+    # `or []` rather than a `get` default, as the key can be present but null
+    addtl_config_files = config.get("addtl_config_files") or []
+    if not (
+        isinstance(addtl_config_files, list)
+        and all(isinstance(f, str) for f in addtl_config_files)
+        and len(addtl_config_files) == len(set(addtl_config_files))
+    ):
+        raise ValueError(
+            "`addtl_config_files` must be a list of unique file names, not "
+            f"{addtl_config_files!r}"
+        )
+    # `workflow.configfile` skips a missing file when there is a `--configfile`
+    missing = [f for f in addtl_config_files if not os.path.isfile(f)]
+    if missing:
+        raise ValueError(f"files in `addtl_config_files` do not exist: {missing}")
+
+    # the main configuration files are those given by `configfile:` directives; the
+    # command-line `--configfile` overrides are left out, as they are meant to repeat keys
+    overrides = {os.path.abspath(f) for f in workflow.overwrite_configfiles}
+    main_config_files = [
+        f for f in workflow.configfiles if os.path.abspath(f) not in overrides
+    ]
+    key_files = {}
+    for f in main_config_files + addtl_config_files:
+        for key in load_configfile(f):
+            if key in key_files:
+                raise ValueError(
+                    f"top-level configuration key {key!r} is in both {key_files[key]} "
+                    f"and {f}, but can be in only one of the configuration files"
+                )
+            key_files[key] = f
+
+    for f in addtl_config_files:
+        workflow.configfile(f)
+
 
 def stringify_plate_dates(config):
     """Convert the ``date`` of each plate in ``config`` to a string.
