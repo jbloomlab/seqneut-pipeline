@@ -176,6 +176,16 @@ COMPOSITION_CATEGORIES = {
     "unmatched_far_expected_reads": f">{MAX_MISREAD_HAMMING} nt from expected/standard",
 }
 
+# The categories that partition a well's valid reads, those matching the library or the
+# neutralization standard, mapped to their labels in the order they stack. The first two
+# take the colors their counterparts above are drawn in.
+VALID_READ_CATEGORIES = {
+    "expected_reads": "expected barcode",
+    "other_library_reads": "unexpected barcode",
+    "neut_standard_reads": "neut standard",
+}
+VALID_READ_COLORS = ["#1b9e77", "#d95f02", "#999999"]
+
 
 # the axis the wells run along in every chart, and so how the panels of each are laid out
 panels = WellPanels(single_well_config["strain_axis"])
@@ -940,19 +950,25 @@ origins_per_well = (
 )
 origins_per_well = narrow_for_altair(origins_per_well)
 # The reads of the "valid barcode" fate are the neutralization standard and every library
-# barcode; a well with none of them has no fraction.
-viral_fraction = narrow_for_altair(
-    infected[["unit_label", "expected_reads", "neut_standard_reads"]].assign(
-        valid_reads=lambda x: (
-            x["expected_reads"]
-            + infected["other_library_reads"]
-            + x["neut_standard_reads"]
+# barcode; a well with none of them has no bar.
+valid_reads_long = (
+    infected.assign(valid_reads=infected[list(VALID_READ_CATEGORIES)].sum(axis=1))
+    .query("valid_reads > 0")
+    .melt(
+        id_vars=["unit_label", "valid_reads"],
+        value_vars=list(VALID_READ_CATEGORIES),
+        var_name="category",
+        value_name="reads",
+    )
+    .assign(
+        fraction_of_valid_reads=lambda x: x["reads"] / x["valid_reads"],
+        category_order=lambda x: x["category"].map(
+            {c: i for (i, c) in enumerate(VALID_READ_CATEGORIES)}
         ),
-        viral_fraction=lambda x: (
-            x["expected_reads"] / x["valid_reads"].where(x["valid_reads"] > 0)
-        ),
+        category=lambda x: x["category"].map(VALID_READ_CATEGORIES),
     )
 )
+valid_reads_long = narrow_for_altair(valid_reads_long)
 
 # a bar is a band of each well's step thick, along the wells' axis
 _bar = panels.bar_band(0.85)
@@ -977,28 +993,41 @@ _panels = [
         tooltip=[*well_tooltips, "fate:N", "count:Q"],
     )
     .properties(**panels.panel_size(170)),
-    alt.Chart(viral_fraction)
+    alt.Chart(valid_reads_long)
     .transform_lookup(lookup="unit_label", from_=well_lookup)
     .mark_bar(**_bar)
     .encode(
         panels.value_channel(
-            "viral_fraction:Q",
-            title="viral fraction of valid reads",
+            "fraction_of_valid_reads:Q",
+            title="fraction of valid reads",
+            stack=True,
             scale=alt.Scale(domain=[0, 1], nice=False),
             axis=alt.Axis(tickCount=4),
         ),
         panels.well_axis(well_order, labeled=panels.labels_wells(1, 4)),
+        alt.Fill(
+            "category:N",
+            title="valid barcode",
+            sort=list(VALID_READ_CATEGORIES.values()),
+            scale=alt.Scale(
+                domain=list(VALID_READ_CATEGORIES.values()), range=VALID_READ_COLORS
+            ),
+            legend=alt.Legend(
+                labelLimit=LABEL_LIMIT, orient=panels.legend_orient, columns=1
+            ),
+        ),
+        alt.Order("category_order:Q", sort="ascending"),
         stroke=_stroke,
         strokeWidth=stroke_width(_hover, STROKE_WIDTH_HOVERED, STROKE_WIDTH),
         tooltip=[
             *well_tooltips,
-            alt.Tooltip("viral_fraction:Q", format=".3g"),
-            "expected_reads:Q",
-            "neut_standard_reads:Q",
+            "category:N",
+            "reads:Q",
+            alt.Tooltip("fraction_of_valid_reads:Q", format=".3g"),
             "valid_reads:Q",
         ],
     )
-    .properties(**panels.panel_size(100)),
+    .properties(**panels.panel_size(200)),
     alt.Chart(composition_long)
     .transform_lookup(lookup="unit_label", from_=well_lookup)
     .mark_bar(**_bar)
@@ -1095,11 +1124,14 @@ with report.notes("How to read this plot"):
     report.md(
         "\n".join(f" - **{fate}**: {_fate_explanations[fate]}" for fate in fate_order)
     )
+    _valid_labels = list(VALID_READ_CATEGORIES.values())
     report.md(f"""
-        The **second panel** takes every valid barcode read (from the "valid barcode"
-        category in the first panel) and plots the fraction of these that map to the
-        expected {well_holds}. This is a rough proxy for the titer of the expected virus and
-        can help with further QC interpretation, especially for low titer strains.
+        The **second panel** splits every valid barcode read (from the "valid barcode"
+        category in the first panel) into the **{_valid_labels[0]}**, **{_valid_labels[1]}**
+        (another {well_holds} of the library), and **{_valid_labels[2]}**, as fractions
+        that sum to one. The expected fraction is a rough proxy for the titer of the
+        expected virus and can help with further QC interpretation, especially for low
+        titer strains.
         """)
     _category_labels = list(COMPOSITION_CATEGORIES.values())
     report.md(f"""
