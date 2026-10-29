@@ -910,19 +910,25 @@ fates_plotted = narrow_for_altair(
 )
 # the legend lists the fates in this order, and the notes explain them in it too
 fate_order = sorted(fates_plotted["fate"].unique(), reverse=True)
-composition_long = infected.melt(
-    id_vars=["unit_label", NON_NEUT_STANDARD_READS],
-    value_vars=list(COMPOSITION_CATEGORIES),
-    var_name="category",
-    value_name="reads",
-).assign(
-    fraction=lambda x: x["reads"] / x[NON_NEUT_STANDARD_READS],
-    # the bars stack in the order the categories are declared in, which the label alone
-    # cannot convey to Vega, so the position in that order rides along to sort on
-    category_order=lambda x: x["category"].map(
-        {c: i for (i, c) in enumerate(COMPOSITION_CATEGORIES)}
-    ),
-    category=lambda x: x["category"].map(COMPOSITION_CATEGORIES),
+# A well with no reads outside the neutralization standard has no composition to divide,
+# so it has no bar, as in the chart of valid reads below.
+composition_long = (
+    infected.query(f"`{NON_NEUT_STANDARD_READS}` > 0")
+    .melt(
+        id_vars=["unit_label", NON_NEUT_STANDARD_READS],
+        value_vars=list(COMPOSITION_CATEGORIES),
+        var_name="category",
+        value_name="reads",
+    )
+    .assign(
+        fraction=lambda x: x["reads"] / x[NON_NEUT_STANDARD_READS],
+        # the bars stack in the order the categories are declared in, which the label
+        # alone cannot convey to Vega, so the position in that order rides along to sort on
+        category_order=lambda x: x["category"].map(
+            {c: i for (i, c) in enumerate(COMPOSITION_CATEGORIES)}
+        ),
+        category=lambda x: x["category"].map(COMPOSITION_CATEGORIES),
+    )
 )
 composition_long = narrow_for_altair(
     composition_long.drop(columns=NON_NEUT_STANDARD_READS)
