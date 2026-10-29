@@ -808,10 +808,9 @@ _origins = [
     trace_origin(row.plate, row.well, _unit_homes.get(row.barcode_unit, []))
     for row in _other_unit_reads.itertuples()
 ]
-_other_unit_reads[["origin", "source_well", "wells_away", "came_from"]] = pd.DataFrame(
-    _origins,
-    index=_other_unit_reads.index,
-    columns=["origin", "source_well", "wells_away", "came_from"],
+_origin_columns = ["origin", "source_well", "wells_away", "came_from", "n_equally_near"]
+_other_unit_reads[_origin_columns] = pd.DataFrame(
+    _origins, index=_other_unit_reads.index, columns=_origin_columns
 )
 
 # The reads of each foreign unit in each well, with where that unit was grown and its share
@@ -826,6 +825,7 @@ other_unit_totals = (
         source_well=pd.NamedAgg("source_well", "first"),
         wells_away=pd.NamedAgg("wells_away", "first"),
         came_from=pd.NamedAgg("came_from", "first"),
+        n_equally_near=pd.NamedAgg("n_equally_near", "first"),
     )
     .rename(columns={"barcode_unit": "other_unit"})
     .merge(
@@ -1711,6 +1711,7 @@ _worst_other_unit = top_other_units(well_reads, 1).rename(
         "source_well": "top_other_unit_well",
         "wells_away": "top_other_unit_wells_away",
         "origin": "top_other_unit_origin",
+        "n_equally_near": "top_other_unit_wells_equally_near",
     }
 )[
     [
@@ -1720,6 +1721,7 @@ _worst_other_unit = top_other_units(well_reads, 1).rename(
         "top_other_unit_reads",
         "top_other_unit_well",
         "top_other_unit_wells_away",
+        "top_other_unit_wells_equally_near",
         "top_other_unit_origin",
     ]
 ]
@@ -1754,6 +1756,7 @@ well_composition = (
             "top_other_unit_reads",
             "top_other_unit_well",
             "top_other_unit_wells_away",
+            "top_other_unit_wells_equally_near",
             "top_other_unit_origin",
         ]
     ]

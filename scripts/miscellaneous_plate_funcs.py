@@ -126,24 +126,30 @@ def trace_origin(plate, well, homes):
             well was infected with.
 
     Returns:
-        `(origin, source_well, wells_away, came_from)`: the origin, one of `all_origins`;
-        the well the material belongs in, or null if it belongs in none; how many wells
-        away that is on the same plate, or null if it is not on this plate; and a short
-        description of the source for tables. Of several homes on this plate the source
-        is the nearest, as the likeliest to have spilled, and the first given of those
-        equally near; of homes only on other plates it is the first given.
+        `(origin, source_well, wells_away, came_from, n_equally_near)`: the origin, one of
+        `all_origins`; the well the material belongs in, or null if it belongs in none; how
+        many wells away that is on the same plate, or null if it is not on this plate; a
+        short description of the source for tables; and how many wells of this plate it is
+        equally near, which is one where the source is unambiguous. Of several homes on this
+        plate the source is the nearest, as the likeliest to have spilled, and the first in
+        fill order of those equally near, which `came_from` names as one of several; of
+        homes only on other plates it is the first given.
 
     """
     same_plate = [w for (p, w) in homes if p == plate]
     if same_plate:
-        source = min(same_plate, key=lambda w: wells_apart(well, w))
-        distance = wells_apart(well, source)
+        distance = min(wells_apart(well, w) for w in same_plate)
+        nearest = [w for w in same_plate if wells_apart(well, w) == distance]
+        source = nearest[0]
         origin = distance_origin(distance)
-        return origin, source, distance, f"{source}, {origin}"
+        came_from = f"{source}, {origin}"
+        if len(nearest) > 1:
+            came_from = f"{came_from} (or {', '.join(nearest[1:])})"
+        return origin, source, distance, came_from, len(nearest)
     if homes:
         home_plate, home_well = homes[0]
-        return ANOTHER_PLATE, home_well, None, f"{home_well} of {home_plate}"
-    return NOT_ASSAYED, None, None, NOT_ASSAYED
+        return ANOTHER_PLATE, home_well, None, f"{home_well} of {home_plate}", 1
+    return NOT_ASSAYED, None, None, NOT_ASSAYED, 1
 
 
 def check_discarded_barcodes(discarded_barcodes, counted_barcodes):
