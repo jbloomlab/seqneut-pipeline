@@ -5,7 +5,6 @@ Writes, from one plan of what each well holds:
   - `fastqs/single_well/<plate>/<well>.fastq.gz`, the reads of each well
   - `data/miscellaneous_plates/<plate>.csv`, the samples CSV of each plate
   - `data/viral_libraries/pdmH1N1_lib2023_loes_final.csv`, the library carried forward
-  - `data/viral_libraries/pdmH1N1_lib2023_loes_stocks.csv`, the library recording tubes
   - `expected_single_well_composition.csv`, what the analysis should find in each well
 
 Each well plants one situation the analysis has to get right: spill from a neighboring
@@ -37,7 +36,6 @@ SEED = 1
 
 LIBRARY_CSV = "data/viral_libraries/pdmH1N1_lib2023_loes.csv"
 FINAL_LIBRARY_CSV = "data/viral_libraries/pdmH1N1_lib2023_loes_final.csv"
-STOCKS_LIBRARY_CSV = "data/viral_libraries/pdmH1N1_lib2023_loes_stocks.csv"
 NEUT_STANDARD_CSV = "data/neut_standard_sets/loes2023_neut_standards.csv"
 SAMPLES_DIR = Path("data/miscellaneous_plates")
 FASTQ_DIR = Path("fastqs/single_well")
@@ -186,7 +184,13 @@ def main():
     }
     # One barcode per well: two wells of one strain's barcodes, the second holding some of
     # the first's, which is foreign as the well was meant to hold its one barcode only.
+    # These two barcodes share a tube, which analyzing by barcode ignores: the well was
+    # infected from one barcode and so the other does not belong in it either.
     sibling_a, sibling_b = strain_barcodes[s[13]][:2]
+    assert (
+        library.loc[library["barcode"] == sibling_a, "stock_id"].item()
+        == library.loc[library["barcode"] == sibling_b, "stock_id"].item()
+    ), "the barcode plate's two wells of one strain hold barcodes of one tube"
     plan_barcodes = {
         "single_well_plate_3": {
             "B2": {"unit": sibling_a, "strain": s[13]},
@@ -200,37 +204,35 @@ def main():
         },
     }
 
-    # One barcode per well again, against a copy of the library that records stocks: the
-    # first two barcodes of s[15] in library order share one tube and its third is a
+    # One tube per well. The library's `stock_id` records which barcodes share a tube: the
+    # first two barcodes of s[15] in library order share its first and its third is a
     # second tube, every other barcode being a tube of its own. The well infected from the
-    # shared tube should hold both of its barcodes, and the wells of s[15] are labeled by
-    # which of its tubes they hold. The shared tube is in a second well of the plate too,
+    # shared tube holds both of its barcodes, and the wells of s[15] are labeled by which
+    # of its tubes they hold. The shared tube is in a second well of the plate too,
     # which is first in the order the plate was filled but farther from the well its
     # spill is found in, so that spill has to be traced to the nearer of the two.
-    stocks_library = library.assign(stock_id=library["barcode"])
+    stock_barcodes = library.groupby("stock_id")["barcode"].apply(list).to_dict()
     in_library_order = library.loc[library["strain"] == s[15], "barcode"].tolist()
-    stocks_library.loc[
-        stocks_library["barcode"].isin(in_library_order[:2]), "stock_id"
-    ] = "shared_tube"
-    stocks_library.loc[stocks_library["barcode"] == in_library_order[2], "stock_id"] = (
-        "second_tube"
+    shared_tube, second_tube = (
+        library.loc[library["barcode"] == barcode, "stock_id"].item()
+        for barcode in [in_library_order[0], in_library_order[2]]
     )
-    stocks_library.to_csv(STOCKS_LIBRARY_CSV, index=False)
-    stock_barcodes = stocks_library.groupby("stock_id")["barcode"].apply(list).to_dict()
+    assert (
+        len(stock_barcodes[shared_tube]) == 2
+    ), "s[15]'s first tube holds two barcodes"
     plan_stocks = {
         "single_well_plate_4": {
-            "B2": {"unit": in_library_order[0], "strain": s[15]},
+            "B2": {"unit": shared_tube, "strain": s[15]},
             "B3": {
-                "unit": in_library_order[2],
+                "unit": second_tube,
                 "strain": s[15],
                 "other_barcodes": {in_library_order[0]: 60},
                 "origin": "1 well away",
             },
             # last, so that adding it left the other wells unchanged
-            "A1": {"unit": in_library_order[0], "strain": s[15]},
+            "A1": {"unit": shared_tube, "strain": s[15]},
         },
     }
-    stock_of = dict(zip(stocks_library["barcode"], stocks_library["stock_id"]))
 
     # the library carried forward: s[9] dropped entirely, s[7] with one barcode dropped
     final = library[
@@ -244,7 +246,13 @@ def main():
     expected = []
     # the plate recording stocks comes last, so that adding it left the others unchanged
     for plate, wells in [*plan.items(), *plan_barcodes.items(), *plan_stocks.items()]:
-        holds_barcode = plate in plan_barcodes or plate in plan_stocks
+        # the column of the samples CSV naming what each well was infected from, which is
+        # the `analyze_by` of the plate's analysis in `CONFIG_YML`
+        unit_column = (
+            "barcode"
+            if plate in plan_barcodes
+            else "stock" if plate in plan_stocks else "strain"
+        )
         thresholds = thresholds_by_plate[plate]
         sample_rows = []
         (FASTQ_DIR / plate).mkdir(parents=True, exist_ok=True)
@@ -263,8 +271,8 @@ def main():
                 add(bc, n)
             if unit is not None:
                 if plate in plan_stocks:
-                    own_barcodes = sorted(stock_barcodes[stock_of[unit]])
-                elif holds_barcode:
+                    own_barcodes = sorted(stock_barcodes[unit])
+                elif plate in plan_barcodes:
                     own_barcodes = [unit]
                 else:
                     own_barcodes = strain_barcodes[unit]
@@ -315,12 +323,11 @@ def main():
                 for i, (seq, qual) in enumerate(zip(sequences, qualities, strict=True)):
                     f.write(f"@{plate}:{well}:{i}\n{seq}\n+\n{qual}\n".encode())
 
-            row = {"well": well, "fastq": str(fastq)}
-            if holds_barcode:
-                row = {"well": well, "strain": w["strain"], "barcode": unit, **row}
+            if unit_column == "strain":
+                row = {"well": well, "strain": unit}
             else:
-                row = {"well": well, "strain": unit, **row}
-            sample_rows.append({**row, "dilution_factor": 1})
+                row = {"well": well, "strain": w["strain"], unit_column: unit}
+            sample_rows.append({**row, "fastq": str(fastq), "dilution_factor": 1})
 
             # the answers, by category
             library_reads = {

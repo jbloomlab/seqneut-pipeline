@@ -5,13 +5,17 @@ well's reads split across the barcodes it was expected to hold. The question the
 answer is whether each well holds only what it should, and whether virus from one well ends
 up in another; they also give a loose estimate of how well each virus grows on its own.
 
-What a well should hold is read from the plates' samples CSVs. Where they have a `barcode`
-column each well was infected with one barcoded variant and should hold that barcode alone
-(with any other barcode carried in the same tube, where the viral library has a `stock_id`
-column); otherwise their `strain` column names a strain and the well should hold every
-barcode of it. That is the well's *unit*, and its *expected barcodes* are what belongs in
-it, along with the neutralization standard spiked in. Every parsed read is put into one of
-five categories that partition it:
+What a well was infected from is named by the `analyze_by` column of the plates' samples
+CSVs, `analyze_by` saying which of three kinds of thing that is:
+
+    strain    the well should hold every barcode of that strain
+    barcode   the well should hold that one barcode and nothing else
+    stock     the well should hold every barcode of that tube, which the viral library's
+              `stock_id` column records
+
+That is the well's *unit*, and its *expected barcodes* are what belongs in it, along with
+the neutralization standard spiked in. Every parsed read is put into one of five categories
+that partition it:
 
     expected            one of the well's expected barcodes
     neut standard       a barcode of the neutralization standard
@@ -26,9 +30,10 @@ Before that, the exact reads of any `discarded_barcodes` are set aside: these ar
 physically in every well that no analysis should count. They are reported but enter no
 category or fraction; a misread of one is an unmatched read like any other.
 
-When each well holds one barcode, another barcode of the well's own strain is *not*
-expected: the well was supposed to hold one variant, so a sibling barcode is material that
-does not belong, exactly like any other.
+A barcode belongs to exactly one unit, so another barcode of the well's own strain is *not*
+expected where wells hold barcodes, nor another barcode of the strain's other tubes where
+they hold stocks: the well was supposed to hold one thing, and anything else is material
+that does not belong, exactly like any other.
 
 The titer is the expected reads against the neutralization standard in the well, `expected /
 neut standard`. Only those two are in that ratio, so a contaminated well's titer is not
@@ -188,6 +193,13 @@ VALID_READ_CATEGORIES = {
 }
 VALID_READ_COLORS = ["#1b9e77", "#d95f02", "#999999"]
 
+# What makes a barcode an expected one, which is what `analyze_by` decides
+_EXPECTED_EXPLANATIONS = {
+    "strain": "the barcode maps correctly to the infecting strain",
+    "barcode": "the barcode is the infecting barcode",
+    "stock": "the barcode is one of those carried in the infecting tube",
+}
+
 
 # the axis the wells run along in every chart, and so how the panels of each are laid out
 panels = WellPanels(single_well_config["strain_axis"])
@@ -219,20 +231,18 @@ samples_by_plate = {
     for (plate, csv_file) in zip(plates, snakemake.input.samples_csvs, strict=True)
 }
 
-# What each well was infected with, read off the samples CSVs: a `barcode` column means one
-# barcoded variant to a well, and otherwise the `strain` column names a whole strain. Every
-# plate of a group has to agree, as the report puts all of their wells on one axis.
-_holds = {
-    plate: "barcode" if "barcode" in df.columns else "strain"
-    for (plate, df) in samples_by_plate.items()
-}
-if len(set(_holds.values())) != 1:
+# What kind of thing each well was infected from, and so which column of the samples CSVs
+# names it and which of the viral library identifies the unit a barcode belongs to. A stock
+# is one tube, which can carry more than one barcode; the other two units are a column of
+# the library already.
+UNIT_LIBRARY_COLUMNS = {"strain": "strain", "barcode": "barcode", "stock": "stock_id"}
+analyze_by = single_well_config["analyze_by"]
+if analyze_by not in UNIT_LIBRARY_COLUMNS:
     raise ValueError(
-        f"the plates of {single_well} do not agree on whether a well holds a strain or a "
-        f"barcode: {_holds}. A samples CSV with a 'barcode' column names a barcode per "
-        "well, and one without it a strain per well"
+        f"'analyze_by' of {single_well} is {analyze_by!r}, but must be one of "
+        f"{sorted(UNIT_LIBRARY_COLUMNS)}"
     )
-well_holds = next(iter(_holds.values()))
+unit_column = UNIT_LIBRARY_COLUMNS[analyze_by]
 
 # A dilution factor is optional, but if any plate gives it then every plate must, as the
 # titers of all of them are ranked against each other below.
@@ -247,30 +257,30 @@ if _with_dilution and _with_dilution != set(plates):
 has_dilution = bool(_with_dilution)
 
 for plate, df in samples_by_plate.items():
-    missing = {"well", well_holds} - set(df.columns)
+    missing = {"well", analyze_by} - set(df.columns)
     if missing:
         raise ValueError(
             f"the samples CSV of {plate} lacks the columns {sorted(missing)}"
         )
     # A well is uninfected only where nothing names what infected it, so a strain beside a
-    # blank barcode is a barcode left out rather than an empty well.
-    if well_holds == "barcode" and "strain" in df.columns:
-        _no_barcode = df[df["barcode"].isna() & df["strain"].notna()]
-        if len(_no_barcode):
+    # blank unit is a unit left out rather than an empty well.
+    if analyze_by != "strain" and "strain" in df.columns:
+        _no_unit = df[df[analyze_by].isna() & df["strain"].notna()]
+        if len(_no_unit):
             raise ValueError(
-                f"the samples CSV of {plate} names a strain but no barcode for the wells "
-                f"{_no_barcode['well'].tolist()}, so what infected them is not known"
+                f"the samples CSV of {plate} names a strain but no {analyze_by} for the "
+                f"wells {_no_unit['well'].tolist()}, so what infected them is not known"
             )
 
 samples = pd.concat(
     [
-        df[["well", well_holds, *(["dilution_factor"] if has_dilution else [])]].assign(
+        df[["well", analyze_by, *(["dilution_factor"] if has_dilution else [])]].assign(
             plate=plate
         )
         for (plate, df) in samples_by_plate.items()
     ],
     ignore_index=True,
-).rename(columns={well_holds: "expected"})
+).rename(columns={analyze_by: "expected"})
 
 # A well that names no unit was left uninfected. A blank is the record here rather than a
 # value that has to be interpreted.
@@ -301,22 +311,27 @@ viral_library = pd.read_csv(
     snakemake.input.viral_library,
     dtype={"barcode": str, "strain": str, "stock_id": str},
 )
-# A stock is one tube, which can carry more than one barcode. Where the library does not
-# record stocks, each barcode is its own.
-records_stocks = "stock_id" in viral_library.columns
-if not records_stocks:
-    viral_library["stock_id"] = viral_library["barcode"]
-viral_library["stock_id"] = viral_library["stock_id"].fillna(viral_library["barcode"])
-# A tube holds virus of one strain, and a well infected from it is labeled by that strain.
-_strains_of_stock = viral_library.groupby("stock_id")["strain"].unique()
-_mixed_stocks = _strains_of_stock[_strains_of_stock.map(len) > 1]
-if len(_mixed_stocks):
+if unit_column not in viral_library.columns:
     raise ValueError(
-        f"these stocks of {snakemake.input.viral_library} carry barcodes of more than one "
-        "strain, but a stock is one tube of one strain: "
+        f"{single_well} is analyzed by {analyze_by}, so {snakemake.input.viral_library} "
+        f"must have a {unit_column!r} column saying which {analyze_by} each barcode is in"
+    )
+if viral_library[unit_column].isna().any():
+    raise ValueError(
+        f"{snakemake.input.viral_library} leaves {unit_column!r} blank for some barcodes, "
+        f"but {single_well} is analyzed by {analyze_by} and so needs it for every one"
+    )
+# A unit of one strain is what lets a well be labeled by the strain it holds. Only a stock
+# can span strains, the other units being the strain itself or a barcode of just one.
+_strains_of_unit = viral_library.groupby(unit_column)["strain"].unique()
+_mixed_units = _strains_of_unit[_strains_of_unit.map(len) > 1]
+if len(_mixed_units):
+    raise ValueError(
+        f"these {analyze_by}s of {snakemake.input.viral_library} carry barcodes of more "
+        f"than one strain, but a {analyze_by} holds virus of one strain: "
         + ", ".join(
-            f"{stock} ({', '.join(sorted(strains))})"
-            for (stock, strains) in _mixed_stocks.items()
+            f"{unit} ({', '.join(sorted(strains))})"
+            for (unit, strains) in _mixed_units.items()
         )
     )
 neut_standard_barcodes = pd.read_csv(
@@ -333,16 +348,12 @@ barcode_class = pd.concat(
 )
 
 # The units of the library, which are what a well can be infected with, and the barcodes
-# each brings to its well. A well holds a stock and a stock brings every barcode it carries,
-# so this resolves through the stock: a passenger barcode sharing a tube belongs to the same
-# well rather than to none.
-barcodes_of_stock = viral_library.groupby("stock_id")["barcode"].apply(set).to_dict()
-unit_stocks = viral_library.groupby(well_holds)["stock_id"].apply(set).to_dict()
-unit_barcodes = {
-    unit: sorted({b for s in stocks for b in barcodes_of_stock[s]})
-    for (unit, stocks) in unit_stocks.items()
-}
-unit_strain = dict(zip(viral_library[well_holds], viral_library["strain"], strict=True))
+# each brings to its well. The units partition the library's barcodes, so a barcode belongs
+# to the well of exactly one of them.
+unit_barcodes = viral_library.groupby(unit_column)["barcode"].apply(sorted).to_dict()
+unit_strain = dict(
+    zip(viral_library[unit_column], viral_library["strain"], strict=True)
+)
 
 missing_viral_cols = sorted(set(addtl_viral_cols) - set(viral_library.columns))
 if missing_viral_cols:
@@ -360,87 +371,70 @@ assayed_units = set(samples.loc[~samples["is_empty"], "expected"])
 unknown_units = sorted(assayed_units - set(unit_barcodes))
 if unknown_units:
     raise ValueError(
-        f"the samples CSVs of {single_well} infect wells with {well_holds}s that are not "
+        f"the samples CSVs of {single_well} infect wells with {analyze_by}s that are not "
         f"in {snakemake.input.viral_library}, so they have no barcodes to count: "
         f"{unknown_units}"
     )
 
-# Where each well holds a barcode, a samples CSV may also name the strain beside it. That
-# column is not what the analysis reads, so it is checked against the library rather than
-# being left to disagree with it unnoticed.
-if well_holds == "barcode":
+# Where a well holds something other than a strain, a samples CSV may also name the strain
+# beside it. That column is not what the analysis reads, so it is checked against the library
+# rather than being left to disagree with it unnoticed.
+if analyze_by != "strain":
     _named_strains = pd.concat(
         [
             df.loc[
-                df["barcode"].notna() & df["strain"].notna(),
-                ["well", "barcode", "strain"],
+                df[analyze_by].notna() & df["strain"].notna(),
+                ["well", analyze_by, "strain"],
             ].assign(plate=plate)
             for (plate, df) in samples_by_plate.items()
             if "strain" in df.columns
         ]
-        or [pd.DataFrame(columns=["plate", "well", "barcode", "strain"])],
+        or [pd.DataFrame(columns=["plate", "well", analyze_by, "strain"])],
         ignore_index=True,
     )
     _disagree = _named_strains[
-        _named_strains["strain"] != _named_strains["barcode"].map(unit_strain)
+        _named_strains["strain"] != _named_strains[analyze_by].map(unit_strain)
     ]
     if len(_disagree):
         raise ValueError(
-            f"the samples CSVs of {single_well} name a strain for these barcodes that is "
-            f"not the strain {snakemake.input.viral_library} gives them: "
+            f"the samples CSVs of {single_well} name a strain for these {analyze_by}s that "
+            f"is not the strain {snakemake.input.viral_library} gives them: "
             + ", ".join(
-                f"{r.plate} {r.well} {r.barcode} ({r.strain!r}, library "
-                f"{unit_strain.get(r.barcode)!r})"
+                f"{r.plate} {r.well} {getattr(r, analyze_by)} ({r.strain!r}, library "
+                f"{unit_strain.get(getattr(r, analyze_by))!r})"
                 for r in _disagree.itertuples()
             )
         )
 
-# The unit each library barcode belongs to, which is the well it should have come from. A
-# barcode expected in an assayed unit's well belongs to that unit; any other belongs to its
-# own, which no well here was infected with.
+# The unit each library barcode belongs to, which is the well it should have come from, and
+# so where a read of it that turns up in another well came from.
 barcode_unit = dict(
-    zip(viral_library["barcode"], viral_library[well_holds], strict=True)
+    zip(viral_library["barcode"], viral_library[unit_column], strict=True)
 )
-_claimed = {}
-for unit in sorted(assayed_units):
-    for barcode in unit_barcodes[unit]:
-        if barcode in _claimed:
-            raise ValueError(
-                f"the barcode {barcode} is expected in the wells of both {_claimed[barcode]} "
-                f"and {unit}, sharing a stock, so a read of it cannot be traced to one well"
-            )
-        _claimed[barcode] = unit
-barcode_unit.update(_claimed)
 n_expected_barcodes = pd.Series({u: len(bs) for (u, bs) in unit_barcodes.items()})
 
-# How a well is labeled on the charts' shared axis. When wells hold strains the label is the
-# strain; when they hold barcodes the strain names the well too, a strain with several
-# stocks being told apart by the stock's position among its strain's in library order,
-# which is a barcode's unless the library records stocks.
-if well_holds == "strain":
-    unit_label = {strain: strain for strain in viral_library["strain"]}
-else:
-    _stocks = (
-        viral_library[["strain", "stock_id"]].drop_duplicates().reset_index(drop=True)
+# How a well is labeled on the charts' shared axis: the strain it holds, with which of the
+# strain's units it is where the strain has more than one, numbered by their order in the
+# library. Wells holding strains are labeled by the strain alone, there being one unit each.
+# `unit` is named apart from the library's column so that this reads the same where that
+# column is `strain` itself, which selecting both would duplicate.
+_units = (
+    viral_library.assign(unit=viral_library[unit_column])[["strain", "unit"]]
+    .drop_duplicates()
+    .reset_index(drop=True)
+)
+_by_strain = _units.groupby("strain")
+_unit_word = "bc" if analyze_by == "barcode" else analyze_by
+unit_label = {
+    unit: strain if n_units == 1 else f"{strain} [{_unit_word} {number}]"
+    for (unit, strain, n_units, number) in zip(
+        _units["unit"],
+        _units["strain"],
+        _by_strain["unit"].transform("nunique"),
+        _by_strain.cumcount() + 1,
+        strict=True,
     )
-    _by_strain = _stocks.groupby("strain")
-    stock_word = "stock" if records_stocks else "bc"
-    _stock_label = {
-        stock_id: strain if n_stocks == 1 else f"{strain} [{stock_word} {number}]"
-        for (stock_id, strain, n_stocks, number) in zip(
-            _stocks["stock_id"],
-            _stocks["strain"],
-            _by_strain["stock_id"].transform("nunique"),
-            _by_strain.cumcount() + 1,
-            strict=True,
-        )
-    }
-    unit_label = {
-        barcode: _stock_label[stock_id]
-        for (barcode, stock_id) in zip(
-            viral_library["barcode"], viral_library["stock_id"], strict=True
-        )
-    }
+}
 
 # Extra per-strain columns of the viral library carried into the tooltips, the tables and
 # the output CSV. They describe the strain rather than the barcode, so a strain carrying
@@ -538,7 +532,7 @@ invalid, discarded = split_discarded(
 
 def warned_wells(rows, reads_column=None):
     """The wells of `well_reads` rows a warning applies to, as the table it shows."""
-    columns = {"plate": "plate", "well": "well", "unit_label": well_holds}
+    columns = {"plate": "plate", "well": "well", "unit_label": analyze_by}
     if reads_column:
         columns[reads_column] = reads_column.replace("_", " ")
     return rows[list(columns)].rename(columns=columns)
@@ -546,12 +540,7 @@ def warned_wells(rows, reads_column=None):
 
 _n_units = len(unit_barcodes)
 _n_empty = int(samples["is_empty"].sum())
-# A unit that no well was infected with, other than one whose barcodes are all in the tube
-# of a unit that was, the passenger barcode of a shared tube being assayed with it.
-_not_assayed = unit_status[
-    ~unit_status["assayed"]
-    & ~unit_status["unit"].map(lambda u: set(unit_barcodes[u]) <= set(_claimed))
-]
+_not_assayed = unit_status[~unit_status["assayed"]]
 report.md("""
     ## Experimental summary
 
@@ -563,7 +552,7 @@ report.stat_tiles(
         "infected wells": len(samples) - _n_empty,
         "blank wells": _n_empty,
         **({"dilution factor": dilutions[0]} if has_dilution else {}),
-        f"{well_holds}s assayed": f"{int(unit_status['assayed'].sum())} / {_n_units}",
+        f"{analyze_by}s assayed": f"{int(unit_status['assayed'].sum())} / {_n_units}",
     },
     caption=f"Viral library: {Path(snakemake.input.viral_library).name}",
 )
@@ -573,14 +562,14 @@ report.reserve_warnings()
 def library_units(rows, columns=None):
     """The units of `unit_status` rows a library warning applies to, as the table it shows.
 
-    Where wells hold barcodes each is shown beside its label, which the barcodes of one tube
-    share. `columns` maps any further columns to show to their headers.
+    Where wells hold something other than a strain, each unit is shown beside its label,
+    which names the strain. `columns` maps any further columns to show to their headers.
 
     """
     named = (
-        {"label": "strain", "unit": "barcode"}
-        if well_holds == "barcode"
-        else {"label": well_holds}
+        {"label": "strain"}
+        if analyze_by == "strain"
+        else {"label": "strain", "unit": analyze_by}
     )
     named.update(columns or {})
     return (
@@ -662,7 +651,7 @@ invalid["expected_distance"] = invalid[
 
 well_reads = (
     samples.assign(
-        unit=well_holds,
+        unit=analyze_by,
         # an empty well expects none, rather than an unknown number
         n_expected_barcodes=lambda x: x["expected"]
         .map(n_expected_barcodes)
@@ -887,7 +876,7 @@ report.md(f"""
 
     The multi-panel plot below can be used to examine the barcode composition of each well
     and help flag any QC issues that may need further attention. Each bar is one infected
-    well, labeled by the {well_holds} it was infected with. Hover over a bar to outline
+    well, labeled by the {analyze_by} it was infected with. Hover over a bar to outline
     that well in all four panels.
     """)
 
@@ -1132,7 +1121,7 @@ with report.notes("How to read this plot"):
     report.md(f"""
         The **second panel** splits every valid barcode read (from the "valid barcode"
         category in the first panel) into the **{_valid_labels[0]}**, **{_valid_labels[1]}**
-        (another {well_holds} of the library), and **{_valid_labels[2]}**, as fractions
+        (another {analyze_by} of the library), and **{_valid_labels[2]}**, as fractions
         that sum to one. The expected fraction is a rough proxy for the titer of the
         expected virus and can help with further QC interpretation, especially for low
         titer strains.
@@ -1142,12 +1131,8 @@ with report.notes("How to read this plot"):
         The **third panel** classifies every barcode found in the well into
         the following categories:
 
-         - **{_category_labels[0]}**: {
-            "the barcode maps correctly to the infecting strain"
-            if well_holds == "strain"
-            else "the barcode is the infecting barcode, or another barcode carried in the "
-            "same tube"}.
-         - **{_category_labels[1]}**: the barcode maps to another {well_holds} in the
+         - **{_category_labels[0]}**: {_EXPECTED_EXPLANATIONS[analyze_by]}.
+         - **{_category_labels[1]}**: the barcode maps to another {analyze_by} in the
            library.
          - **{_category_labels[2]}**: the barcode is within {MAX_MISREAD_HAMMING} nt
            of an expected barcode or a neutralization standard barcode. These are likely
@@ -1165,7 +1150,7 @@ with report.notes("How to read this plot"):
         """)
     _belongs = (
         "the barcode belongs to a strain expected in a well"
-        if well_holds == "strain"
+        if analyze_by == "strain"
         else "the barcode is expected in a well"
     )
     _origin_explanations = {
@@ -1184,7 +1169,7 @@ with report.notes("How to read this plot"):
         NOT_ASSAYED: (
             "the barcode belongs to a strain in the library but not assayed on the plates "
             "measured here."
-            if well_holds == "strain"
+            if analyze_by == "strain"
             else "the barcode is in the library but not assayed on the plates measured "
             "here."
         ),
@@ -1245,7 +1230,7 @@ if discarded_barcodes:
                 )
             )[["plate", "well", "unit_label", "discarded_reads", "fraction"]].rename(
                 columns={
-                    "unit_label": well_holds,
+                    "unit_label": analyze_by,
                     "discarded_reads": "discarded reads",
                     "fraction": "fraction of all parsed reads",
                 }
@@ -1265,7 +1250,7 @@ report.md(f"""
 
     Below is a table showing wells where more than {100 * max_other_library_frac:g}% of
     the non-neutralization-standard reads are unexpected library barcodes. Read counts are
-    included and should be considered, especially in cases where the expected {well_holds}
+    included and should be considered, especially in cases where the expected {analyze_by}
     failed to grow.
     """)
 if not len(flagged_other_library):
@@ -1303,7 +1288,7 @@ else:
         validate="one_to_many",
     )
     _top_other = {
-        "other_unit_label": well_holds,
+        "other_unit_label": analyze_by,
         "fraction_of_reads": "fraction of non-neut-standard reads",
         "source": "well",
         "origin": "distance",
@@ -1311,7 +1296,7 @@ else:
     report.table(
         _table.drop(columns=["carried_forward"], errors="ignore").rename(
             columns={
-                "unit_label": well_holds,
+                "unit_label": analyze_by,
                 NON_NEUT_STANDARD_READS: "non-neut-standard reads",
                 "expected_reads": "expected reads",
                 "other_library_reads": "other library reads",
@@ -1320,7 +1305,7 @@ else:
         ),
         marked=dropped_rows(_table),
         marked_color=DROPPED_COLOR,
-        group=(f"top other {well_holds}s", _top_other),
+        group=(f"top other {analyze_by}s", _top_other),
     )
 
 # --- wells with unknown barcodes ----------------------------------------------------------
@@ -1401,7 +1386,7 @@ else:
             ]
         ].rename(
             columns={
-                "unit_label": f"{well_holds} in well",
+                "unit_label": f"{analyze_by} in well",
                 NON_NEUT_STANDARD_READS: "non-neut-standard reads",
                 "frac_unmatched": "fraction of well unknown",
                 "fraction_of_reads": "fraction of non-neut-standard reads",
@@ -1423,20 +1408,20 @@ else:
 # --- estimated titer of what each well held -----------------------------------------------
 
 report.md(f"""
-    ## Estimated titer of each {well_holds}
+    ## Estimated titer of each {analyze_by}
 
     These single virus per well infection experiments allow for an estimated titer of each
-    {well_holds}. This is simply computed as the ratio of reads containing the expected
+    {analyze_by}. This is simply computed as the ratio of reads containing the expected
     barcode to the neutralization standard reads in a well{
-        ", summed over all of the strain's barcodes (the number of barcodes is shown "
-        "when hovering over points)"
-        if well_holds == "strain"
+        f", summed over all of the {analyze_by}'s barcodes (the number of barcodes is "
+        "shown when hovering over points)"
+        if analyze_by != "barcode"
         else ""}. The titer is relative, in arbitrary units rather than infectious units.
     These titers should be
     interpreted carefully as they assume each infection was performed in the linear range
     (where there is a linear relationship between the amount of input virus and resulting
     spike-in normalized counts), which may not always be true for every virus in these
-    experiments. Additionally, the total counts for both the expected {well_holds} and the
+    experiments. Additionally, the total counts for both the expected {analyze_by} and the
     neutralization standard are displayed when hovering over points. These can be used to
     help assess the precision of these estimates.
     """)
@@ -1552,13 +1537,23 @@ else:
 
 # --- expected barcode recovery -----------------------------------------------------------
 
-report.md("""
+report.md(
+    """
     ## Expected barcode recovery
 
     This section examines the expected barcode recovery in each well. This can be helpful
     to examine the representation of each barcode in the viral stock when there are
     multiple barcodes mapping to an individual strain.
-    """)
+    """
+    if analyze_by != "barcode"
+    else """
+    ## Expected barcode recovery
+
+    This section reports any well that produced no reads of the barcode it was infected
+    with. How the well's expected reads are divided among its barcodes is not shown, each
+    well expecting just the one barcode.
+    """
+)
 
 # Built by reindexing onto the barcodes each well expects rather than by filtering the
 # counts, so that a barcode with no row in a well reads as zero rather than vanishing.
@@ -1591,7 +1586,7 @@ expected_barcode_reads = (
         validate="many_to_one",
     )
     .assign(
-        unit=well_holds,
+        unit=analyze_by,
         frac_of_expected=lambda x: x["reads"]
         / x["expected_reads"].where(x["expected_reads"] > 0),
     )
@@ -1599,7 +1594,9 @@ expected_barcode_reads = (
     .reset_index(drop=True)
 )
 
-if len(expected_barcode_reads):
+# Charted only where a well can expect several barcodes: analyzing by barcode gives every
+# well just one, whose fraction of the well's expected reads is therefore always one.
+if len(expected_barcode_reads) and analyze_by != "barcode":
     report.chart(
         panels.configure(
             alt.Chart(
@@ -1654,7 +1651,7 @@ if len(_absent):
     )
     report.table(
         _absent[["plate", "well", "unit_label", "barcode"]].rename(
-            columns={"unit_label": well_holds}
+            columns={"unit_label": analyze_by}
         ),
         marked=dropped_rows(_absent),
         marked_color=DROPPED_COLOR,
@@ -1665,7 +1662,7 @@ else:
 # --- write the outputs -----------------------------------------------------------------
 
 for _text, _details in library_warnings:
-    report.warning(_text, _details, shows=well_holds)
+    report.warning(_text, _details, shows=analyze_by)
 if report.warnings:
     print(f"Finished with {len(report.warnings)} warnings")
 

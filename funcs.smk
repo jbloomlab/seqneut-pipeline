@@ -206,7 +206,7 @@ def process_single_well_infections(single_well_d, misc_plates):
         "final_viral_library": None,
         "addtl_viral_cols_to_show": [],
     }
-    required = {"miscellaneous_plates", "description"}
+    required = {"miscellaneous_plates", "description", "analyze_by"}
     check_no_whitespace(single_well_d, "analyze_single_well_infections names")
     processed = {}
     for name, entry in single_well_d.items():

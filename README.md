@@ -675,6 +675,7 @@ Each entry is one analysis, which can combine several plates and is reported on 
 analyze_single_well_infections:
 
   <analysis_name>:
+    analyze_by: <strain, barcode, or stock>
     miscellaneous_plates: [<plate_name_1>, <plate_name_2>]
     description: <markdown describing the experiment>
     # the rest are optional, shown with their defaults
@@ -689,6 +690,7 @@ analyze_single_well_infections:
 
 The keys are:
 
+ - `analyze_by`: what each well was infected from, which is `strain`, `barcode`, or `stock`. Described below.
  - `miscellaneous_plates`: the plates to analyze together, which must share one `viral_library` and one `neut_standard_set`. Contamination is traced across all of them.
  - `description`: what the experiment was, shown at the top of the report.
  - `max_other_library_frac`: flag a well when more than this fraction of its non-neutralization-standard reads are library barcodes that do not belong in it.
@@ -701,17 +703,21 @@ The keys are:
 
 The four thresholds only decide which wells are flagged and warned about.
 
-What each well was infected with is read from the `samples_csv` of its plate, and all plates of an analysis must be of one kind:
+`analyze_by` says what kind of thing each well was infected from, and the `samples_csv` of every plate of the analysis names that thing for each well in a column of the same name:
 
- - If there is a `barcode` column, each well was infected with that one barcode, and another barcode of the same strain does not belong in it. If the viral library has a `stock_id` column naming the tube each barcode is in, the well should also hold the other barcodes of that tube; a blank `stock_id` means the barcode is in a tube of its own, and all barcodes of a tube must be of one strain. A `strain` column may be given alongside, but must match the library's strain for each barcode, and a well naming a strain must also name its barcode.
- - Otherwise the `strain` column gives the strain each well was infected with, and the well should hold every barcode of that strain.
+ - `strain`: the well should hold every barcode of that strain.
+ - `barcode`: the well should hold that one barcode and nothing else, so another barcode of the same strain does not belong in it.
+ - `stock`: the well should hold every barcode of that tube. The viral library must have a `stock_id` column giving the tube of every barcode, and the barcodes of a tube must be of one strain. A `stock_id` column is read only in this mode, so a library can carry one and still be analyzed by `barcode`, where a barcode sharing a tube with the well's own does not belong in it either.
 
-A blank in that column marks an uninfected well, which should hold only the neutralization standard.
-A strain or barcode can be in more than one well, of one plate or several. Each such well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of its plate that it belongs in, so material spilled between two wells of the same strain or barcode is counted as expected.
+Each barcode of the library therefore belongs to exactly one of these units, which is the well its reads should have come from.
+Where `analyze_by` is not `strain`, the samples CSV may also give a `strain` column, which is checked against the library rather than read, and a well naming a strain must also name what it was infected from.
+
+A blank in the `analyze_by` column marks an uninfected well, which should hold only the neutralization standard.
+One strain, barcode, or stock can be in more than one well, of one plate or several. Each such well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of its plate that it belongs in, so material spilled between two wells of the same unit is counted as expected.
 An optional `dilution_factor` column must have the same value for every infected well of the analysis, as their titers are compared.
-Strains or barcodes of the library in no well are reported as not assayed.
+Anything in the library that no well was infected from is reported as not assayed.
 
-The titer of a well is its expected barcode or strain reads divided by its neutralization-standard reads, in relative rather than infectious units.
+The titer of a well is its expected barcode reads divided by its neutralization-standard reads, in relative rather than infectious units.
 These titers should be interpreted carefully, as they assume each infection was performed in the linear range (where there is a linear relationship between the amount of input virus and the resulting spike-in normalized counts), which may not be true for every virus.
 
 ## Results of running the pipeline
