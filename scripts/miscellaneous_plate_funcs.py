@@ -263,11 +263,16 @@ def reads_per_well(frame, well_index):
     Returns:
         pandas.Series of the reads of each well of `well_index`, indexed from zero.
 
+    Reads are counts, so the result is an integer however `frame` is typed: summing a
+    frame of no rows gives a column of Python objects, which carries through arithmetic
+    into anything derived from it and is written to a CSV at full precision.
+
     """
     return (
         frame.groupby(["plate", "well"])["count"]
         .sum()
         .reindex(well_index, fill_value=0)
+        .astype(int)
         .reset_index(drop=True)
     )
 

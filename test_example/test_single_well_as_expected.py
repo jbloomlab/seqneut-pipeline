@@ -93,7 +93,8 @@ for label in [
 ]:
     assert label in stocks_html, f"{label} is not a label of the stocks report"
 
-# Against a library recording no stocks, each barcode is a stock of its own and is labeled so.
+# Analyzing by barcode, a strain's wells are told apart by which of its barcodes each holds,
+# whatever tube the library puts that barcode in.
 with open(
     "results/single_well_infections/single_well_barcodes_analyze_single_well_infections.html"
 ) as f:

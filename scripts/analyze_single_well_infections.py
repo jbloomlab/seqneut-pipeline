@@ -227,7 +227,9 @@ report.md(single_well_config["description"])  # added separately as it is multi-
 # --- read the samples and the libraries ------------------------------------------------
 
 samples_by_plate = {
-    plate: pd.read_csv(csv_file, dtype={"well": str, "strain": str, "barcode": str})
+    plate: pd.read_csv(
+        csv_file, dtype={"well": str, "strain": str, "barcode": str, "stock": str}
+    )
     for (plate, csv_file) in zip(plates, snakemake.input.samples_csvs, strict=True)
 }
 

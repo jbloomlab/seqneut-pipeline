@@ -146,6 +146,23 @@ def test_reads_per_well_counts_a_well_without_rows_as_zero():
     assert reads_per_well(frame, index).tolist() == [4, 0, 5]
 
 
+def test_reads_per_well_of_no_rows_is_still_an_integer_count():
+    """Reads are counts, so wells of a frame of no rows read as integer zero."""
+    frame = pd.DataFrame(
+        {
+            "plate": pd.Series(dtype=object),
+            "well": pd.Series(dtype=object),
+            "count": pd.Series(dtype=object),
+        }
+    )
+    index = pd.MultiIndex.from_tuples(
+        [("p1", "A1"), ("p1", "A2")], names=["plate", "well"]
+    )
+    reads = reads_per_well(frame, index)
+    assert reads.tolist() == [0, 0]
+    assert reads.dtype == int
+
+
 def test_split_discarded_takes_exact_matches_only():
     """Only a discarded barcode itself is set aside; its misreads are kept."""
     invalid = pd.DataFrame(
