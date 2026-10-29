@@ -710,6 +710,7 @@ The four thresholds only decide which wells are flagged and warned about.
  - `stock`: the well should hold every barcode of that tube. The viral library must have a `stock_id` column giving the tube of every barcode, and the barcodes of a tube must be of one strain. A `stock_id` column is read only in this mode, so a library can carry one and still be analyzed by `barcode`, where a barcode sharing a tube with the well's own does not belong in it either.
 
 Each barcode of the library therefore belongs to exactly one of these units, which is the well its reads should have come from.
+The output CSVs name what each well was infected from in an `expected_strain`, `expected_barcode`, or `expected_stock` column, after the `analyze_by` of the analysis. Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`; no strain is read off a well's barcodes, so both are what the well should hold rather than what it held. The expected-barcode CSV leaves out the unit and the fraction of the well's expected reads when analyzing by barcode, a well expecting the one barcode it is listed under.
 Where `analyze_by` is not `strain`, the samples CSV may also give a `strain` column, which is checked against the library rather than read, and a well naming a strain must also name what it was infected from.
 
 A blank in the `analyze_by` column marks an uninfected well, which should hold only the neutralization standard.
@@ -766,7 +767,7 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/qc_drops/aggregate_qc_drops.html`: HTML report summarizing the QC drops. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
       
   - Outputs related to the analyses of single virus per well infections, if `analyze_single_well_infections` is configured:
-    - `./results/single_well_infections/{analysis_name}_well_composition.csv`: for each well, the reads in each category described in the report, the discarded reads, their fractions, the titer, the flags, and the largest contaminant and where it came from. You should track this in the repo.
+    - `./results/single_well_infections/{analysis_name}_well_composition.csv`: for each well, the reads in each category described in the report, the discarded reads, the fraction of its reads that are foreign and that are unmatched, the titer, the flags, and the largest contaminant and where it came from. You should track this in the repo.
     - `./results/single_well_infections/{analysis_name}_expected_barcode_reads.csv`: for each well, the reads of each barcode it was expected to hold, to show whether all of a strain's barcodes turned up. You should track this in the repo.
     - `./results/single_well_infections/{analysis_name}_analyze_single_well_infections.html`: HTML report of the analysis. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
 

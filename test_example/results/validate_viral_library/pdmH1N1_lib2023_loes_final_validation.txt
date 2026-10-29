@@ -4,11 +4,12 @@
 === summary of data/viral_libraries/pdmH1N1_lib2023_loes_final.csv ===
 106 barcodes for 35 strains
 
-  column   null  non-null  distinct  max per strain  checks
-  barcode     0       106       106               4  non-null; distinct per row; matches ^[ACGT]{16}$
-  strain      0       106        35               1  non-null; matches ^\S+$
+  column    null  non-null  distinct  max per strain  checks
+  barcode      0       106       106               4  non-null; distinct per row; matches ^[ACGT]{16}$
+  strain       0       106        35               1  non-null; matches ^\S+$
+  stock_id     0       106       104               4  NOT VALIDATED
 
-columns not listed in `viral_library_validations: columns`: none
+columns not listed in `viral_library_validations: columns`: ['stock_id']
 
 === columns ===
    OK   columns declared non-null have no null values                             (2 columns)

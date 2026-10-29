@@ -244,6 +244,27 @@ if analyze_by not in UNIT_LIBRARY_COLUMNS:
     )
 unit_column = UNIT_LIBRARY_COLUMNS[analyze_by]
 
+# What a well was infected from is called `expected` throughout, there being one name for
+# it whichever kind it is, but the reports and the output CSVs name the kind, as a bare
+# "expected" beside a `barcode` column reads as the expected barcode rather than the strain
+# or tube it belongs to. The strain of that unit is as much a statement of what the well
+# should hold, no strain being read off the barcodes, so it is named the same way; it is the
+# unit itself where the unit is a strain, and then only the one column is written.
+EXPECTED_COLUMN = f"expected_{analyze_by}"
+EXPECTED_STRAIN_COLUMN = "expected_strain"
+OUTPUT_RENAMES = {"expected": EXPECTED_COLUMN, "strain": EXPECTED_STRAIN_COLUMN}
+# the unit's own column already carries it where the unit is a strain
+OUTPUT_STRAIN_COLUMNS = [] if analyze_by == "strain" else [EXPECTED_STRAIN_COLUMN]
+
+# How much of a unit the final viral library keeps, as the output CSV says it. The report
+# says it in prose instead, a table of units reading better than one of categories. Only an
+# empty well, which has no unit to keep, is left blank.
+KEPT_IN_FINAL_LIBRARY = {
+    "kept": "all barcodes",
+    "kept, some barcodes dropped": "some barcodes",
+    "dropped from the library": "none",
+}
+
 # A dilution factor is optional, but if any plate gives it then every plate must, as the
 # titers of all of them are ranked against each other below.
 _with_dilution = {
@@ -477,6 +498,11 @@ if has_final_library:
             CARRIED_FORWARD_LABELS
         ),
     )
+    if not set(unit_status["final_library"]) <= set(KEPT_IN_FINAL_LIBRARY):
+        raise ValueError(
+            f"{sorted(set(unit_status['final_library']) - set(KEPT_IN_FINAL_LIBRARY))} "
+            "is not among the values the output CSV gives for the final library"
+        )
 final_cols = (
     ["n_expected_barcodes_final", "final_library", "carried_forward"]
     if has_final_library
@@ -651,7 +677,6 @@ invalid["expected_distance"] = invalid[
 
 well_reads = (
     samples.assign(
-        unit=analyze_by,
         # an empty well expects none, rather than an unknown number
         n_expected_barcodes=lambda x: x["expected"]
         .map(n_expected_barcodes)
@@ -847,11 +872,11 @@ well_info = well_reads[
         "plate",
         "well",
         "expected",
-        "strain",
+        *([] if analyze_by == "strain" else ["strain"]),
         *addtl_viral_cols,
         *final_cols,
     ]
-]
+].rename(columns=OUTPUT_RENAMES)
 assert well_info["unit_label"].is_unique
 well_lookup = alt.LookupData(
     data=well_info,
@@ -862,7 +887,13 @@ well_lookup = alt.LookupData(
 
 well_tooltips = [
     lookup_tooltip(well_info, c)
-    for c in ["plate", "well", "expected", "strain", *addtl_viral_cols]
+    for c in [
+        "plate",
+        "well",
+        EXPECTED_COLUMN,
+        *OUTPUT_STRAIN_COLUMNS,
+        *addtl_viral_cols,
+    ]
 ]
 if has_final_library:
     well_tooltips.append(lookup_tooltip(well_info, "final_library"))
@@ -1592,7 +1623,6 @@ expected_barcode_reads = (
         validate="many_to_one",
     )
     .assign(
-        unit=analyze_by,
         frac_of_expected=lambda x: x["reads"]
         / x["expected_reads"].where(x["expected_reads"] > 0),
     )
@@ -1700,9 +1730,8 @@ well_composition = (
         [
             "plate",
             "well",
-            "unit",
             "expected",
-            "strain",
+            *([] if analyze_by == "strain" else ["strain"]),
             *addtl_viral_cols,
             *(["dilution_factor"] if has_dilution else []),
             "n_expected_barcodes",
@@ -1712,7 +1741,6 @@ well_composition = (
             "neut_standard_reads",
             NON_NEUT_STANDARD_READS,
             *COMPOSITION_CATEGORIES,
-            *(f"frac_{column}" for column in COMPOSITION_CATEGORIES),
             "frac_foreign",
             "frac_unmatched",
             "titer",
@@ -1728,13 +1756,35 @@ well_composition = (
         ]
     ]
     .reset_index(drop=True)
+    .assign(
+        **(
+            {"final_library": lambda x: x["final_library"].map(KEPT_IN_FINAL_LIBRARY)}
+            if has_final_library
+            else {}
+        )
+    )
+    .rename(
+        columns=OUTPUT_RENAMES | {"final_library": "kept_in_final_library"},
+    )
 )
 well_composition.to_csv(
     snakemake.output.well_composition, index=False, float_format="%.4g"
 )
+# Analyzing by barcode, a well expects the one barcode, which is therefore the unit it is
+# listed under and holds every read expected of the well: both columns would say for every
+# row what `barcode` already says and that the fraction is one.
 expected_barcode_reads[
-    ["plate", "well", "unit", "expected", "barcode", "reads", "frac_of_expected"]
-].to_csv(snakemake.output.expected_barcode_reads, index=False, float_format="%.4g")
+    [
+        "plate",
+        "well",
+        *([] if analyze_by == "barcode" else ["expected"]),
+        "barcode",
+        "reads",
+        *([] if analyze_by == "barcode" else ["frac_of_expected"]),
+    ]
+].rename(columns=OUTPUT_RENAMES).to_csv(
+    snakemake.output.expected_barcode_reads, index=False, float_format="%.4g"
+)
 report.write(snakemake.output.html)
 
 print(f"Wrote the report to {snakemake.output.html}")

@@ -112,17 +112,17 @@ def split_evenly(total, n):
 
 
 def final_library_status(own_barcodes, final_barcodes, applies):
-    """How a well's unit fared in the final library, if one applies to its plate."""
+    """How much of a well's unit the final library keeps, if one applies to its plate."""
     if not applies:
-        return {"n_expected_barcodes_final": None, "final_library": None}
+        return {"n_expected_barcodes_final": None, "kept_in_final_library": None}
     n_final = len(set(own_barcodes) & final_barcodes)
     if n_final == 0:
-        status = "dropped from the library"
+        kept = "none"
     elif n_final < len(own_barcodes):
-        status = "kept, some barcodes dropped"
+        kept = "some barcodes"
     else:
-        status = "kept"
-    return {"n_expected_barcodes_final": n_final, "final_library": status}
+        kept = "all barcodes"
+    return {"n_expected_barcodes_final": n_final, "kept_in_final_library": kept}
 
 
 def main():

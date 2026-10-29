@@ -27,7 +27,7 @@ EXACT_COLUMNS = [
     "top_other_unit_origin",
     # absent from the CSV, and so null, for an analysis with no final library
     "n_expected_barcodes_final",
-    "final_library",
+    "kept_in_final_library",
 ]
 
 expected = pd.read_csv("expected_single_well_composition.csv")

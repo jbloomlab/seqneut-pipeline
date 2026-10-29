@@ -1,6 +1,6 @@
-plate,well,unit,expected,barcode,reads,frac_of_expected
-single_well_plate_4,A1,stock,A/Ghana/2080/2020_stock_1,CAGCAAAAGCATCACC,1500,0.5
-single_well_plate_4,A1,stock,A/Ghana/2080/2020_stock_1,GTAGTGCATCATTGAT,1500,0.5
-single_well_plate_4,B2,stock,A/Ghana/2080/2020_stock_1,CAGCAAAAGCATCACC,1500,0.5
-single_well_plate_4,B2,stock,A/Ghana/2080/2020_stock_1,GTAGTGCATCATTGAT,1500,0.5
-single_well_plate_4,B3,stock,A/Ghana/2080/2020_stock_2,GCAATCCCGCAATTTG,3000,1
+plate,well,expected_stock,barcode,reads,frac_of_expected
+single_well_plate_4,A1,A/Ghana/2080/2020_stock_1,CAGCAAAAGCATCACC,1500,0.5
+single_well_plate_4,A1,A/Ghana/2080/2020_stock_1,GTAGTGCATCATTGAT,1500,0.5
+single_well_plate_4,B2,A/Ghana/2080/2020_stock_1,CAGCAAAAGCATCACC,1500,0.5
+single_well_plate_4,B2,A/Ghana/2080/2020_stock_1,GTAGTGCATCATTGAT,1500,0.5
+single_well_plate_4,B3,A/Ghana/2080/2020_stock_2,GCAATCCCGCAATTTG,3000,1

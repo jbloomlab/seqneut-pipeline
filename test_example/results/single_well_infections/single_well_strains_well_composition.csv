@@ -1,15 +1,15 @@
-plate,well,unit,expected,strain,dilution_factor,n_expected_barcodes,n_expected_barcodes_final,final_library,parsed_reads,discarded_reads,neut_standard_reads,non-neut-standard_parsed_reads,expected_reads,other_library_reads,unmatched_near_expected_reads,unmatched_far_expected_reads,frac_expected_reads,frac_other_library_reads,frac_unmatched_near_expected_reads,frac_unmatched_far_expected_reads,frac_foreign,frac_unmatched,titer,too_shallow,titer_imprecise,flagged_other_library,flagged_unmatched,top_other_unit,top_other_unit_reads,top_other_unit_well,top_other_unit_wells_away,top_other_unit_origin
-single_well_plate_1,B2,strain,A/Brisbane/02/2018,A/Brisbane/02/2018,1,4,4,kept,3400,0,400,3000,3000,0,0,0,1,0,0,0,0,0,7.5,False,False,False,False,,,,,
-single_well_plate_1,C2,strain,A/Bangladesh/8036/2021,A/Bangladesh/8036/2021,1,3,2,"kept, some barcodes dropped",3450,0,400,3050,3000,50,0,0,0.9836,0.01639,0,0,0.01639,0,7.5,False,False,True,False,A/Chester/5355/2022,50,B2,,another plate here
-single_well_plate_1,B3,strain,A/California/07/2009,A/California/07/2009,1,4,4,kept,3460,0,400,3060,3000,60,0,0,0.9804,0.01961,0,0,0.01961,0,7.5,False,False,True,False,A/Brisbane/02/2018,60,B2,1,1 well away
-single_well_plate_1,C3,strain,A/Belgium/H0017/2022,A/Belgium/H0017/2022,1,3,3,kept,3430,0,400,3030,3000,30,0,0,0.9901,0.009901,0,0,0.009901,0,7.5,False,False,True,False,A/Niger/10217/2021,30,,,not assayed here
-single_well_plate_1,B4,strain,A/Hawaii/70/2019,A/Hawaii/70/2019,1,4,4,kept,3440,0,400,3040,3000,40,0,0,0.9868,0.01316,0,0,0.01316,0,7.5,False,False,True,False,A/Bangladesh/8002/2021,40,D7,3,over 2 wells away
-single_well_plate_1,C4,strain,A/Belgium/H0038/2022,A/Belgium/H0038/2022,1,3,0,dropped from the library,3400,0,400,3000,3000,0,0,0,1,0,0,0,0,0,7.5,False,False,False,False,,,,,
-single_well_plate_1,B5,strain,A/Michigan/45/2015,A/Michigan/45/2015,1,4,4,kept,3630,0,400,3230,3000,0,30,200,0.9288,0,0.009288,0.06192,0.06192,0.07121,7.5,False,False,False,True,,,,,
-single_well_plate_1,C5,strain,A/Brisbane/48/2022,A/Brisbane/48/2022,1,3,3,kept,500,0,50,450,450,0,0,0,1,0,0,0,0,0,9,True,True,False,False,,,,,
-single_well_plate_1,B6,strain,A/Bangladesh/2221/2021,A/Bangladesh/2221/2021,1,3,3,kept,3450,500,400,3050,3000,0,0,50,0.9836,0,0,0.01639,0.01639,0.01639,7.5,False,False,False,False,,,,,
-single_well_plate_1,B7,strain,,,1,0,,,420,0,400,20,0,20,0,0,0,1,0,0,1,0,,True,False,True,False,A/Michigan/45/2015,20,B5,2,2 wells away
-single_well_plate_1,D7,strain,A/Bangladesh/8002/2021,A/Bangladesh/8002/2021,1,3,3,kept,3400,0,400,3000,3000,0,0,0,1,0,0,0,0,0,7.5,False,False,False,False,,,,,
-single_well_plate_2,B2,strain,A/Chester/5355/2022,A/Chester/5355/2022,1,3,3,kept,3400,0,400,3000,3000,0,0,0,1,0,0,0,0,0,7.5,False,False,False,False,,,,,
-single_well_plate_2,B3,strain,A/Cote_DIvoire/1448/2021,A/Cote_DIvoire/1448/2021,1,3,3,kept,3440,0,400,3040,3000,40,0,0,0.9868,0.01316,0,0,0.01316,0,7.5,False,False,True,False,A/California/07/2009,40,B3,,another plate here
-single_well_plate_2,B5,strain,A/Brisbane/02/2018,A/Brisbane/02/2018,1,4,4,kept,3400,0,400,3000,3000,0,0,0,1,0,0,0,0,0,7.5,False,False,False,False,,,,,
+plate,well,expected_strain,dilution_factor,n_expected_barcodes,n_expected_barcodes_final,kept_in_final_library,parsed_reads,discarded_reads,neut_standard_reads,non-neut-standard_parsed_reads,expected_reads,other_library_reads,unmatched_near_expected_reads,unmatched_far_expected_reads,frac_foreign,frac_unmatched,titer,too_shallow,titer_imprecise,flagged_other_library,flagged_unmatched,top_other_unit,top_other_unit_reads,top_other_unit_well,top_other_unit_wells_away,top_other_unit_origin
+single_well_plate_1,B2,A/Brisbane/02/2018,1,4,4,all barcodes,3400,0,400,3000,3000,0,0,0,0,0,7.5,False,False,False,False,,,,,
+single_well_plate_1,C2,A/Bangladesh/8036/2021,1,3,2,some barcodes,3450,0,400,3050,3000,50,0,0,0.01639,0,7.5,False,False,True,False,A/Chester/5355/2022,50,B2,,another plate here
+single_well_plate_1,B3,A/California/07/2009,1,4,4,all barcodes,3460,0,400,3060,3000,60,0,0,0.01961,0,7.5,False,False,True,False,A/Brisbane/02/2018,60,B2,1,1 well away
+single_well_plate_1,C3,A/Belgium/H0017/2022,1,3,3,all barcodes,3430,0,400,3030,3000,30,0,0,0.009901,0,7.5,False,False,True,False,A/Niger/10217/2021,30,,,not assayed here
+single_well_plate_1,B4,A/Hawaii/70/2019,1,4,4,all barcodes,3440,0,400,3040,3000,40,0,0,0.01316,0,7.5,False,False,True,False,A/Bangladesh/8002/2021,40,D7,3,over 2 wells away
+single_well_plate_1,C4,A/Belgium/H0038/2022,1,3,0,none,3400,0,400,3000,3000,0,0,0,0,0,7.5,False,False,False,False,,,,,
+single_well_plate_1,B5,A/Michigan/45/2015,1,4,4,all barcodes,3630,0,400,3230,3000,0,30,200,0.06192,0.07121,7.5,False,False,False,True,,,,,
+single_well_plate_1,C5,A/Brisbane/48/2022,1,3,3,all barcodes,500,0,50,450,450,0,0,0,0,0,9,True,True,False,False,,,,,
+single_well_plate_1,B6,A/Bangladesh/2221/2021,1,3,3,all barcodes,3450,500,400,3050,3000,0,0,50,0.01639,0.01639,7.5,False,False,False,False,,,,,
+single_well_plate_1,B7,,1,0,,,420,0,400,20,0,20,0,0,1,0,,True,False,True,False,A/Michigan/45/2015,20,B5,2,2 wells away
+single_well_plate_1,D7,A/Bangladesh/8002/2021,1,3,3,all barcodes,3400,0,400,3000,3000,0,0,0,0,0,7.5,False,False,False,False,,,,,
+single_well_plate_2,B2,A/Chester/5355/2022,1,3,3,all barcodes,3400,0,400,3000,3000,0,0,0,0,0,7.5,False,False,False,False,,,,,
+single_well_plate_2,B3,A/Cote_DIvoire/1448/2021,1,3,3,all barcodes,3440,0,400,3040,3000,40,0,0,0.01316,0,7.5,False,False,True,False,A/California/07/2009,40,B3,,another plate here
+single_well_plate_2,B5,A/Brisbane/02/2018,1,4,4,all barcodes,3400,0,400,3000,3000,0,0,0,0,0,7.5,False,False,False,False,,,,,
