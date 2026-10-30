@@ -76,13 +76,13 @@ import pandas as pd
 from miscellaneous_plate_charts import (
     CARRIED_FORWARD_LABELS,
     DROPPED_COLOR,
-    LABEL_LIMIT,
     POINT_STROKE_WIDTH,
     POINT_STROKE_WIDTH_HOVERED,
     STROKE_WIDTH,
     STROKE_WIDTH_HOVERED,
     WellPanels,
     carried_forward_stroke,
+    category_fill,
     lookup_tooltip,
     stroke_width,
     well_hover,
@@ -1038,16 +1038,12 @@ _panels = [
             axis=alt.Axis(tickCount=4),
         ),
         panels.well_axis(well_order, labeled=panels.labels_wells(1, 4)),
-        alt.Fill(
-            "category:N",
-            title="valid barcode",
-            sort=list(VALID_READ_CATEGORIES.values()),
-            scale=alt.Scale(
-                domain=list(VALID_READ_CATEGORIES.values()), range=VALID_READ_COLORS
-            ),
-            legend=alt.Legend(
-                labelLimit=LABEL_LIMIT, orient=panels.legend_orient, columns=1
-            ),
+        category_fill(
+            "category",
+            "valid barcode",
+            list(VALID_READ_CATEGORIES.values()),
+            panels.legend_orient,
+            range_=VALID_READ_COLORS,
         ),
         alt.Order("category_order:Q", sort="ascending"),
         stroke=_stroke,
@@ -1074,14 +1070,12 @@ _panels = [
             axis=alt.Axis(tickCount=4),
         ),
         panels.well_axis(well_order, labeled=panels.labels_wells(2, 4)),
-        alt.Fill(
-            "category:N",
-            title="barcode category",
-            sort=list(COMPOSITION_CATEGORIES.values()),
-            scale=alt.Scale(scheme="dark2"),
-            legend=alt.Legend(
-                labelLimit=LABEL_LIMIT, orient=panels.legend_orient, columns=1
-            ),
+        category_fill(
+            "category",
+            "barcode category",
+            list(COMPOSITION_CATEGORIES.values()),
+            panels.legend_orient,
+            scheme="dark2",
         ),
         alt.Order("category_order:Q", sort="ascending"),
         stroke=_stroke,
@@ -1106,14 +1100,12 @@ _panels = [
             axis=alt.Axis(tickCount=3),
         ),
         panels.well_axis(well_order, labeled=panels.labels_wells(3, 4)),
-        alt.Fill(
-            "origin:N",
-            title="came from",
-            sort=origin_order,
-            scale=alt.Scale(scheme="set1"),
-            legend=alt.Legend(
-                labelLimit=LABEL_LIMIT, orient=panels.legend_orient, columns=1
-            ),
+        category_fill(
+            "origin",
+            "came from",
+            origin_order,
+            panels.legend_orient,
+            scheme="set1",
         ),
         alt.Order("origin_order:Q", sort="ascending"),
         stroke=_stroke,

@@ -8,6 +8,7 @@ from miscellaneous_plate_charts import (
     RETAINED_COLOR,
     WellPanels,
     carried_forward_stroke,
+    category_fill,
     lookup_tooltip,
     stroke_width,
     well_hover,
@@ -76,3 +77,31 @@ def test_lookup_tooltip_names_the_type():
     frame = pd.DataFrame({"n": [1, 2], "name": ["a", "b"]})
     assert lookup_tooltip(frame, "n").to_dict()["type"] == "quantitative"
     assert lookup_tooltip(frame, "name").to_dict()["type"] == "nominal"
+
+
+def test_category_fill_from_a_scheme():
+    """A scheme colors the categories and the sort order is the order given."""
+    fill = category_fill("c", "a title", ["x", "y"], "right", scheme="dark2").to_dict()
+    assert fill["field"] == "c"
+    assert fill["title"] == "a title"
+    assert fill["sort"] == ["x", "y"]
+    assert fill["scale"] == {"scheme": "dark2"}
+    assert fill["legend"] == {
+        "labelLimit": LABEL_LIMIT,
+        "orient": "right",
+        "columns": 1,
+    }
+
+
+def test_category_fill_from_explicit_colors():
+    """Explicit colors are mapped to the categories in order."""
+    fill = category_fill("c", "t", ["x", "y"], "bottom", range_=["#000", "#fff"])
+    assert fill.to_dict()["scale"] == {"domain": ["x", "y"], "range": ["#000", "#fff"]}
+
+
+def test_category_fill_needs_exactly_one_of_scheme_and_range():
+    """Giving both colorings, or neither, is an error rather than a silent precedence."""
+    with pytest.raises(ValueError, match="exactly one"):
+        category_fill("c", "t", ["x"], "right")
+    with pytest.raises(ValueError, match="exactly one"):
+        category_fill("c", "t", ["x"], "right", scheme="dark2", range_=["#000"])

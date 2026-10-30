@@ -148,6 +148,40 @@ def carried_forward_stroke(has_final_library, legend_orient):
     )
 
 
+def category_fill(field, title, categories, legend_orient, scheme=None, range_=None):
+    """A stacked bar's fill, colored by `field` and drawn in the order `categories` gives.
+
+    Args:
+        `field` (str)
+            The field to color by.
+        `title` (str)
+            The legend's title.
+        `categories` (list)
+            The category labels, in the order they stack and are listed.
+        `legend_orient` (str)
+            Which side the legend goes on.
+        `scheme` (str or None)
+            A `vega` color scheme to draw from.
+        `range_` (list or None)
+            Explicit colors, one per category, instead of a scheme.
+
+    """
+    if (scheme is None) == (range_ is None):
+        raise ValueError("specify exactly one of `scheme` and `range_`")
+    scale = (
+        alt.Scale(scheme=scheme)
+        if range_ is None
+        else alt.Scale(domain=categories, range=range_)
+    )
+    return alt.Fill(
+        f"{field}:N",
+        title=title,
+        sort=categories,
+        scale=scale,
+        legend=alt.Legend(labelLimit=LABEL_LIMIT, orient=legend_orient, columns=1),
+    )
+
+
 def lookup_tooltip(lookup_frame, column):
     """Tooltip of a field a lookup adds from `lookup_frame`, as Altair cannot infer its type."""
     is_numeric = pandas.api.types.is_numeric_dtype(lookup_frame[column])
