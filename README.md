@@ -703,7 +703,7 @@ The keys are:
 
 The four thresholds only decide which wells are flagged and warned about.
 
-`analyze_by` says what kind of thing each well was infected from, and the `samples_csv` of every plate of the analysis names that thing for each well in a column of the same name:
+`analyze_by` says what kind of thing each well was infected from, and so which column of the viral library assigns each barcode to such a thing: `strain`, `barcode`, or `stock_id`. The `samples_csv` of every plate of the analysis names that thing for each well in a column of the same name:
 
  - `strain`: the well should hold every barcode of that strain.
  - `barcode`: the well should hold that one barcode and nothing else, so another barcode of the same strain does not belong in it.
@@ -713,7 +713,7 @@ Each barcode of the library therefore belongs to exactly one of these units, whi
 The output CSVs name what each well was infected from in an `expected_strain`, `expected_barcode`, or `expected_stock` column, after the `analyze_by` of the analysis. Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`; no strain is read off a well's barcodes, so both are what the well should hold rather than what it held. The expected-barcode CSV leaves out the unit and the fraction of the well's expected reads when analyzing by barcode, a well expecting the one barcode it is listed under.
 Where `analyze_by` is not `strain`, the samples CSV may also give a `strain` column, which is checked against the library rather than read, and a well naming a strain must also name what it was infected from.
 
-A blank in the `analyze_by` column marks an uninfected well, which should hold only the neutralization standard.
+A blank in that column marks an uninfected well, which should hold only the neutralization standard.
 One strain, barcode, or stock can be in more than one well, of one plate or several. Each such well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of its plate that it belongs in, so material spilled between two wells of the same unit is counted as expected. Where several of those wells are equally near, the composition CSV counts them in `top_other_unit_wells_equally_near` and the report names them all, the traced well being only one of the candidates.
 An optional `dilution_factor` column must have the same value for every infected well of the analysis, as their titers are compared.
 Anything in the library that no well was infected from is reported as not assayed.

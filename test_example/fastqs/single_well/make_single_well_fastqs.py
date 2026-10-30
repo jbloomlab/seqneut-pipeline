@@ -247,11 +247,12 @@ def main():
     # the plate recording stocks comes last, so that adding it left the others unchanged
     for plate, wells in [*plan.items(), *plan_barcodes.items(), *plan_stocks.items()]:
         # the column of the samples CSV naming what each well was infected from, which is
-        # the `analyze_by` of the plate's analysis in `CONFIG_YML`
+        # the viral library's column for the `analyze_by` of the plate's analysis in
+        # `CONFIG_YML`
         unit_column = (
             "barcode"
             if plate in plan_barcodes
-            else "stock" if plate in plan_stocks else "strain"
+            else "stock_id" if plate in plan_stocks else "strain"
         )
         thresholds = thresholds_by_plate[plate]
         sample_rows = []

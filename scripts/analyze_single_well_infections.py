@@ -5,13 +5,14 @@ well's reads split across the barcodes it was expected to hold. The question the
 answer is whether each well holds only what it should, and whether virus from one well ends
 up in another; they also give a loose estimate of how well each virus grows on its own.
 
-What a well was infected from is named by the `analyze_by` column of the plates' samples
-CSVs, `analyze_by` saying which of three kinds of thing that is:
+What a well was infected from is named in the plates' samples CSVs, `analyze_by` saying
+which of three kinds of thing that is, and so which column names it there; that is the
+column of the viral library giving the thing each barcode belongs to:
 
-    strain    the well should hold every barcode of that strain
-    barcode   the well should hold that one barcode and nothing else
-    stock     the well should hold every barcode of that tube, which the viral library's
-              `stock_id` column records
+    analyze_by  column    the well should hold
+    strain      strain    every barcode of that strain
+    barcode     barcode   that one barcode and nothing else
+    stock       stock_id  every barcode of that tube
 
 That is the well's *unit*, and its *expected barcodes* are what belongs in it, along with
 the neutralization standard spiked in. Every parsed read is put into one of five categories
@@ -228,15 +229,15 @@ report.md(single_well_config["description"])  # added separately as it is multi-
 
 samples_by_plate = {
     plate: pd.read_csv(
-        csv_file, dtype={"well": str, "strain": str, "barcode": str, "stock": str}
+        csv_file, dtype={"well": str, "strain": str, "barcode": str, "stock_id": str}
     )
     for (plate, csv_file) in zip(plates, snakemake.input.samples_csvs, strict=True)
 }
 
-# What kind of thing each well was infected from, and so which column of the samples CSVs
-# names it and which of the viral library identifies the unit a barcode belongs to. A stock
-# is one tube, which can carry more than one barcode; the other two units are a column of
-# the library already.
+# What kind of thing each well was infected from, and so the column that names it, in the
+# samples CSVs and in the viral library alike: the library's column identifies the unit a
+# barcode belongs to, and a samples CSV names that unit for each well. A stock is one tube,
+# which can carry more than one barcode.
 UNIT_LIBRARY_COLUMNS = {"strain": "strain", "barcode": "barcode", "stock": "stock_id"}
 analyze_by = single_well_config["analyze_by"]
 if analyze_by not in UNIT_LIBRARY_COLUMNS:
@@ -280,7 +281,7 @@ if _with_dilution and _with_dilution != set(plates):
 has_dilution = bool(_with_dilution)
 
 for plate, df in samples_by_plate.items():
-    missing = {"well", analyze_by} - set(df.columns)
+    missing = {"well", unit_column} - set(df.columns)
     if missing:
         raise ValueError(
             f"the samples CSV of {plate} lacks the columns {sorted(missing)}"
@@ -288,7 +289,7 @@ for plate, df in samples_by_plate.items():
     # A well is uninfected only where nothing names what infected it, so a strain beside a
     # blank unit is a unit left out rather than an empty well.
     if analyze_by != "strain" and "strain" in df.columns:
-        _no_unit = df[df[analyze_by].isna() & df["strain"].notna()]
+        _no_unit = df[df[unit_column].isna() & df["strain"].notna()]
         if len(_no_unit):
             raise ValueError(
                 f"the samples CSV of {plate} names a strain but no {analyze_by} for the "
@@ -297,13 +298,13 @@ for plate, df in samples_by_plate.items():
 
 samples = pd.concat(
     [
-        df[["well", analyze_by, *(["dilution_factor"] if has_dilution else [])]].assign(
-            plate=plate
-        )
+        df[
+            ["well", unit_column, *(["dilution_factor"] if has_dilution else [])]
+        ].assign(plate=plate)
         for (plate, df) in samples_by_plate.items()
     ],
     ignore_index=True,
-).rename(columns={analyze_by: "expected"})
+).rename(columns={unit_column: "expected"})
 
 # A well that names no unit was left uninfected. A blank is the record here rather than a
 # value that has to be interpreted.
@@ -406,25 +407,25 @@ if analyze_by != "strain":
     _named_strains = pd.concat(
         [
             df.loc[
-                df[analyze_by].notna() & df["strain"].notna(),
-                ["well", analyze_by, "strain"],
+                df[unit_column].notna() & df["strain"].notna(),
+                ["well", unit_column, "strain"],
             ].assign(plate=plate)
             for (plate, df) in samples_by_plate.items()
             if "strain" in df.columns
         ]
-        or [pd.DataFrame(columns=["plate", "well", analyze_by, "strain"])],
+        or [pd.DataFrame(columns=["plate", "well", unit_column, "strain"])],
         ignore_index=True,
     )
     _disagree = _named_strains[
-        _named_strains["strain"] != _named_strains[analyze_by].map(unit_strain)
+        _named_strains["strain"] != _named_strains[unit_column].map(unit_strain)
     ]
     if len(_disagree):
         raise ValueError(
             f"the samples CSVs of {single_well} name a strain for these {analyze_by}s that "
             f"is not the strain {snakemake.input.viral_library} gives them: "
             + ", ".join(
-                f"{r.plate} {r.well} {getattr(r, analyze_by)} ({r.strain!r}, library "
-                f"{unit_strain.get(getattr(r, analyze_by))!r})"
+                f"{r.plate} {r.well} {getattr(r, unit_column)} ({r.strain!r}, library "
+                f"{unit_strain.get(getattr(r, unit_column))!r})"
                 for r in _disagree.itertuples()
             )
         )
