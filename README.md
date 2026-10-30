@@ -703,11 +703,11 @@ The keys are:
 
 The four thresholds only decide which wells are flagged and warned about.
 
-`analyze_by` says what kind of thing each well was infected from, and so which column of the viral library assigns each barcode to such a thing: `strain`, `barcode`, or `stock_id`. The `samples_csv` of every plate of the analysis names that thing for each well in a column of the same name:
+`analyze_by` says what kind of thing each well was infected from, and so which column of the viral library assigns each barcode to such a thing: `strain`, `barcode`, or `stock`. The `samples_csv` of every plate of the analysis names that thing for each well in a column of the same name:
 
  - `strain`: the well should hold every barcode of that strain.
  - `barcode`: the well should hold that one barcode and nothing else, so another barcode of the same strain does not belong in it.
- - `stock`: the well should hold every barcode of that tube. The viral library must have a `stock_id` column giving the tube of every barcode, and the barcodes of a tube must be of one strain. A `stock_id` column is read only in this mode, so a library can carry one and still be analyzed by `barcode`, where a barcode sharing a tube with the well's own does not belong in it either.
+ - `stock`: the well should hold every barcode of that tube. The viral library must have a `stock` column giving the tube of every barcode, and the barcodes of a tube must be of one strain. A `stock` column is read only in this mode, so a library can carry one and still be analyzed by `barcode`, where a barcode sharing a tube with the well's own does not belong in it either.
 
 Each barcode of the library therefore belongs to exactly one of these units, which is the well its reads should have come from.
 The output CSVs name what each well was infected from in an `expected_strain`, `expected_barcode`, or `expected_stock` column, after the `analyze_by` of the analysis. Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`; no strain is read off a well's barcodes, so both are what the well should hold rather than what it held. The expected-barcode CSV leaves out the unit and the fraction of the well's expected reads when analyzing by barcode, a well expecting the one barcode it is listed under.

@@ -188,8 +188,8 @@ def main():
     # infected from one barcode and so the other does not belong in it either.
     sibling_a, sibling_b = strain_barcodes[s[13]][:2]
     assert (
-        library.loc[library["barcode"] == sibling_a, "stock_id"].item()
-        == library.loc[library["barcode"] == sibling_b, "stock_id"].item()
+        library.loc[library["barcode"] == sibling_a, "stock"].item()
+        == library.loc[library["barcode"] == sibling_b, "stock"].item()
     ), "the barcode plate's two wells of one strain hold barcodes of one tube"
     plan_barcodes = {
         "single_well_plate_3": {
@@ -204,17 +204,17 @@ def main():
         },
     }
 
-    # One tube per well. The library's `stock_id` records which barcodes share a tube: the
+    # One tube per well. The library's `stock` records which barcodes share a tube: the
     # first two barcodes of s[15] in library order share its first and its third is a
     # second tube, every other barcode being a tube of its own. The well infected from the
     # shared tube holds both of its barcodes, and the wells of s[15] are labeled by which
     # of its tubes they hold. The shared tube is in a second well of the plate too,
     # which is first in the order the plate was filled but farther from the well its
     # spill is found in, so that spill has to be traced to the nearer of the two.
-    stock_barcodes = library.groupby("stock_id")["barcode"].apply(list).to_dict()
+    stock_barcodes = library.groupby("stock")["barcode"].apply(list).to_dict()
     in_library_order = library.loc[library["strain"] == s[15], "barcode"].tolist()
     shared_tube, second_tube = (
-        library.loc[library["barcode"] == barcode, "stock_id"].item()
+        library.loc[library["barcode"] == barcode, "stock"].item()
         for barcode in [in_library_order[0], in_library_order[2]]
     )
     assert (
@@ -247,12 +247,11 @@ def main():
     # the plate recording stocks comes last, so that adding it left the others unchanged
     for plate, wells in [*plan.items(), *plan_barcodes.items(), *plan_stocks.items()]:
         # the column of the samples CSV naming what each well was infected from, which is
-        # the viral library's column for the `analyze_by` of the plate's analysis in
-        # `CONFIG_YML`
+        # the `analyze_by` of the plate's analysis in `CONFIG_YML`
         unit_column = (
             "barcode"
             if plate in plan_barcodes
-            else "stock_id" if plate in plan_stocks else "strain"
+            else "stock" if plate in plan_stocks else "strain"
         )
         thresholds = thresholds_by_plate[plate]
         sample_rows = []

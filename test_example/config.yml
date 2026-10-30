@@ -24,7 +24,7 @@ viral_libraries:
   pdmH1N1_lib2023_loes_final: data/viral_libraries/pdmH1N1_lib2023_loes_final.csv
 
 # Optional checks on each library in `viral_libraries`, one entry per library. These
-# describe only the `barcode` and `strain` the checks apply to; `stock_id` is left out, as
+# describe only the `barcode` and `strain` the checks apply to; `stock` is left out, as
 # it describes the tube rather than the strain or the barcode and so fits neither the
 # per-strain nor the per-barcode checks. A real project may describe other columns as well.
 viral_library_validations:
