@@ -118,8 +118,8 @@ _ = alt.data_transformers.disable_max_rows()
 # computed, so it lives here rather than in the configuration.
 N_TOP_BARCODES = 3
 
-# the non-neut-standard parsed reads the categories above are taken as fractions of, spelled
-# with hyphens as it is a column of the output CSV as well as of the frame here
+# the column of the non-neut-standard parsed reads, which the categories above are taken as
+# fractions of
 NON_NEUT_STANDARD_READS = "non-neut-standard_parsed_reads"
 
 # What an empty well is called on the charts' axis. A well whose unit is blank was left
@@ -877,7 +877,8 @@ well_info = well_reads[
         "expected",
         *([] if analyze_by == "strain" else ["strain"]),
         *addtl_viral_cols,
-        *final_cols,
+        # what the tooltips and outlines show of the final library, not its barcode count
+        *(c for c in final_cols if c != "n_expected_barcodes_final"),
     ]
 ].rename(columns=OUTPUT_RENAMES)
 assert well_info["unit_label"].is_unique
@@ -1744,13 +1745,9 @@ well_composition = (
             *(["dilution_factor"] if has_dilution else []),
             "n_expected_barcodes",
             *(c for c in final_cols if c != "carried_forward"),
-            "parsed_reads",
             "discarded_reads",
             "neut_standard_reads",
-            NON_NEUT_STANDARD_READS,
             *COMPOSITION_CATEGORIES,
-            "frac_foreign",
-            "frac_unmatched",
             "titer",
             "too_shallow",
             "titer_imprecise",

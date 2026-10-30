@@ -767,7 +767,7 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/qc_drops/aggregate_qc_drops.html`: HTML report summarizing the QC drops. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
       
   - Outputs related to the analyses of single virus per well infections, if `analyze_single_well_infections` is configured:
-    - `./results/single_well_infections/{analysis_name}_well_composition.csv`: for each well, the reads in each category described in the report, the discarded reads, the fraction of its reads that are foreign and that are unmatched, the titer, the flags, and the largest contaminant and where it came from. You should track this in the repo.
+    - `./results/single_well_infections/{analysis_name}_well_composition.csv`: for each well, the reads in each category described in the report, the neutralization-standard and discarded reads, the titer, the flags, and the largest contaminant and where it came from. You should track this in the repo.
     - `./results/single_well_infections/{analysis_name}_expected_barcode_reads.csv`: for each well, the reads of each barcode it was expected to hold, to show whether all of a strain's barcodes turned up. You should track this in the repo.
     - `./results/single_well_infections/{analysis_name}_analyze_single_well_infections.html`: HTML report of the analysis. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
 
