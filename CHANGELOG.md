@@ -1,6 +1,11 @@
 # CHANGELOG
 
-#### version 9.4.0
+#### version 9.4.1
+- Update to latest `bloomlab-coding-standards` submodule.
+
+- Update `tree-annotated-plot` in `environment.yml` to 0.5.0.
+
+### version 9.4.0
 - The plate-to-plate correlation CSVs (`results/plate_to_plate_corrs/plate_to_plate_corr_{group}_{plate}.csv`) add `slope` and `slope_retained` columns: the reduced major axis slope of the log titers on the plate against those on the other plate, over all strains and over just the retained strains. A slope near one means the plates agree in scale as well as in rank, which the Pearson correlation alone does not show. The reduced major axis slope is used rather than a least-squares slope because it treats the plates alike: it is not biased below one by noise in the other plate, and the two files comparing a pair of plates give exactly reciprocal slopes.
 
 - Add an optional `addtl_config_files` key that lists more YAML files to merge into the configuration, so that a lengthy configuration (typically `plates`) can be split across several files, which we suggest putting in `./data/config/`. A top-level key may be in only one of the configuration files, and it is an error otherwise. `--config` and `--configfile` overrides still take precedence over the additional files. A YAML alias cannot refer to an anchor in another file, so defaults merged into `plates` have to be in the same file as them. The test example uses this to put `plates` and `miscellaneous_plates` in their own files.
@@ -8,7 +13,7 @@
 #### version 9.3.1
 - Add `pyarrow` to `envs/count_barcodes.yml`.
 
-#### version 9.3.0
+### version 9.3.0
 - The barcode-counting rules (`count_barcodes` and `miscellaneous_plate_count_barcodes`) now run in their own `conda` environment, `envs/count_barcodes.yml`, while every other rule still runs in `environment.yml`. `snakemake` reruns a rule whenever its environment changes, and counting is slow to rerun from the FASTQs, so updating `environment.yml` no longer reruns it. Moving the counting rules to the new environment is itself such a change, so the first run after upgrading to this version reruns them once.
 
 - Update package versions:
@@ -75,7 +80,7 @@
   + Add `pytest`, which runs the tests in `./tests`.
   + `pandas` stays at 2.3, as the `bioconda` `snakemake` package still pins `pandas <3`.
 
-## version 8.1.0
+### version 8.1.0
 - Build the docs in `./results/docs` even when there are no `plates`. A project that only counts barcodes for `miscellaneous_plates` previously got no docs at all, which silently ignored any HTML files it added with `add_htmls_to_docs`; those files are now the entire contents of its docs, since every other section describes the plates. This is what lets such a project publish its own analysis of the counts via GitHub Pages.
 
 - Make `plates` an optional configuration key, so that a project with only `miscellaneous_plates` no longer needs a placeholder `plates: {}`. Along with it, `sera_override_defaults` is now optional too (it is keyed by group, and a project with no plates has no groups), and both keys, as well as `miscellaneous_plates`, are accepted as null and not just as an empty dictionary. Note that null is the only way to empty one of these keys from a `--configfile` override, as `snakemake` merges an override into the configuration recursively and so treats an empty dictionary as leaving the existing value untouched.

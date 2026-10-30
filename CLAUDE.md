@@ -130,6 +130,9 @@ risk and needs no escaping.
   version ends up with rather than the steps taken to get there: rewrite an `(unreleased)`
   entry in place rather than adding a second describing how the first was revised. Bump the
   version in `pyproject.toml`, the single source of truth for it.
+- A version's heading depth in `CHANGELOG.md` follows the part of the version it bumps:
+  `##` for a major version (`x.0.0`), `###` for a minor version (`x.y.0`), and `####` for a
+  patch (`x.y.z`).
 - A version accumulates changes over several pull requests, so its `CHANGELOG.md` heading
   carries an `(unreleased)` marker while in progress; add new entries under that heading
   rather than starting a new version. Do not record the release state anywhere else.
