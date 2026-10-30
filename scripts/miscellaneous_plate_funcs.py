@@ -644,18 +644,17 @@ class PlateReport(Report):
 
     def __init__(self, title):
         super().__init__(title)
-        self._blocks.append(f"<style>{_TABLE_CSS}</style>")
+        self._append(f"<style>{_TABLE_CSS}</style>")
         self._warnings = []
         self._section_warnings = []
-        self._warnings_index = None
+        self._warnings_slot = None
         self._notes_styled = False
 
     def reserve_warnings(self):
         """Leave the slot the warnings are written into, at the current position."""
-        if self._warnings_index is not None:
+        if self._warnings_slot is not None:
             raise ValueError("the warnings slot is already reserved")
-        self._warnings_index = len(self._blocks)
-        self._blocks.append("")
+        self._warnings_slot = self._reserve_slot()
 
     def warning(self, text, details, shows="well", note=None):
         """Record a warning, printing it to the log as well.
@@ -684,7 +683,7 @@ class PlateReport(Report):
         warnings = [_logged_warning(**w) for w in warnings]
         if warnings:
             self._section_warnings += warnings
-            self._blocks.append(_warnings_html(warnings))
+            self._append(_warnings_html(warnings))
 
     @property
     def warnings(self):
@@ -710,18 +709,18 @@ class PlateReport(Report):
                 where they first appear, with those columns as one cell spanning them.
 
         """
-        self._blocks.append(table_html(df, index, marked, marked_color, group))
+        self._append(table_html(df, index, marked, marked_color, group))
 
     @contextlib.contextmanager
     def notes(self, summary):
         """Hide whatever is appended within the block behind `summary`, closed by default."""
         style = "" if self._notes_styled else f"<style>{_NOTES_CSS}</style>"
         self._notes_styled = True
-        self._blocks.append(
+        self._append(
             f'{style}<details class="notes"><summary>{html.escape(summary)}</summary>'
         )
         yield
-        self._blocks.append("</details>")
+        self._append("</details>")
 
     def stat_tiles(self, tiles, caption):
         """Append a row of tiles, each a value over its label, with `caption` below.
@@ -733,7 +732,7 @@ class PlateReport(Report):
                 A line of text under the tiles.
 
         """
-        self._blocks.append(
+        self._append(
             '<div style="display: flex; flex-wrap: wrap; gap: 0.6em; margin: 1em 0 0.4em">'
             + "".join(
                 '<div style="border: 1px solid #ddd; border-radius: 6px; min-width: 6em; '
@@ -747,15 +746,14 @@ class PlateReport(Report):
             + f'</div><p style="color: #555">{html.escape(caption)}</p>'
         )
 
+    def _transform_body(self, blocks):
+        """The blocks with a sidebar of the report's sections."""
+        return _with_sidebar(blocks)
+
     def write(self, path):
         """Write the report to `path`, with the warnings in their slot and a sidebar."""
         if self._warnings:
-            if self._warnings_index is None:
+            if self._warnings_slot is None:
                 raise ValueError("there are warnings but no slot was reserved for them")
-            self._blocks[self._warnings_index] = _warnings_html(self._warnings)
-        blocks = self._blocks
-        self._blocks = _with_sidebar(blocks)
-        try:
-            super().write(path)
-        finally:
-            self._blocks = blocks
+            self._fill_slot(self._warnings_slot, _warnings_html(self._warnings))
+        super().write(path)

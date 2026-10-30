@@ -97,6 +97,34 @@ class Report:
         self._blocks = []
         self._n_charts = 0  # gives each chart a unique `altair` `output_div`
 
+    def _append(self, html):
+        """Append `html` as a block. The way a subclass adds one of its own."""
+        self._blocks.append(html)
+
+    def _reserve_slot(self):
+        """Reserve a block for content supplied later, returning a token for it.
+
+        For content that belongs at this point but is not known until later, such as
+        warnings gathered as the analysis runs. Pass the token to `_fill_slot`; an
+        unfilled slot writes as nothing.
+
+        """
+        self._blocks.append("")
+        return len(self._blocks) - 1
+
+    def _fill_slot(self, token, html):
+        """Write `html` into the block `_reserve_slot` returned `token` for."""
+        self._blocks[token] = html
+
+    def _transform_body(self, blocks):
+        """The blocks to write, given those appended. Identity unless overridden.
+
+        Lets a subclass wrap or add to the whole report once it is built, as for a
+        sidebar of its sections.
+
+        """
+        return blocks
+
     def md(self, text, log=False):
         """Append a block of markdown prose, which may contain LaTeX.
 
@@ -116,7 +144,7 @@ class Report:
             text,
             extensions=["fenced_code", "tables", "sane_lists"],
         )
-        self._blocks.append(f'<div class="md-block">{html}</div>')
+        self._append(f'<div class="md-block">{html}</div>')
 
     def yaml(self, obj):
         """Append `obj` as a fenced YAML block."""
@@ -132,7 +160,7 @@ class Report:
             output_div=f"chart_{self._n_charts}",
             template="universal",
         )
-        self._blocks.append(f'<div class="chart-block">{fragment}</div>')
+        self._append(f'<div class="chart-block">{fragment}</div>')
 
     def table(self, df, index=True):
         """Append a `pandas` data frame as a table in a scrollable box.
@@ -144,13 +172,13 @@ class Report:
                 Write the index. Pass `False` where it is a meaningless range.
 
         """
-        self._blocks.append(
+        self._append(
             f'<div class="scroll-box">{df.to_html(index=index, border=0)}</div>'
         )
 
     def figure(self, fig, display_method):
         """Append a `matplotlib` figure, rendered as by `neutcurve.fig_utils.fig_html`."""
-        self._blocks.append(fig_html(fig, display_method))
+        self._append(fig_html(fig, display_method))
 
     def write(self, path):
         """Write the report to `path`."""
@@ -160,6 +188,6 @@ class Report:
                     title=self.title,
                     katex=KATEX_VERSION,
                     scroll_height=SCROLL_BOX_HEIGHT,
-                    body="\n".join(self._blocks),
+                    body="\n".join(self._transform_body(self._blocks)),
                 )
             )
