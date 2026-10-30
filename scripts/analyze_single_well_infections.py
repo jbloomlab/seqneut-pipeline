@@ -820,7 +820,14 @@ _origins = [
     trace_origin(row.plate, row.well, _unit_homes.get(row.barcode_unit, []))
     for row in _other_unit_reads.itertuples()
 ]
-_origin_columns = ["origin", "source_well", "wells_away", "came_from", "n_equally_near"]
+_origin_columns = [
+    "origin",
+    "source_plate",
+    "source_well",
+    "wells_away",
+    "came_from",
+    "n_equally_near",
+]
 _other_unit_reads[_origin_columns] = pd.DataFrame(
     _origins, index=_other_unit_reads.index, columns=_origin_columns
 )
@@ -834,6 +841,7 @@ other_unit_totals = (
     .aggregate(
         reads=pd.NamedAgg("count", "sum"),
         origin=pd.NamedAgg("origin", "first"),
+        source_plate=pd.NamedAgg("source_plate", "first"),
         source_well=pd.NamedAgg("source_well", "first"),
         wells_away=pd.NamedAgg("wells_away", "first"),
         came_from=pd.NamedAgg("came_from", "first"),
@@ -1727,6 +1735,7 @@ _worst_other_unit = top_other_units(well_reads, 1).rename(
     columns={
         "other_unit": "top_other_unit",
         "reads": "top_other_unit_reads",
+        "source_plate": "top_other_unit_plate",
         "source_well": "top_other_unit_well",
         "wells_away": "top_other_unit_wells_away",
         "origin": "top_other_unit_origin",
@@ -1738,6 +1747,7 @@ _worst_other_unit = top_other_units(well_reads, 1).rename(
         "well",
         "top_other_unit",
         "top_other_unit_reads",
+        "top_other_unit_plate",
         "top_other_unit_well",
         "top_other_unit_wells_away",
         "top_other_unit_wells_equally_near",
@@ -1769,6 +1779,7 @@ well_composition = (
             "flagged_unmatched",
             "top_other_unit",
             "top_other_unit_reads",
+            "top_other_unit_plate",
             "top_other_unit_well",
             "top_other_unit_wells_away",
             "top_other_unit_wells_equally_near",

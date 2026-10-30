@@ -254,13 +254,20 @@ def test_report_table_formats_floats_and_marks_rows(tmp_path):
 @pytest.mark.parametrize(
     "homes, expected",
     [
-        ([("p1", "B2")], ("1 well away", "B2", 1, "B2, 1 well away", 1)),
-        ([("p1", "B5")], ("2 wells away", "B5", 2, "B5, 2 wells away", 1)),
-        ([("p1", "F9")], ("over 2 wells away", "F9", 6, "F9, over 2 wells away", 1)),
+        ([("p1", "B2")], ("1 well away", "p1", "B2", 1, "B2, 1 well away", 1)),
+        ([("p1", "B5")], ("2 wells away", "p1", "B5", 2, "B5, 2 wells away", 1)),
+        (
+            [("p1", "F9")],
+            ("over 2 wells away", "p1", "F9", 6, "F9, over 2 wells away", 1),
+        ),
         # a home on this plate wins over one on another
-        ([("p2", "A1"), ("p1", "B2")], ("1 well away", "B2", 1, "B2, 1 well away", 1)),
-        ([("p2", "A1")], (ANOTHER_PLATE, "A1", None, "A1 of p2", 1)),
-        ([], (NOT_ASSAYED, None, None, NOT_ASSAYED, 1)),
+        (
+            [("p2", "A1"), ("p1", "B2")],
+            ("1 well away", "p1", "B2", 1, "B2, 1 well away", 1),
+        ),
+        # off this plate the source well is named with its plate, and nothing is near
+        ([("p2", "A1")], (ANOTHER_PLATE, "p2", "A1", None, "A1 of p2", None)),
+        ([], (NOT_ASSAYED, None, None, None, NOT_ASSAYED, None)),
     ],
 )
 def test_trace_origin(homes, expected):
@@ -270,19 +277,19 @@ def test_trace_origin(homes, expected):
 
 def test_trace_origin_takes_the_nearest_home_on_a_plate():
     """Of several homes on this plate, the nearest is the source."""
-    nearest = ("1 well away", "B4", 1, "B4, 1 well away", 1)
+    nearest = ("1 well away", "p1", "B4", 1, "B4, 1 well away", 1)
     assert trace_origin("p1", "B3", [("p1", "F9"), ("p1", "B4")]) == nearest
 
 
 def test_trace_origin_counts_the_homes_equally_near():
     """Where several homes are equally near, the source is one of them and says so."""
-    origin, source, distance, came_from, n_near = trace_origin(
+    origin, _, source, distance, came_from, n_near = trace_origin(
         "p1", "B3", [("p1", "B4"), ("p1", "B2")]
     )
     assert (origin, source, distance, n_near) == ("1 well away", "B4", 1, 2)
     assert came_from == "B4, 1 well away (or B2)"
     # the source is the first of the tie in the order given, so that it is deterministic
-    assert trace_origin("p1", "B3", [("p1", "B2"), ("p1", "B4")])[1] == "B2"
+    assert trace_origin("p1", "B3", [("p1", "B2"), ("p1", "B4")])[2] == "B2"
 
 
 def test_all_origins_covers_every_traced_origin():

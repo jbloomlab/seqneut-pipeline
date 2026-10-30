@@ -711,7 +711,7 @@ The four thresholds only decide which wells are flagged and warned about.
 
 The output CSVs give what each well was infected with in an `expected_strain`, `expected_barcode`, or `expected_stock` column, according to the `analyze_by` of the analysis. Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`. Where `analyze_by` is not `strain`, the samples CSV may also have a `strain` column, which is checked against the library.
 
-A strain, barcode, or stock can be in more than one well, of one plate or several. Each well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of the plate that it belongs in. Where several of those wells are equally near, the composition CSV counts them in `top_other_unit_wells_equally_near` and the report names them all, the traced well being only one of the candidates.
+A strain, barcode, or stock can be in more than one well, of one plate or several. Each well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of the plate that it belongs in. Where several of those wells are equally near, the composition CSV counts them in `top_other_unit_wells_equally_near` and the report names them all, the traced well being only one of the candidates. Material belonging only on other plates is traced to the first of its wells there, given by `top_other_unit_plate` and `top_other_unit_well`.
 
 An optional `dilution_factor` column in the samples CSV must have the same value for every infected well of the analysis, as their titers are compared. Anything in the library that no well was infected from is reported as not assayed.
 
