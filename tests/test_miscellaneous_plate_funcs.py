@@ -350,14 +350,16 @@ def test_check_discarded_barcodes_rejects_a_list_and_repeats():
 
 
 def test_report_stat_tiles(tmp_path):
-    """Each tile holds its value over its label, escaped, with the caption after."""
+    """Each tile holds its value over its label, escaped, with the captions after."""
     report = PlateReport(title="t")
-    report.stat_tiles({"plates": 2, "a<b": "12 / 36"}, caption="library: x.csv")
+    report.stat_tiles(
+        {"plates": 2, "a<b": "12 / 36"}, captions=["library: x.csv", "by: c<d"]
+    )
     report.write(out := tmp_path / "r.html")
     html = out.read_text()
     assert html.index(">2</div>") < html.index(">plates</div>")
     assert "a&lt;b" in html
-    assert html.index("12 / 36") < html.index("library: x.csv")
+    assert html.index("12 / 36") < html.index("library: x.csv<br>by: c&lt;d")
 
 
 def test_report_sidebar(tmp_path):

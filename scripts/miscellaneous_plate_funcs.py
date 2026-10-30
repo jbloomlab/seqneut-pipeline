@@ -724,14 +724,14 @@ class PlateReport(Report):
         yield
         self._append("</details>")
 
-    def stat_tiles(self, tiles, caption):
-        """Append a row of tiles, each a value over its label, with `caption` below.
+    def stat_tiles(self, tiles, captions):
+        """Append a row of tiles, each a value over its label, with `captions` below.
 
         Args:
             `tiles` (dict)
                 The value of each tile, keyed by its label.
-            `caption` (str)
-                A line of text under the tiles.
+            `captions` (list)
+                Lines of text under the tiles, one per string.
 
         """
         self._append(
@@ -745,7 +745,9 @@ class PlateReport(Report):
                 "</div>"
                 for (label, value) in tiles.items()
             )
-            + f'</div><p style="color: #555">{html.escape(caption)}</p>'
+            + "</div><p>"
+            + "<br>".join(html.escape(c) for c in captions)
+            + "</p>"
         )
 
     def _transform_body(self, blocks):

@@ -594,7 +594,10 @@ report.stat_tiles(
         **({"dilution factor": dilutions[0]} if has_dilution else {}),
         f"{analyze_by}s assayed": f"{int(unit_status['assayed'].sum())} / {_n_units}",
     },
-    caption=f"Viral library: {Path(snakemake.input.viral_library).name}",
+    captions=[
+        f"Viral library: {Path(snakemake.input.viral_library).name}",
+        f"Analyzed by: {analyze_by}",
+    ],
 )
 report.reserve_warnings()
 
