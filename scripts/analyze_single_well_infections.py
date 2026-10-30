@@ -1662,7 +1662,11 @@ if len(expected_barcode_reads) and analyze_by != "barcode":
             .mark_bar(**_bar)
             .encode(
                 panels.value_channel(
-                    "frac_of_expected:Q", title="fraction of the well's expected reads"
+                    "frac_of_expected:Q",
+                    title="fraction of the well's expected reads",
+                    # a well's barcodes divide its expected reads, so the stack is one;
+                    # fixed rather than fit to the data, which rounding can push over one
+                    scale=alt.Scale(domain=[0, 1], nice=False),
                 ),
                 panels.well_axis(well_order, labeled=True),
                 alt.Fill(
