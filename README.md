@@ -660,12 +660,12 @@ discarded_barcodes:
   <barcode>: <reason it is discarded>
 ```
 
-The analyses of miscellaneous plates (currently `analyze_single_well_infections`) set aside the reads that exactly match these barcodes, as only exact matches of the viral library and neutralization standard are counted, and list each barcode with its reason in their reports.
-A discarded barcode must be in neither the viral library nor the neutralization standard set.
+The analyses of miscellaneous plates set aside the reads that exactly match these barcodes.
+A discarded barcode cannot be in either the viral library or the neutralization standard set.
 The neutralization plates do not use this key.
 
 ### analyze_single_well_infections
-An optional key that analyzes miscellaneous plates whose wells were each infected with a single virus of the library (plus the neutralization standard) rather than with the pool.
+An optional key that analyzes miscellaneous plates whose wells were each infected with a single virus of the library rather than with the pool.
 These plates are a QC check on the viral stocks: they check that each stock holds the barcodes it should with little contamination and give a rough estimate of the titer of each virus.
 If you do not have any such plates, leave this key out or set it to null.
 
@@ -690,7 +690,7 @@ analyze_single_well_infections:
 
 The keys are:
 
- - `analyze_by`: what each well was infected from, which is `strain`, `barcode`, or `stock`. Described below.
+ - `analyze_by`: what each well was infected with, which is `strain`, `barcode`, or `stock`. Described below.
  - `miscellaneous_plates`: the plates to analyze together, which must share one `viral_library` and one `neut_standard_set`. Contamination is traced across all of them.
  - `description`: what the experiment was, shown at the top of the report.
  - `max_other_library_frac`: flag a well when more than this fraction of its non-neutralization-standard reads are library barcodes that do not belong in it.
@@ -703,23 +703,19 @@ The keys are:
 
 The four thresholds only decide which wells are flagged and warned about.
 
-`analyze_by` says what kind of thing each well was infected from, and so which column of the viral library assigns each barcode to such a thing: `strain`, `barcode`, or `stock`. The `samples_csv` of every plate of the analysis names that thing for each well in a column of the same name:
+`analyze_by` says what each well was infected with, and so how its barcodes are counted. The `samples_csv` of every plate of the analysis names that for each well in a column of the same name, as does the viral library for each barcode. A blank in that column marks an uninfected well, which should hold only the neutralization standard. `analyze_by` is one of:
 
- - `strain`: the well should hold every barcode of that strain.
- - `barcode`: the well should hold that one barcode and nothing else, so another barcode of the same strain does not belong in it.
- - `stock`: the well should hold every barcode of that tube. The viral library must have a `stock` column giving the tube of every barcode, and the barcodes of a tube must be of one strain. A `stock` column is read only in this mode, so a library can carry one and still be analyzed by `barcode`, where a barcode sharing a tube with the well's own does not belong in it either.
+ - `strain`: the well should hold every barcode of that strain, however many there are.
+ - `barcode`: the well should hold that one barcode and nothing else. Choose this when each barcode of a strain was grown as its own stock and put in its own well.
+ - `stock`: the well should hold every barcode of the stock tube named in its `stock` column. This option is useful when single-barcode and multi-barcode stocks of the same strain are mixed. The viral library must have a `stock` column giving the tube of every barcode, and the barcodes of a tube must be of one strain.
 
-Each barcode of the library therefore belongs to exactly one of these units, which is the well its reads should have come from.
-The output CSVs name what each well was infected from in an `expected_strain`, `expected_barcode`, or `expected_stock` column, after the `analyze_by` of the analysis. Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`; no strain is read off a well's barcodes, so both are what the well should hold rather than what it held. The expected-barcode CSV leaves out the unit and the fraction of the well's expected reads when analyzing by barcode, a well expecting the one barcode it is listed under.
-Where `analyze_by` is not `strain`, the samples CSV may also give a `strain` column, which is checked against the library rather than read, and a well naming a strain must also name what it was infected from.
+The output CSVs give what each well was infected with in an `expected_strain`, `expected_barcode`, or `expected_stock` column, according to the `analyze_by` of the analysis. Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`. Where `analyze_by` is not `strain`, the samples CSV may also have a `strain` column, which is checked against the library.
 
-A blank in that column marks an uninfected well, which should hold only the neutralization standard.
-One strain, barcode, or stock can be in more than one well, of one plate or several. Each such well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of its plate that it belongs in, so material spilled between two wells of the same unit is counted as expected. Where several of those wells are equally near, the composition CSV counts them in `top_other_unit_wells_equally_near` and the report names them all, the traced well being only one of the candidates.
-An optional `dilution_factor` column must have the same value for every infected well of the analysis, as their titers are compared.
-Anything in the library that no well was infected from is reported as not assayed.
+A strain, barcode, or stock can be in more than one well, of one plate or several. Each well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of the plate that it belongs in. Where several of those wells are equally near, the composition CSV counts them in `top_other_unit_wells_equally_near` and the report names them all, the traced well being only one of the candidates.
 
-The titer of a well is its expected barcode reads divided by its neutralization-standard reads, in relative rather than infectious units.
-These titers should be interpreted carefully, as they assume each infection was performed in the linear range (where there is a linear relationship between the amount of input virus and the resulting spike-in normalized counts), which may not be true for every virus.
+An optional `dilution_factor` column in the samples CSV must have the same value for every infected well of the analysis, as their titers are compared. Anything in the library that no well was infected from is reported as not assayed.
+
+The titer of a well is its expected barcode reads divided by its neutralization-standard reads, in relative rather than infectious units. These titers should be interpreted carefully, as they assume each infection was performed in the linear range (where there is a linear relationship between the amount of input virus and the resulting spike-in normalized counts), which may not be true for every virus.
 
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
