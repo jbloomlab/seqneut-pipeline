@@ -188,7 +188,7 @@ COMPOSITION_CATEGORIES = {
 # take the colors their counterparts above are drawn in.
 VALID_READ_CATEGORIES = {
     "expected_reads": "expected barcode",
-    "other_library_reads": "unexpected barcode",
+    "other_library_reads": "other library barcode",
     "neut_standard_reads": "neut standard",
 }
 VALID_READ_COLORS = ["#1b9e77", "#d95f02", "#999999"]
@@ -1158,12 +1158,18 @@ with report.notes("How to read this plot"):
     )
     _valid_labels = list(VALID_READ_CATEGORIES.values())
     report.md(f"""
-        The **second panel** splits every valid barcode read (from the "valid barcode"
-        category in the first panel) into the **{_valid_labels[0]}**, **{_valid_labels[1]}**
-        (another {analyze_by} of the library), and **{_valid_labels[2]}**, as fractions
-        that sum to one. The expected fraction is a rough proxy for the titer of the
-        expected virus and can help with further QC interpretation, especially for low
-        titer strains.
+        The **second panel** classifies every read from the "valid barcode" category in
+        the first panel into the following categories:
+
+         - **{_valid_labels[0]}**: {_EXPECTED_EXPLANATIONS[analyze_by]}.
+         - **{_valid_labels[1]}**: the barcode maps to another {analyze_by} in the
+           library.
+         - **{_valid_labels[2]}**: the barcode is one of the specified neutralization
+           standard barcodes.
+
+        This can be used to quickly identify low titer {analyze_by}s, which have a low
+        fraction of expected barcode reads, and to help with further QC interpretation of
+        contamination issues.
         """)
     _category_labels = list(COMPOSITION_CATEGORIES.values())
     report.md(f"""
@@ -1396,9 +1402,10 @@ else:
             fraction_of_reads=lambda x: x["count"] / x[NON_NEUT_STANDARD_READS],
             # Close enough to a known barcode and it is that barcode misread, so the thing
             # it came off is named; further away the closest match is a coincidence rather
-            # than an origin, so only the distance is given.
+            # than an origin, so it is left unnamed.
             relation=lambda x: (
-                "sequencing error off "
+                x["closest_valid_barcode_hamming_distance"].astype(str)
+                + " nt away from "
                 + x["strain"].where(~x["neut_standard"].astype(bool), "neut standard")
             ).where(
                 x["closest_valid_barcode_hamming_distance"] <= MAX_MISREAD_HAMMING,
