@@ -37,3 +37,5 @@ That run writes over the results of the standard run, so the GitHub Action does 
 The example also has synthetic miscellaneous plates whose wells were each infected with a single virus, analyzed by the `analyze_single_well_infections` entries of [config.yml](config.yml). Example HTML reports can be found under the *Library quality-control* section, in the *Single virus per well infections* subsection. After running the example, check the analysis runs as expected with:
 
     python test_single_well_as_expected.py
+
+The first of those analyses sets `final_viral_library` to [data/viral_libraries/pdmH1N1_lib2023_loes_final.csv](data/viral_libraries/pdmH1N1_lib2023_loes_final.csv), the library carried forward after this quality control. It holds the barcodes of [pdmH1N1_lib2023_loes.csv](data/viral_libraries/pdmH1N1_lib2023_loes.csv) less a few dropped ones, so that the reports mark which barcodes and strains were kept.
