@@ -309,6 +309,13 @@ samples = pd.concat(
 # A well that names no unit was left uninfected. A blank is the record here rather than a
 # value that has to be interpreted.
 samples["is_empty"] = samples["expected"].isna()
+# Every well blank is more likely the wrong column or `analyze_by` than a plate left wholly
+# uninfected, and leaves nothing to analyze either way.
+if samples["is_empty"].all():
+    raise ValueError(
+        f"every well of {single_well} is blank in its {unit_column!r} column, so no well "
+        "was infected and there is nothing to analyze"
+    )
 samples[["row", "column"]] = [well_position(well) for well in samples["well"]]
 
 if samples.duplicated(["plate", "well"]).any():
@@ -320,6 +327,14 @@ samples = samples.sort_values(["plate", "column", "row"]).reset_index(drop=True)
 samples["position"] = samples.groupby("plate").cumcount()
 
 if has_dilution:
+    _no_dilution = samples[~samples["is_empty"] & samples["dilution_factor"].isna()]
+    if len(_no_dilution):
+        raise ValueError(
+            f"the samples CSVs of {single_well} give no 'dilution_factor' for the infected "
+            "wells "
+            + ", ".join(f"{r.plate}:{r.well}" for r in _no_dilution.itertuples())
+            + ", though their plates give one"
+        )
     # over the infected wells only, as an empty well has no titer to compare
     dilutions = sorted(samples.loc[~samples["is_empty"], "dilution_factor"].unique())
     # Every titer below is a ratio to the same fixed spike, so two wells are comparable only
@@ -1394,13 +1409,16 @@ else:
         )
         .assign(
             fraction_of_reads=lambda x: x["count"] / x[NON_NEUT_STANDARD_READS],
-            # Close enough to a known barcode and it is that barcode misread, so the thing
-            # it came off is named; further away the closest match is a coincidence rather
-            # than an origin, so it is left unnamed.
+            # Close enough to a known barcode and it is that barcode misread, so the unit
+            # it came off is named, as the charts label it; further away the closest match
+            # is a coincidence rather than an origin, so it is left unnamed.
             relation=lambda x: (
                 x["closest_valid_barcode_hamming_distance"].astype(str)
                 + " nt away from "
-                + x["strain"].where(~x["neut_standard"].astype(bool), "neut standard")
+                + x["closest_valid_barcode"]
+                .map(barcode_unit)
+                .map(unit_label)
+                .where(~x["neut_standard"].astype(bool), "neut standard")
             ).where(
                 x["closest_valid_barcode_hamming_distance"] <= MAX_MISREAD_HAMMING,
                 x["closest_valid_barcode_hamming_distance"].astype(str)
