@@ -1,0 +1,4 @@
+plate,well,expected_barcode,expected_strain,dilution_factor,n_expected_barcodes,discarded_reads,neut_standard_reads,expected_reads,other_library_reads,unmatched_near_expected_reads,unmatched_far_expected_reads,titer,too_shallow,titer_imprecise,flagged_other_library,flagged_unmatched,top_other_unit,top_other_unit_reads,top_other_unit_plate,top_other_unit_well,top_other_unit_wells_away,top_other_unit_wells_equally_near,top_other_unit_origin
+single_well_plate_3,B2,CGTAATACATTTAAGA,A/England/220200318/2022,1,1,0,400,3000,0,0,0,7.5,False,False,False,False,,,,,,,
+single_well_plate_3,B3,GACCAACTGTGGTACA,A/England/220200318/2022,1,1,0,400,3000,60,0,0,7.5,False,False,True,False,CGTAATACATTTAAGA,60,single_well_plate_3,B2,1,1,1 well away
+single_well_plate_3,B4,CCAGTTCCCTTCGATG,A/Ghana/138/2020,1,1,0,400,3000,0,0,0,7.5,False,False,False,False,,,,,,,

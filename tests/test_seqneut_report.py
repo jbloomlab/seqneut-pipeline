@@ -214,6 +214,62 @@ def test_blocks_keep_their_order(tmp_path, chart):
     assert html.index("first") < html.index("chart_1") < html.index("last")
 
 
+def test_a_reserved_slot_holds_its_place(tmp_path):
+    """Content filled into a slot appears where the slot was reserved, not where it is filled."""
+    report = Report(title="t")
+    report.md("# first")
+    slot = report._reserve_slot()
+    report.md("# last")
+    report._fill_slot(slot, "<p>filled</p>")
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert html.index("first") < html.index("filled") < html.index("last")
+
+
+def test_an_unfilled_slot_adds_no_content(tmp_path):
+    """A slot nothing is filled into contributes no content of its own."""
+    report = Report(title="t")
+    report.md("# only")
+    report._reserve_slot()
+    report.write(out := tmp_path / "r.html")
+
+    expected = Report(title="t")
+    expected.md("# only")
+    expected.write(other := tmp_path / "other.html")
+
+    # the empty block still joins with a newline, which renders as nothing
+    assert out.read_text().replace("\n", "") == other.read_text().replace("\n", "")
+
+
+def test_transform_body_wraps_the_whole_report(tmp_path):
+    """A subclass's `_transform_body` decides the blocks written, and runs once."""
+
+    class Wrapped(Report):
+        def _transform_body(self, blocks):
+            return ["<nav>sidebar_marker</nav>", *blocks]
+
+    report = Wrapped(title="t")
+    report.md("# content_marker")
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert html.count("sidebar_marker") == 1
+    assert html.index("sidebar_marker") < html.index("content_marker")
+
+
+def test_transform_body_does_not_disturb_later_writes(tmp_path):
+    """Writing twice gives the same bytes, so `_transform_body` does not mutate the blocks."""
+
+    class Wrapped(Report):
+        def _transform_body(self, blocks):
+            return ["<nav>sidebar_marker</nav>", *blocks]
+
+    report = Wrapped(title="t")
+    report.md("# content_marker")
+    report.write(first := tmp_path / "first.html")
+    report.write(second := tmp_path / "second.html")
+    assert first.read_text() == second.read_text()
+
+
 def test_report_is_reproducible(tmp_path, chart, fig):
     """The same report written twice gives the same bytes.
 

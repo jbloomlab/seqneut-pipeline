@@ -1,0 +1,21 @@
+plate,well,n_expected_barcodes,expected_reads,neut_standard_reads,other_library_reads,unmatched_near_expected_reads,unmatched_far_expected_reads,discarded_reads,flagged_other_library,flagged_unmatched,too_shallow,titer_imprecise,titer,top_other_unit_origin,absent_barcodes,n_expected_barcodes_final,kept_in_final_library
+single_well_plate_1,B2,4,3000,400,0,0,0,0,False,False,False,False,7.5,,,4.0,all barcodes
+single_well_plate_1,B3,4,3000,400,60,0,0,0,True,False,False,False,7.5,1 well away,,4.0,all barcodes
+single_well_plate_1,B4,4,3000,400,40,0,0,0,True,False,False,False,7.5,over 2 wells away,,4.0,all barcodes
+single_well_plate_1,B5,4,3000,400,0,30,200,0,False,True,False,False,7.5,,,4.0,all barcodes
+single_well_plate_1,B6,3,3000,400,0,0,50,500,False,False,False,False,7.5,,,3.0,all barcodes
+single_well_plate_1,B7,0,0,400,20,0,0,0,True,False,True,False,,2 wells away,,,
+single_well_plate_1,D7,3,3000,400,0,0,0,0,False,False,False,False,7.5,,,3.0,all barcodes
+single_well_plate_1,C2,3,3000,400,50,0,0,0,True,False,False,False,7.5,another plate here,,2.0,some barcodes
+single_well_plate_1,C3,3,3000,400,30,0,0,0,True,False,False,False,7.5,not assayed here,,3.0,all barcodes
+single_well_plate_1,C4,3,3000,400,0,0,0,0,False,False,False,False,7.5,,GATCCGTACTTTGATT,0.0,none
+single_well_plate_1,C5,3,450,50,0,0,0,0,False,False,True,True,9.0,,,3.0,all barcodes
+single_well_plate_2,B2,3,3000,400,0,0,0,0,False,False,False,False,7.5,,,3.0,all barcodes
+single_well_plate_2,B3,3,3000,400,40,0,0,0,True,False,False,False,7.5,another plate here,,3.0,all barcodes
+single_well_plate_2,B5,4,3000,400,0,0,0,0,False,False,False,False,7.5,,,4.0,all barcodes
+single_well_plate_3,B2,1,3000,400,0,0,0,0,False,False,False,False,7.5,,,,
+single_well_plate_3,B3,1,3000,400,60,0,0,0,True,False,False,False,7.5,1 well away,,,
+single_well_plate_3,B4,1,3000,400,0,0,0,0,False,False,False,False,7.5,,,,
+single_well_plate_4,B2,2,3000,400,0,0,0,0,False,False,False,False,7.5,,,,
+single_well_plate_4,B3,1,3000,400,60,0,0,0,True,False,False,False,7.5,1 well away,,,
+single_well_plate_4,A1,2,3000,400,0,0,0,0,False,False,False,False,7.5,,,,

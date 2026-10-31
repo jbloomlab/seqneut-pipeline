@@ -1,0 +1,4 @@
+well,strain,fastq,dilution_factor
+B2,A/Chester/5355/2022,fastqs/single_well/single_well_plate_2/B2.fastq.gz,1
+B3,A/Cote_DIvoire/1448/2021,fastqs/single_well/single_well_plate_2/B3.fastq.gz,1
+B5,A/Brisbane/02/2018,fastqs/single_well/single_well_plate_2/B5.fastq.gz,1

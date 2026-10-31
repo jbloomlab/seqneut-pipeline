@@ -21,10 +21,12 @@ description: |
 viral_libraries:
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
   H3N2_lib2023_Kikawa: data/viral_libraries/2023_H3N2_Kikawa.csv
+  pdmH1N1_lib2023_loes_final: data/viral_libraries/pdmH1N1_lib2023_loes_final.csv
 
-# Optional checks on each library in `viral_libraries`, one entry per library. These two
-# have only the `barcode` and `strain` that the pipeline itself reads, so there is nothing
-# else to check; a real project may describe other columns as well.
+# Optional checks on each library in `viral_libraries`, one entry per library. These
+# describe only the `barcode` and `strain` the checks apply to; `stock` is left out, as
+# it describes the tube rather than the strain or the barcode and so fits neither the
+# per-strain nor the per-barcode checks. A real project may describe other columns as well.
 viral_library_validations:
   pdmH1N1_lib2023_loes: &library_validations
     columns:
@@ -33,6 +35,7 @@ viral_library_validations:
       barcode: {nulls: false, unique: barcode, matches: ['^[ACGT]{16}$']}
       strain: {nulls: false, matches: ['^\S+$']}
   H3N2_lib2023_Kikawa: *library_validations
+  pdmH1N1_lib2023_loes_final: *library_validations
 
 viral_strain_plot_order: data/viral_strain_plot_order.csv
 
@@ -73,3 +76,39 @@ sera_override_defaults:
         max_fold_change_from_median: 4
       titer_as: nt50
 
+# Barcodes in every well that no analysis of the miscellaneous plates counts.
+discarded_barcodes:
+  GGCAGATTTTCATATT: made up for this example
+
+# Analyses of the miscellaneous plates below, each reported on one page of the docs.
+analyze_single_well_infections:
+  single_well_strains:
+    analyze_by: strain  # the samples CSVs name a strain per well in a `strain` column
+    miscellaneous_plates: [single_well_plate_1, single_well_plate_2]
+    description: |
+      Synthetic plates of one strain per well, built so that each well holds one thing
+      the analysis has to get right.
+    final_viral_library: pdmH1N1_lib2023_loes_final
+    # the thresholds wells are flagged by, here at their defaults
+    <<: &single_well_flag_thresholds
+      max_other_library_frac: 0.005
+      max_unmatched_frac: 0.02
+      min_parsed_reads_per_well: 1000
+      min_neut_standard_reads_for_titer: 100
+  single_well_barcodes:
+    analyze_by: barcode
+    miscellaneous_plates: [single_well_plate_3]
+    description: |
+      A synthetic plate of one barcode per well, two wells of which hold barcodes that
+      share a tube, the second holding some of the first's. Analyzing by barcode ignores
+      the tube, so that sibling is unexpected material here.
+    # charted with the wells along `x`, so that both orientations are exercised
+    strain_axis: x
+    <<: *single_well_flag_thresholds
+  single_well_stocks:
+    analyze_by: stock
+    miscellaneous_plates: [single_well_plate_4]
+    description: |
+      A synthetic plate of one tube per well: two wells are infected from a tube holding
+      two barcodes, and another from a second tube of the same strain.
+    <<: *single_well_flag_thresholds
