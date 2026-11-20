@@ -1,0 +1,4 @@
+pool,analysis_dilution,linear_range_dilutions,linear_range_strict,analysis_wells_given,n_strains
+pool_plate_1,8,4 8 16,True,False,6
+pool_plate_2,8,4 8 16,True,False,3
+pool_plate_3,8,,False,True,6

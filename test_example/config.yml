@@ -19,6 +19,8 @@ description: |
   list of all contributors to the pipeline.
 
 viral_libraries:
+  # the library the synthetic pool plates are made from
+  pool_library: data/viral_libraries/pool_library.csv
   pdmH1N1_lib2023_loes: data/viral_libraries/pdmH1N1_lib2023_loes.csv
   H3N2_lib2023_Kikawa: data/viral_libraries/2023_H3N2_Kikawa.csv
   pdmH1N1_lib2023_loes_final: data/viral_libraries/pdmH1N1_lib2023_loes_final.csv
@@ -28,6 +30,14 @@ viral_libraries:
 # it describes the tube rather than the strain or the barcode and so fits neither the
 # per-strain nor the per-barcode checks. A real project may describe other columns as well.
 viral_library_validations:
+  # the pool library carries per-strain columns of its own, which are checked as such;
+  # `stock` is left out for the reason above, as two stocks of one strain differ in it
+  pool_library:
+    columns:
+      barcode: {nulls: false, unique: barcode, matches: ['^[ACGT]{16}$']}
+      strain: {nulls: false, matches: ['^\S+$']}
+      subgroup: {nulls: false}
+      passage_history: {nulls: false}
   pdmH1N1_lib2023_loes: &library_validations
     columns:
       # uppercase is required, not merely conventional: the uniqueness check compares
@@ -112,3 +122,52 @@ analyze_single_well_infections:
       A synthetic plate of one tube per well: two wells are infected from a tube holding
       two barcodes, and another from a second tube of the same strain.
     <<: *single_well_flag_thresholds
+
+# Analyses of the pool plates above, each reported on one page of the docs.
+analyze_pools:
+  pool_whole_library:
+    analyze_by: strain
+    pooled_by_equal_volume: true
+    miscellaneous_plates: [pool_plate_1]
+    description: |
+      A synthetic pool of the whole library, infected over a serial dilution that is
+      saturated at its concentrated end. The thresholds are at their defaults, so those
+      decide which wells are trusted and which dilution is read.
+    # the thresholds wells and dilution windows are judged by, here at their defaults
+    <<: &pool_thresholds
+      min_avg_barcode_count_per_well: 500
+      min_neut_standard_frac_per_well: 0.001
+      linearity_window_dilutions: 3
+      linearity_slope_tol: 0.3
+      linearity_slope_z: 3
+      max_stock_share_ratio: 3
+
+  pool_subgroup_by_stock:
+    analyze_by: stock
+    pooled_by_equal_volume: true
+    miscellaneous_plates: [pool_plate_2]
+    description: |
+      A synthetic pool of just the `group_a` strains, measured per stock: one strain is
+      held as two tubes that differ severalfold, which is what the divergence warning is
+      for. Some reads come from a strain the pool was not made from.
+    <<: *pool_thresholds
+    # this plate names the pool of each well, as a plate holding several pools must
+    pool_wells:
+      pool: subgroup_pool
+    pool_members:
+      subgroup: group_a
+    addtl_viral_cols_to_show: [subgroup, passage_history]
+
+  pool_no_linear_range:
+    analyze_by: barcode
+    # the two stocks of a strain were not pipetted equally into this pool
+    pooled_by_equal_volume: false
+    miscellaneous_plates: [pool_plate_3]
+    description: |
+      A synthetic pool whose counts never fall as it is diluted, so no window of dilutions is
+      within tolerance of the ideal slope. The analysis would stop there, and reads it only
+      because `linear_range_wells` names the wells to use; it reports no titer, as there is
+      no fit over those wells to take one from.
+    <<: *pool_thresholds
+    # a well is named with its plate, the plates of a pool naming their wells alike
+    linear_range_wells: ["pool_plate_3:A3", "pool_plate_3:B3"]

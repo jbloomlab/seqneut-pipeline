@@ -38,4 +38,10 @@ The example also has synthetic miscellaneous plates whose wells were each infect
 
     python test_single_well_as_expected.py
 
+The example also has synthetic miscellaneous plates infected with a pool over a serial dilution, analyzed by the `analyze_pools` entries of [config.yml](config.yml). Example HTML reports can be found under the *Library quality-control* section, in the *Pool composition* subsection. After running the example, check the analyses measure what was planted with:
+
+    python test_pool_as_expected.py
+
+Those plates are built by [fastqs/pool/make_pool_fastqs.py](fastqs/pool/make_pool_fastqs.py), which writes their library, FASTQs, samples CSVs, and the expected answers from one plan, so the two cannot drift apart. One pool is measured per strain and configured with nothing but the required keys; one is a subpool measured per stock, holding a strain whose two tubes differ severalfold; and one never responds to dilution, so it is read only because `linear_range_wells` names its wells, and reports no titer.
+
 The first of those analyses sets `final_viral_library` to [data/viral_libraries/pdmH1N1_lib2023_loes_final.csv](data/viral_libraries/pdmH1N1_lib2023_loes_final.csv), the library carried forward after this quality control. It holds the barcodes of [pdmH1N1_lib2023_loes.csv](data/viral_libraries/pdmH1N1_lib2023_loes.csv) less a few dropped ones, so that the reports mark which barcodes and strains were kept.

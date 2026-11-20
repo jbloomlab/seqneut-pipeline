@@ -32,3 +32,21 @@ miscellaneous_plates:
   single_well_plate_4:
     <<: *single_well_plate
     samples_csv: data/miscellaneous_plates/single_well_plate_4.csv
+
+  # Synthetic plates infected with a pool over a serial dilution. The first two hold a
+  # pool that saturates at its concentrated end and then responds to dilution; the third
+  # never clearly responds, so its wells have to be named.
+  pool_plate_1: &pool_plate
+    date: 2023-08-03
+    viral_library: pool_library
+    neut_standard_set: loes2023
+    samples_csv: data/miscellaneous_plates/pool_plate_1.csv
+    illumina_barcode_parser_params:
+      upstream2: GCTACA
+      upstream2_mismatch: 1
+  pool_plate_2:
+    <<: *pool_plate
+    samples_csv: data/miscellaneous_plates/pool_plate_2.csv
+  pool_plate_3:
+    <<: *pool_plate
+    samples_csv: data/miscellaneous_plates/pool_plate_3.csv

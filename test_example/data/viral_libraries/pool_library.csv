@@ -1,0 +1,9 @@
+barcode,strain,stock,subgroup,passage_history
+AAAGCGGCACTTGTGA,A/alpha/1/2020,A/alpha/1/2020_stock1,group_a,cell
+AGTGTTCCCCACGCCG,A/alpha/2/2020,A/alpha/2/2020_stock1,group_a,cell
+CTTGGGTCTTCTGTGT,A/alpha/2/2020,A/alpha/2/2020_stock2,group_a,cell
+TGTTCGCGTGGTGCTG,A/alpha/3/2020,A/alpha/3/2020_stock1,group_a,egg
+AGACAAAGCACGCCAT,A/beta/1/2021,A/beta/1/2021_stock1,group_b,cell
+AAGGCCAAAAAAAGGC,A/beta/2/2021,A/beta/2/2021_stock1,group_b,egg
+CCATACCAAGAGGTAG,A/beta/2/2021,A/beta/2/2021_stock2,group_b,egg
+TAGTCTCAGAATCTTG,A/beta/3/2021,A/beta/3/2021_stock1,group_b,cell

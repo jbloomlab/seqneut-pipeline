@@ -33,3 +33,5 @@ results/**
 !results/miscellaneous_plates/*/*fates.csv
 
 !results/single_well_infections/*.csv
+
+!results/pool_composition/*.csv

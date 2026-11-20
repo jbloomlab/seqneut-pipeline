@@ -1,0 +1,5 @@
+barcode,mean_fraction,strain,stock,subgroup,passage_history,stock_measured_share,stock_divided_share
+AGTGTTCCCCACGCCG,0.6154,A/alpha/2/2020,A/alpha/2/2020_stock1,group_a,cell,0.6154,0.3462
+AAAGCGGCACTTGTGA,0.1538,A/alpha/1/2020,A/alpha/1/2020_stock1,group_a,cell,0.1538,0.1538
+TGTTCGCGTGGTGCTG,0.1538,A/alpha/3/2020,A/alpha/3/2020_stock1,group_a,egg,0.1538,0.1538
+CTTGGGTCTTCTGTGT,0.07692,A/alpha/2/2020,A/alpha/2/2020_stock2,group_a,cell,0.07692,0.3462
