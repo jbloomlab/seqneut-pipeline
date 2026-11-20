@@ -9,6 +9,7 @@ import matplotlib.style
 import neutcurve
 import numpy
 import pandas as pd
+from miscellaneous_plate_charts import fate_colors, order_fates
 from neutcurve.colorschemes import CBMARKERS, CBPALETTE
 from seqneut_funcs import yaml_rt
 from seqneut_report import Report
@@ -165,6 +166,8 @@ fates = (
 
 assert len(fates) == len(fates.drop_duplicates())
 
+fate_order, fates["fate_order"] = order_fates(fates["fate"])
+
 serum_replicates = sorted(fates["serum_replicate"].unique())
 sample_wells = list(
     fates.sort_values(["serum_replicate", dilution_factor_or_concentration])[
@@ -192,8 +195,8 @@ fates_chart = (
             title=None,
             sort=sample_wells,
         ),
-        alt.Color("fate", sort=sorted(fates["fate"].unique(), reverse=True)),
-        alt.Order("fate", sort="descending"),
+        alt.Color("fate", sort=fate_order, scale=fate_colors(fate_order)),
+        alt.Order("fate_order:Q"),
         tooltip=fates.columns.tolist(),
     )
     .mark_bar(height={"band": 0.85})
