@@ -725,9 +725,17 @@ def _headline(text, shows, verb, n):
     return f"{noun} {text}", noun
 
 
-def _warnings_html(warnings):
-    """HTML for `warnings` under a heading, each a line that opens its table."""
-    return f"<style>{_WARNINGS_CSS}</style><h3>Warnings</h3>" + "".join(
+def _warnings_html(warnings, heading=True):
+    """HTML for `warnings`, each a line that opens its table.
+
+    `heading` writes them under a "Warnings" heading, for the block that gathers those of
+    the report as a whole. The warnings of one section carry none: they open the section
+    they are about, where a heading would separate them from it.
+
+    """
+    return (
+        f"<style>{_WARNINGS_CSS}</style>" + ("<h3>Warnings</h3>" if heading else "")
+    ) + "".join(
         f'<details class="warning"><summary><b>{len(details)}</b> '
         f'{html.escape(said)} <span class="toggle"><span class="show">show'
         f'</span><span class="hide">hide</span> {noun}</span></summary>'
@@ -785,7 +793,7 @@ class PlateReport(Report):
         self._warnings.append(_logged_warning(text, details, shows, note, verb))
 
     def section_warnings(self, warnings):
-        """Append `warnings` here, under their own heading, rather than in the slot.
+        """Append `warnings` here, without a heading, rather than in the report's slot.
 
         For warnings about one section, which are read with it. Each is a dict of the
         arguments of `warning`, and nothing is appended if there are none.
@@ -794,7 +802,29 @@ class PlateReport(Report):
         warnings = [_logged_warning(**w) for w in warnings]
         if warnings:
             self._section_warnings += warnings
-            self._append(_warnings_html(warnings))
+            self._append(_warnings_html(warnings, heading=False))
+
+    def reserve_section_warnings(self):
+        """Leave a slot for the warnings of the section starting here.
+
+        Returns a token for `fill_section_warnings`. A section's warnings are found as it
+        is built but belong at the top of it, where they are read before the tables and
+        charts they qualify.
+
+        """
+        return self._reserve_slot()
+
+    def fill_section_warnings(self, token, warnings):
+        """Write `warnings` into the slot `reserve_section_warnings` returned `token` for.
+
+        Each is a dict of the arguments of `warning`; the slot is left empty where there
+        are none.
+
+        """
+        warnings = [_logged_warning(**w) for w in warnings]
+        if warnings:
+            self._section_warnings += warnings
+            self._fill_slot(token, _warnings_html(warnings, heading=False))
 
     @property
     def warnings(self):

@@ -485,8 +485,9 @@ def test_report_section_warnings(tmp_path):
     report.md("## After")
     report.write(out := tmp_path / "r.html")
     html = out.read_text()
-    assert html.count(">Warnings</h3>") == 1
-    assert html.index(">Titers</h2>") < html.index(">Warnings</h3>")
+    # no heading of their own: they read as part of the section they are added to
+    assert ">Warnings</h3>" not in html
+    assert html.index(">Titers</h2>") < html.index("<b>2</b> wells with zero titer")
     assert html.index("<b>2</b> wells with zero titer") < html.index(
         "absent from &lt;log&gt;"
     )
@@ -496,6 +497,45 @@ def test_report_section_warnings(tmp_path):
         < html.index(">After</h2>")
     )
     assert len(report.warnings) == 1
+
+
+def test_report_section_warnings_fill_a_slot_left_at_the_section_top(tmp_path):
+    """A section's warnings are written above the content they qualify, not below it."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.md("## Titers")
+    slot = report.reserve_section_warnings()
+    report.md("the table a reader sees the warning against")
+    # found while building the section, but belonging at the top of it
+    report.fill_section_warnings(
+        slot,
+        [{"text": "with zero titer", "details": pd.DataFrame({"well": ["A1"]})}],
+    )
+    report.md("## After")
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert ">Warnings</h3>" not in html
+    assert (
+        html.index(">Titers</h2>")
+        < html.index("<b>1</b> well with zero titer")
+        < html.index("the table a reader sees the warning against")
+        < html.index(">After</h2>")
+    )
+    assert len(report.warnings) == 1
+
+
+def test_report_section_warnings_leave_an_unused_slot_empty(tmp_path):
+    """A section that finds no warning writes nothing where its slot was left."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.md("## Titers")
+    slot = report.reserve_section_warnings()
+    report.fill_section_warnings(slot, [])
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert ">Warnings</h3>" not in html
+    assert "warning" not in html
+    assert report.warnings == []
 
 
 def test_table_html_headers_wrap(tmp_path):

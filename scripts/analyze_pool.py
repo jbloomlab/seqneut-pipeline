@@ -366,9 +366,15 @@ with report.notes("What each fate means"):
 
 # --- which wells measure the pool ---------------------------------------------------------
 
-report.md(f"""
+report.md("""
     ## Barcode level QC
+    """)
 
+# before the section's text, which a reader otherwise has to get past to learn that
+# something needs their attention
+_barcode_qc_warnings_slot = report.reserve_section_warnings()
+
+report.md(f"""
     Each well needs to have enough barcode counts to accurately assess the composition of
     the pool. A well fails if it averages fewer than
     {pool_config["min_avg_barcode_count_per_well"]} counts per barcode.
@@ -559,14 +565,18 @@ report.chart(
     .configure_axis(grid=False)
     .configure_axisX(labelOverlap="greedy")
 )
-report.section_warnings(barcode_qc_warnings)
+report.fill_section_warnings(_barcode_qc_warnings_slot, barcode_qc_warnings)
 
 
 # --- the linear range of the dilution series ----------------------------------------------
 
-report.md(f"""
+report.md("""
     ## The linear range of the dilution series
+    """)
 
+_linear_range_warnings_slot = report.reserve_section_warnings()
+
+report.md(f"""
     The linear range for a pool is determined by examining how the fraction of
     neutralization standard counts changes across the dilution series. At high
     concentrations of the viral pool (low dilution factor), it is possible to saturate the
@@ -1016,14 +1026,18 @@ if len(failing_analysis):
         }
     )
 
-report.section_warnings(linear_range_warnings)
+report.fill_section_warnings(_linear_range_warnings_slot, linear_range_warnings)
 
 
 # --- invalid and discarded barcodes -------------------------------------------------------
 
-report.md(f"""
+report.md("""
     ## Pool level QC
+    """)
 
+_pool_qc_warnings_slot = report.reserve_section_warnings()
+
+report.md(f"""
     The following table classifies the barcodes of all reads that came from the chosen
     dilution factor wells. Reads with barcodes within {MAX_MISREAD_HAMMING} nucleotide of
     an expected barcode is likely sequencing error where as those further away may
@@ -1110,9 +1124,10 @@ if len(non_members):
         analysis_counts.loc[analysis_counts["barcode"].isin(members), "count"].sum()
     )
     total = member_reads + int(non_members["count"].sum())
-    # appended here rather than gathered at the top: contamination is what this section
-    # classifies the reads for, so the warning is read with that classification
-    report.section_warnings(
+    # slotted into this section rather than the report's block: contamination is what the
+    # section classifies the reads for, so the warning is read with that classification
+    report.fill_section_warnings(
+        _pool_qc_warnings_slot,
         [
             {
                 "text": "detected",
@@ -1131,7 +1146,7 @@ if len(non_members):
                     "fraction above."
                 ),
             }
-        ]
+        ],
     )
 
 
@@ -1209,9 +1224,13 @@ several_barcodes = (
     pool_by != "barcode" and within_unit.groupby("unit")["barcode"].size().max() > 1
 )
 
-report.md(f"""
+report.md("""
     ### Pool composition
+    """)
 
+_composition_warnings_slot = report.reserve_section_warnings()
+
+report.md(f"""
     A perfectly balanced pool would have equal representation from each {pool_by},
     represented by the red dashed line on the barplot below. The degree of variation from
     this equal share should be assessed for each {pool_by} to determine whether and how to
@@ -1268,9 +1287,10 @@ if len(absent):
 if pool_by == "stock" and equal_volume:
     diverging = diverging_stocks(shares, member_library, max_stock_share_ratio)
     if len(diverging):
-        # appended here rather than gathered at the top: it is about the shares this
-        # subsection plots, and is read against them
-        report.section_warnings(
+        # slotted into this subsection rather than the report's block: it is about the
+        # shares the subsection plots, and is read against them
+        report.fill_section_warnings(
+            _composition_warnings_slot,
             [
                 {
                     "text": (
@@ -1295,7 +1315,7 @@ if pool_by == "stock" and equal_volume:
                         "weakest stock has no reads at all."
                     ),
                 }
-            ]
+            ],
         )
 
 
