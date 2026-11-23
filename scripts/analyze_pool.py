@@ -656,6 +656,22 @@ odds_axis = alt.Y(
     title="neutralization standard odds, frac / (1 - frac)",
 )
 
+
+def ideal_height_over(window):
+    """The height a line of the ideal slope takes to pass through `window`'s wells.
+
+    The intercept of `IDEAL_SLOPE` through the mean of the wells of `window` on log-log
+    axes, which is what the odds of the undiluted pool would be if the pool responded to
+    dilution ideally over that window.
+
+    """
+    in_window = fittable_wells[fittable_wells["dilution_factor"].isin(window)]
+    return (
+        in_window["neut_standard_odds"].map(math.log10)
+        - IDEAL_SLOPE * in_window["dilution_factor"].map(math.log10)
+    ).mean()
+
+
 # The titer: how much virus the undiluted pool holds against the standard. The standard is
 # the same spike-in in every well, so the viral-to-standard ratio measures the pool in units
 # that do not depend on sequencing depth, and multiplying by the dilution recovers the
@@ -665,19 +681,59 @@ if chosen.titer_window is None:
     ideal_intercept = None
     titer_vs_neut_standard = None
 else:
-    in_window = fittable_wells[
-        fittable_wells["dilution_factor"].isin(chosen.titer_window)
-    ]
-    ideal_intercept = (
-        in_window["neut_standard_odds"].map(math.log10)
-        - IDEAL_SLOPE * in_window["dilution_factor"].map(math.log10)
-    ).mean()
+    ideal_intercept = ideal_height_over(chosen.titer_window)
     # The intercept is the odds of the undiluted pool, and the titer is how much virus that
     # is per unit of standard, which is the reciprocal.
     titer_vs_neut_standard = 10**-ideal_intercept
 
 
-series_layers = [
+def ideal_line(dilutions, intercept):
+    """Where a line of the ideal slope and height `intercept` sits at each of `dilutions`.
+
+    The slope is fixed at `IDEAL_SLOPE` rather than fit, so this is what the odds would do
+    if every dilution step divided the viral counts by that step; only the height is fit.
+    Every dilution asked for is returned, the line being cut to the axis by the mark's own
+    clipping: dropping the points that fall outside the odds the wells set would shorten
+    the line to its endpoints inside them instead of running it to the edge of the plot.
+
+    """
+    line = pd.DataFrame({"dilution_factor": sorted(set(dilutions))}).assign(
+        neut_standard_odds=lambda x: x["dilution_factor"].map(
+            lambda d: 10 ** (intercept + IDEAL_SLOPE * math.log10(d))
+        )
+    )
+    return narrow_for_altair(line)
+
+
+series_layers = []
+
+if ideal_intercept is not None:
+    # A checkbox rather than an entry in the legend the windows are selected from: the
+    # ideal line belongs to whichever window is selected rather than being one more window
+    # to pick, so it is shown or hidden on its own. Off by default, so the plot opens on
+    # the wells and the fits alone.
+    ideal_param_name = "ideal_slope_line"
+    ideal_shown = alt.param(
+        name=ideal_param_name,
+        value=False,
+        bind=alt.binding_checkbox(name="ideal slope line "),
+    )
+    # Dashed, where the fits to the windows are solid: it is the slope the assay should
+    # have rather than anything measured from the wells, and a reader comparing a fit
+    # against it should not have to tell them apart by color alone. The dash is longer than
+    # the chosen-dilution rule's, so the two do not read as the same annotation.
+    ideal_dash = [6, 3]
+    # One line per window rather than one path through every window's points. A line mark
+    # draws a single connected path through the rows behind it, and only a grouping channel
+    # splits it; the fits are split by the color they carry, which these have none of, being
+    # black. Without this, selecting two windows joins their lines end to end, running the
+    # path back across the series to start the next.
+    ideal_group = alt.Detail("window:N")
+
+# the ideal lines, built per window once the windows are fit and the selection exists
+ideal_layers = []
+
+series_layers += [
     # every well is drawn, but the limits come from the wells that are fit, so a failing
     # well far off the scale is clipped rather than compressing all the others
     alt.Chart(
@@ -783,6 +839,24 @@ if windows and chosen_label is not None:
     # selected, so that comparing two compares where each would put the whole series.
     window_extensions = fits_frame(lambda w: all_dilutions)
 
+    # The ideal line of each window, at the height that carries the ideal slope through
+    # that window's wells, so that selecting a window draws the reference its own fit is to
+    # be read against rather than one pinned to the window the titer came from.
+    def ideal_frame(dilutions_of):
+        """Every window's ideal line, over the dilutions `dilutions_of` gives each."""
+        return pd.concat(
+            [
+                ideal_line(dilutions_of(w), ideal_height_over(w["window"])).assign(
+                    window=window_label(w)
+                )
+                for w in windows
+            ],
+            ignore_index=True,
+        )
+
+    ideal_fits = ideal_frame(lambda w: w["window"])
+    ideal_extensions = ideal_frame(lambda w: all_dilutions)
+
     # the domain names every window, so that a window keeps its color however many are
     # selected and the legend lists them all to click
     window_fill = alt.Color(
@@ -818,6 +892,45 @@ if windows and chosen_label is not None:
         # string; the label is dilutions and a word, so it holds none of its own
         f": datum.window === '{chosen_label}'"
     )
+    # Only while a single window is drawn. The line is the reference that one fit is read
+    # against, and one per window at once is several dashed lines at several heights
+    # competing with the fits they are meant to qualify rather than a reference. An empty
+    # store falls back to the window the composition is read from, which is a single window
+    # too, so the line is there on load.
+    one_window_selected = "length(data('window_fit_store')) <= 1"
+
+    if ideal_intercept is not None:
+        ideal_layers = [
+            # Behind the fits and the wells, being the reference they are read against.
+            # Three filters apply: the checkbox shows it at all, the count keeps it to a
+            # single window, and the selection picks whose it is.
+            alt.Chart(narrow_for_altair(ideal_extensions))
+            .mark_line(
+                color="black",
+                opacity=0.25,
+                strokeWidth=2,
+                strokeDash=ideal_dash,
+                clip=True,
+            )
+            .encode(dilution_axis, odds_axis, ideal_group, tooltip=["window:N"])
+            .add_params(ideal_shown)
+            # the param's own name, as a `vega` expression: passing the param itself makes
+            # a selection predicate, which tests a row against a selection's values rather
+            # than reading the boolean the checkbox sets
+            .transform_filter(ideal_param_name)
+            .transform_filter(one_window_selected)
+            .transform_filter(selected_windows),
+            # Full strength over the window's own dilutions, where its wells are claimed to
+            # follow the ideal, and faint across the rest of the series, where they are
+            # not. Both are dashed, so the opacity is what separates the two.
+            alt.Chart(narrow_for_altair(ideal_fits))
+            .mark_line(color="black", strokeWidth=2, strokeDash=ideal_dash, clip=True)
+            .encode(dilution_axis, odds_axis, ideal_group, tooltip=["window:N"])
+            .transform_filter(ideal_param_name)
+            .transform_filter(one_window_selected)
+            .transform_filter(selected_windows),
+        ]
+
     series_layers += [
         # the extension first, so the fit over the window's own dilutions draws on top
         alt.Chart(narrow_for_altair(window_extensions))
@@ -870,11 +983,27 @@ else:
         analysis of the pool is based on the wells at this chosen dilution factor.
         """)
 
+if ideal_intercept is not None:
+    report.md(f"""
+        Check *ideal slope line* below the plot to draw the ideal slope of
+        {IDEAL_SLOPE:+.0f}: a dashed black line of what the odds would do if each dilution
+        step divided the viral counts by that step, rather than a fit to the wells. It
+        belongs to the window selected, at the height that carries the ideal slope through
+        that window's wells, so it moves with the fit it is there to be compared against. It
+        is drawn at full strength over that window's own dilutions, where its wells are
+        claimed to follow the ideal, and faint across the rest of the series, where they are
+        not. A fit parallel to it responds to dilution as it should; one flattening away
+        from it at the concentrated end is saturated. Selecting more than one window hides
+        it, a reference line per window being several lines at several heights rather than
+        something to read the fits against.
+        """)
+
 if not chosen.wells_given:
     report.md(f"**Recommended dilution factor: {chosen.dilution}-fold**")
 
 series_chart = (
-    alt.layer(*series_layers)
+    # the ideal lines first, being the reference the wells and the fits are read against
+    alt.layer(*ideal_layers, *series_layers)
     .properties(height=SERIES_CHART_HEIGHT, width=SERIES_CHART_WIDTH)
     # The wells color by whether they pass a threshold and the fitted lines by which window
     # they belong to, which are unrelated. Both fields are nominal, and `vega-lite` merges

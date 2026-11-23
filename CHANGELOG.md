@@ -17,6 +17,8 @@
 
 - A warning's note in a report is now rendered as markdown, so a note can write a column name as code or emphasize a phrase. A tag in a note still reaches the page as text rather than as markup.
 
+- The pool report's linear-range plot can now draw a line of the ideal slope, which an *ideal slope line* checkbox below the plot turns on. The line has the ideal slope rather than one fit to the wells, so it is what the neutralization-standard odds would do if each dilution step divided the viral counts by that step; only its height is fit, over the selected window of dilutions, and it is dashed where the fits are solid. It shows a saturated pool directly, its wells lying above the line at the concentrated end where previously that had to be read off the slope table. It is drawn only while a single window is selected, a line per window being several references at several heights rather than something to read a fit against, and it is off by default. The titer is unaffected, still coming from the ideal height over the window that gives it.
+
 - This is a major version because a project with its own rule named `analyze_single_well_infections` or `analyze_pool` has to delete it in the same commit that bumps this submodule, as `snakemake` will not parse two rules of the same name, and a configuration that already has an `analyze_single_well_infections`, `analyze_pools`, or `discarded_barcodes` key in some other format now fails validation. A project whose own rules write to `./results/pool_composition/` also has to rename those outputs, which the pipeline now writes.
 
 #### version 9.4.1
