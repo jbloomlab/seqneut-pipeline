@@ -742,7 +742,6 @@ analyze_pools:
     min_neut_standard_frac_per_well: 0.001
     linearity_window_dilutions: 3
     linearity_slope_tol: 0.3
-    linearity_slope_z: 3
     max_stock_share_ratio: 3
     addtl_viral_cols_to_show: []
 ```
@@ -761,7 +760,7 @@ The keys are:
  - `pool_wells`: this pool's wells, as `<samples CSV column>: <value>` pairs selecting them from the plate; empty takes every well, which is the case of one pool per plate. Each pool's wells are read as one dilution series, so a plate holding several pools needs this to tell them apart.
  - `pool_members`: the strains the pool was made from, as a single `<viral library column>: <value>` pair; empty takes the whole library. Reads of a library strain the pool was not made from are reported as contamination and left out of every share. A selection taking only some of a strain's barcodes is an error.
  - `min_avg_barcode_count_per_well` and `min_neut_standard_frac_per_well`: a well below either is left out of the dilution-series fit and of the composition. The average is over every barcode counted, the neutralization standard and any non-member included, so that the threshold means the same thing on a plate of a subpool as on one of the whole library.
- - `linearity_window_dilutions`, `linearity_slope_tol`, and `linearity_slope_z`: how the linear range is located, described below. The window must be an odd number of at least three.
+ - `linearity_window_dilutions` and `linearity_slope_tol`: how the linear range is located, described below. The window must be an odd number of at least three.
  - `max_stock_share_ratio`: under `analyze_by: stock`, report a strain whose stocks differ in measured share by more than this many fold.
  - `addtl_viral_cols_to_show`: a list of viral library columns to show in the report and the output CSV, each of which must be constant across the barcodes of a strain.
 
@@ -769,13 +768,12 @@ Diluting the pool should divide its viral counts by the dilution factor while le
 The composition can only be read over the dilutions where it does: a well too concentrated for its counts to fall with dilution measures the assay rather than the pool.
 Every window of `linearity_window_dilutions` consecutive dilutions is fit, and the first whose slope is within `linearity_slope_tol` of the ideal marks where the pool starts responding; the composition is read from the **middle** dilution of that window, which leaves a dilution of margin on either side.
 
-Where no window is within tolerance, the range is placed by the first window admitted once the tolerance is widened by `linearity_slope_z` standard errors of its own slope, and the report warns that it was: that widening grows with the noise, so it admits a saturated window more readily than a clean one, and a range placed this way is weaker evidence that the pool responds to dilution.
-A pool with no window either way is an error.
-Set `linear_range_wells` to read such a pool anyway, or to overrule a widened placement, after inspecting the slope of every run, which the report tabulates.
+A pool with no window within tolerance is an error naming the window that came closest: it never clearly responds to being diluted, which is a question about the pool rather than one to settle by loosening the tolerance.
+Set `linear_range_wells` to read such a pool anyway, after inspecting the slope of every window, which the report tabulates.
 The titer then comes from the window whose middle dilution is theirs, so that it describes the same dilutions as the composition, and is left empty if no qualifying window does.
 
 `titer_vs_neut_standard` is how much virus the undiluted pool holds against the neutralization standard, in relative rather than infectious units.
-It is only comparable between pools read against the same standard on the same date, which is why the summary CSV names the date, the plates, and the standard set, and says which window of dilutions the titer came from and whether that window needed widening.
+It is only comparable between pools read against the same standard on the same date, which is why the summary CSV names the date, the plates, and the standard set, and says which window of dilutions the titer came from.
 
 Under `analyze_by: stock`, each stock gets two shares, which are different quantities: its **measured** share is what that tube itself holds, while its **divided** share is its strain's share split equally among the strain's stocks, which is what a project balancing per strain pipettes.
 Only the measured share is reported where `pooled_by_equal_volume` is false, since dividing a strain's share equally among tubes that went in unequally would describe none of them.

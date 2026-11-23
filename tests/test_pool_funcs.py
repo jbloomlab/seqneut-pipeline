@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 from pool_funcs import (
     DEFAULT_LINEARITY_SLOPE_TOL,
-    DEFAULT_LINEARITY_SLOPE_Z,
     DEFAULT_LINEARITY_WINDOW_DILUTIONS,
     IDEAL_SLOPE,
     analysis_wells,
@@ -87,7 +86,6 @@ def test_fit_dilution_windows_over_an_ideal_series():
     for window in windows:
         assert window["slope"] == pytest.approx(IDEAL_SLOPE, abs=0.01)
         assert window["within_tol"]
-        assert window["within_tol_widened"]
 
 
 def test_fit_dilution_windows_takes_the_window_length():
@@ -185,13 +183,13 @@ def test_analysis_wells_takes_the_middle_of_the_first_strict_run():
     )
 
 
-def test_analysis_wells_falls_back_to_a_widened_run():
-    """A window admitted only by its own noise places the range where nothing else can.
+def test_analysis_wells_raises_where_only_the_noise_would_admit_a_run():
+    """A pool whose every window misses the tolerance raises rather than being read.
 
-    Modeled on the most saturated window of a real equal-volume pool, whose slope of -0.416
-    clears the widened tolerance on a standard error of 0.106. It is weak evidence that the
-    pool responds to dilution, so the wells are read but `strict` says they were not
-    placed strictly, which is what the report warns on.
+    Modeled on the most saturated window of a real equal-volume pool, whose slope of
+    -0.416 on a standard error of 0.106 is far off the ideal but not by much more than its
+    own noise. Such a pool does not clearly respond to being diluted, and the composition
+    is not read from it unless `linear_range_wells` names the wells.
 
     """
     noisy = pd.DataFrame(
@@ -213,20 +211,19 @@ def test_analysis_wells_falls_back_to_a_widened_run():
         ]
     )
     windows = fit_dilution_windows(noisy)
-    assert not windows[0]["within_tol"]
-    assert windows[0]["within_tol_widened"]
-    chosen = analysis_wells(windows, noisy)
-    assert not chosen.strict
-    assert chosen.dilution == 4
-    assert chosen.titer_window == [2, 4, 8]
+    assert not any(w["within_tol"] for w in windows)
+    with pytest.raises(ValueError, match="never clearly responds to being diluted"):
+        analysis_wells(windows, noisy)
+    # the closest window is named, so a reader can judge the pool and name wells for it
+    with pytest.raises(ValueError, match=r"the closest is 2-8"):
+        analysis_wells(windows, noisy)
 
 
-def test_analysis_wells_prefers_a_strict_run_to_an_earlier_widened_one():
-    """Widening is a fallback, so a strict window wins however far out it is.
+def test_analysis_wells_passes_over_a_saturated_run_for_a_strict_one():
+    """The first window within tolerance wins, however far out in the series it lies.
 
-    The saturated end of a healthy series is noisy, and wide error bars there admit a
-    window the analysis should pass over; taking the first window admitted either way
-    would read the pool at its most saturated.
+    The saturated end of a healthy series misses the tolerance however noisy it is, so the
+    range is placed where the pool actually responds rather than at its most saturated.
 
     """
     saturated_then_linear = pd.DataFrame(
@@ -238,8 +235,7 @@ def test_analysis_wells_prefers_a_strict_run_to_an_earlier_widened_one():
                 "neut_standard_odds": 1 / r,
             }
             for w, d, r in [
-                # the saturated end of the widened-only window above, scattered enough
-                # for its error bars to admit it
+                # a saturated end, scattered enough that its slope is poorly determined
                 ("A1", 2, 500.0),
                 ("B1", 2, 300.0),
                 ("A2", 4, 460.0),
@@ -257,15 +253,10 @@ def test_analysis_wells_prefers_a_strict_run_to_an_earlier_widened_one():
         ]
     )
     windows = fit_dilution_windows(saturated_then_linear)
-    assert [(w["within_tol"], w["within_tol_widened"]) for w in windows] == [
-        (False, True),
-        (False, True),
-        (True, True),
-        (True, True),
-    ]
+    assert [w["within_tol"] for w in windows] == [False, False, True, True]
     chosen = analysis_wells(windows, saturated_then_linear)
     assert chosen.strict
-    # the middle of the first strict window, not of the first widened one at 4-fold
+    # the middle of the first strict window, not of the saturated end at 4-fold
     assert chosen.dilution == 16
 
 
@@ -311,7 +302,7 @@ def test_analysis_wells_given_at_an_uncentered_dilution_has_no_titer():
     assert sorted(chosen.wells) == [("p1", "A1"), ("p1", "B1")]
 
 
-def test_analysis_wells_given_ignores_a_widened_run():
+def test_analysis_wells_given_without_a_strict_run_has_no_titer():
     """Only a strict window gives a titer, on the explicit path as on the automatic one."""
     noisy = series({2: 500.0, 4: 300.0, 8: 250.0}, replicates=3)
     windows = fit_dilution_windows(noisy)
@@ -744,5 +735,4 @@ def test_defaults_are_the_documented_ones():
     """The defaults the README states, applied in one place."""
     assert DEFAULT_LINEARITY_WINDOW_DILUTIONS == 3
     assert DEFAULT_LINEARITY_SLOPE_TOL == 0.3
-    assert DEFAULT_LINEARITY_SLOPE_Z == 3
     assert IDEAL_SLOPE == 1.0

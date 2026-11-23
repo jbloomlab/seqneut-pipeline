@@ -592,8 +592,8 @@ report.md(f"""
     2-fold dilution of the library pool would result in a 2-fold increase in the amount of
     neutralization standard. To determine the appropriate dilution factor for the pool, we
     have a tolerance set here for {pool_config["linearity_slope_tol"]} around that ideal
-    slope of {IDEAL_SLOPE:.1f} and an additional widened tolerance band which adds
-    {pool_config["linearity_slope_z"]}x the slope standard error on top of that. This is
+    slope of {IDEAL_SLOPE:.1f}. A pool with no window within that tolerance never clearly
+    responds to being diluted, and is reported as an error rather than read anyway. This is
     quantified in the following table:
     """)
 
@@ -608,7 +608,6 @@ windows = fit_dilution_windows(
     fittable_wells,
     window_dilutions=pool_config["linearity_window_dilutions"],
     slope_tol=pool_config["linearity_slope_tol"],
-    slope_z=pool_config["linearity_slope_z"],
 )
 chosen = analysis_wells(
     windows, fittable_wells, given=pool_config["linear_range_wells"]
@@ -630,7 +629,6 @@ if windows:
                     "standard error": round_sig(w["slope_se"]),
                     "off ideal by": round_sig(w["deviation"]),
                     "within tolerance": w["within_tol"],
-                    "within widened tolerance": w["within_tol_widened"],
                 }
                 for w in windows
             ]
@@ -1078,50 +1076,6 @@ if chosen.wells_given and chosen.titer_window is None:
                 "no fit over these wells to take a titer from and "
                 "`titer_vs_neut_standard` is empty. The composition below is still "
                 "measured from them."
-            ),
-        }
-    )
-
-# Only where widening placed the range, which is the case where it changed the answer. A
-# widened window that merely exists alongside a strict one decided nothing: the saturated
-# end of a healthy series is noisy, and wide error bars there admit a window the analysis
-# correctly passed over.
-if not chosen.wells_given and not chosen.strict:
-    linear_range_warnings.append(
-        {
-            "text": "a wider slope tolerance to place the linear range",
-            "details": pd.DataFrame(
-                [
-                    {
-                        "dilutions": f"{w['window'][0]}-{w['window'][-1]}",
-                        "slope": round_sig(w["slope"]),
-                        "off ideal by": round_sig(w["deviation"]),
-                        "standard error": round_sig(w["slope_se"]),
-                    }
-                    for w in windows
-                    if w["window"] == chosen.titer_window
-                ]
-            ),
-            "shows": "dilution window",
-            "verb": "required",
-            "note": (
-                f"A window here is defined as {pool_config['linearity_window_dilutions']} "
-                "consecutive dilutions in the series. A slope is fit to these three values to "
-                "find where the pool starts responding to dilution. A sliding window of one "
-                "is used to test possible windows of dilution factors. Ideally, diluting the "
-                "pool 2-fold should result in half the number of viral barcode counts, "
-                "doubling the neutralization standard's share of them and giving a slope of "
-                f"{IDEAL_SLOPE:+.0f}. The tolerance here is set to "
-                f"{pool_config['linearity_slope_tol']}, so a slope of "
-                f"{IDEAL_SLOPE - pool_config['linearity_slope_tol']:.3g} to "
-                f"{IDEAL_SLOPE + pool_config['linearity_slope_tol']:.3g} passes normally. To "
-                f'"widen" the tolerance, we add an addition '
-                f"{pool_config['linearity_slope_z']}x the slope standard error to the "
-                "acceptable range. No window passed normally here, so the composition is "
-                "read from one that passed only once the tolerance was widened. That "
-                "latitude grows with the noise, so a noisy window passes more readily than a "
-                "cleaner one: check the slope of every window above, and set "
-                "`linear_range_wells` if this is the wrong place to read the pool."
             ),
         }
     )

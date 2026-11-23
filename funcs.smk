@@ -295,7 +295,6 @@ def process_analyze_pools(pools_d, misc_plates):
         "min_neut_standard_frac_per_well": 0.001,
         "linearity_window_dilutions": 3,
         "linearity_slope_tol": 0.3,
-        "linearity_slope_z": 3,
         "max_stock_share_ratio": 3,
         "addtl_viral_cols_to_show": [],
     }

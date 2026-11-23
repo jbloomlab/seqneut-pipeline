@@ -30,12 +30,6 @@ IDEAL_SLOPE = 1.0
 DEFAULT_LINEARITY_WINDOW_DILUTIONS = 3
 DEFAULT_LINEARITY_SLOPE_TOL = 0.3
 
-# How many standard errors of its own slope widen the tolerance for a window. Widening is only
-# ever consulted on the explicit-wells path: a window admitted by it is reported as such but
-# never chooses the wells, since the latitude grows with the noise and so admits a
-# saturated, noisy window more readily than a cleaner one.
-DEFAULT_LINEARITY_SLOPE_Z = 3
-
 # the unit a pool can be balanced by, and so the unit an equal share is an equal share of
 POOL_BY_OPTIONS = ("strain", "barcode", "stock")
 
@@ -53,9 +47,9 @@ class AnalysisWells:
             The dilutions of the window the titer is computed over, or `None` where no
             strict window gives one and the titer is therefore not reported.
         `strict` (bool)
-            Whether that window was within tolerance without being widened. False where
-            the tolerance had to be widened to place the range at all, and where there is
-            no window.
+            Whether a window within tolerance gives the titer. Always true where the wells
+            were located from the fit, which only a window within tolerance can do, and
+            false where configured wells sit at a dilution no such window centers.
         `wells_given` (bool)
             Whether the wells were configured rather than located from the fit.
 
@@ -103,7 +97,6 @@ def fit_dilution_windows(
     wells,
     window_dilutions=DEFAULT_LINEARITY_WINDOW_DILUTIONS,
     slope_tol=DEFAULT_LINEARITY_SLOPE_TOL,
-    slope_z=DEFAULT_LINEARITY_SLOPE_Z,
 ):
     """Fit the slope of every window of `window_dilutions` consecutive dilutions.
 
@@ -117,15 +110,12 @@ def fit_dilution_windows(
             give a slope and its error, and odd, so that a window has a middle dilution.
         `slope_tol` (float)
             How far a window's slope may be from `IDEAL_SLOPE` and still count as ideal.
-        `slope_z` (float)
-            Standard errors of the slope by which that tolerance is widened.
 
     Returns:
         List of dicts, one per window from the most concentrated end, each with the window's
         ``window`` of dilutions, its ``slope``, ``slope_se`` and ``intercept``, which
-        together place its fitted line, its ``deviation`` from
-        `IDEAL_SLOPE`, and whether it is ``within_tol`` and ``within_tol_widened``. Empty
-        where the series is shorter than one window.
+        together place its fitted line, its ``deviation`` from `IDEAL_SLOPE`, and whether
+        it is ``within_tol``. Empty where the series is shorter than one window.
 
     """
     if window_dilutions < 3 or window_dilutions % 2 == 0:
@@ -154,7 +144,6 @@ def fit_dilution_windows(
                 "intercept": intercept,
                 "deviation": deviation,
                 "within_tol": deviation <= slope_tol,
-                "within_tol_widened": deviation <= slope_tol + slope_z * slope_se,
             }
         )
     return windows
@@ -166,12 +155,10 @@ def analysis_wells(windows, wells, given=None):
     Without `given`, the wells are the middle dilution of the first strictly linear window,
     rather than its most concentrated edge, so that there is a dilution of margin on either
     side: at the edge the pool has only just started responding, and a slightly misplaced
-    onset would put the wells outside the linear range altogether. Where no window is
-    strictly within tolerance, the first admitted by widening that tolerance with the
-    standard errors of its slope is used instead, and `strict` records that it was: the
-    latitude grows with the noise, so a window admitted this way is weaker evidence that
-    the pool responds to dilution than a strict one and is reported as such. A pool with
-    no window either way raises.
+    onset would put the wells outside the linear range altogether. A pool with no window
+    within tolerance raises: it never clearly responds to being diluted, which is a
+    question about the pool rather than one to settle by loosening the tolerance, so the
+    wells to read it from are named explicitly or not at all.
 
     With `given`, those wells are read whatever the fit says, and the titer comes from the
     window whose middle dilution is theirs. A dilution lies in several overlapping windows whose
@@ -196,19 +183,29 @@ def analysis_wells(windows, wells, given=None):
     """
     strict = [w for w in windows if w["within_tol"]]
     if given is None:
-        # Strict tolerance is preferred over the widening by the error on the slope, as a
-        # window admitted only by its error bars is weaker evidence that the pool responds
-        # to dilution; it places the range only where nothing else can.
-        qualifying = strict or [w for w in windows if w["within_tol_widened"]]
-        if not qualifying:
+        if not strict:
+            # The window that came closest is named, that being what a reader needs in
+            # order to judge whether the pool is worth reading at all and which wells to
+            # name if it is.
+            closest = min(windows, key=lambda w: w["deviation"], default=None)
+            closest_msg = (
+                (
+                    f"; the closest is {closest['window'][0]}-{closest['window'][-1]}, "
+                    f"whose slope is {closest['slope']:+.3g} "
+                    f"+/- {closest['slope_se']:.3g}, off the ideal by "
+                    f"{closest['deviation']:.3g}"
+                )
+                if closest is not None
+                else ", there being no window of dilutions to fit at all"
+            )
             raise ValueError(
                 "no window of dilutions has a slope within tolerance of the ideal "
-                f"{IDEAL_SLOPE:+.0f}, even once that tolerance is widened by the standard "
-                "errors of the slope, so the pool never clearly responds to being diluted "
-                "and there is no linear range to read its composition from. Set "
-                "'linear_range_wells' to read it from particular wells anyway"
+                f"{IDEAL_SLOPE:+.0f}, so the pool never clearly responds to being diluted "
+                "and there is no linear range to read its composition from"
+                f"{closest_msg}. Check the pool and the series before trusting it, and "
+                "set 'linear_range_wells' to read it from particular wells anyway"
             )
-        window = qualifying[0]["window"]
+        window = strict[0]["window"]
         dilution = window[len(window) // 2]
         at_dilution = wells[wells["dilution_factor"] == dilution]
         return AnalysisWells(
@@ -217,7 +214,8 @@ def analysis_wells(windows, wells, given=None):
             ),
             dilution=dilution,
             titer_window=window,
-            strict=bool(strict),
+            # located from the fit, which only a window within tolerance can do
+            strict=True,
             wells_given=False,
         )
 

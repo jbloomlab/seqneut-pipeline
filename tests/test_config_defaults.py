@@ -37,7 +37,6 @@ POOL_THRESHOLDS = [
     "min_neut_standard_frac_per_well",
     "linearity_window_dilutions",
     "linearity_slope_tol",
-    "linearity_slope_z",
     "max_stock_share_ratio",
 ]
 
@@ -184,7 +183,6 @@ def test_pool_linearity_defaults_match_pool_funcs(
     for config_key, constant in [
         ("linearity_window_dilutions", "DEFAULT_LINEARITY_WINDOW_DILUTIONS"),
         ("linearity_slope_tol", "DEFAULT_LINEARITY_SLOPE_TOL"),
-        ("linearity_slope_z", "DEFAULT_LINEARITY_SLOPE_Z"),
     ]:
         assert defaults[config_key] == getattr(pool_funcs, constant), (
             f"the {config_key!r} default is {defaults[config_key]!r} but "
