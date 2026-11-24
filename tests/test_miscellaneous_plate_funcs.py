@@ -499,6 +499,50 @@ def test_report_section_warnings(tmp_path):
     assert len(report.warnings) == 1
 
 
+def test_report_warning_levels_are_drawn_apart(tmp_path):
+    """An error carries a class a warning does not, so the two are told apart on sight."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.md("## Titers")
+    report.section_warnings(
+        [
+            {
+                "text": "with zero titer",
+                "details": pd.DataFrame({"well": ["A1"]}),
+            },
+            {
+                "text": "{verb} outside tolerance, so the pool is not measured",
+                "details": pd.DataFrame({"window": ["2-8"]}),
+                "shows": "dilution window",
+                "verb": "falls",
+                "level": "error",
+            },
+        ]
+    )
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert '<details class="warning">' in html
+    assert '<details class="warning error">' in html
+    # the error styling is defined, not merely named by a class
+    assert "details.warning.error" in html
+
+
+def test_report_warning_level_must_be_known(tmp_path):
+    """A level that is neither a warning nor an error is an error in itself."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    with pytest.raises(ValueError, match="'warning' or 'error'"):
+        report.section_warnings(
+            [
+                {
+                    "text": "with zero titer",
+                    "details": pd.DataFrame({"well": ["A1"]}),
+                    "level": "critical",
+                }
+            ]
+        )
+
+
 def test_report_section_warnings_fill_a_slot_left_at_the_section_top(tmp_path):
     """A section's warnings are written above the content they qualify, not below it."""
     report = PlateReport(title="t")

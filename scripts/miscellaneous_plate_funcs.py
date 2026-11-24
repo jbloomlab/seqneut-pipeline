@@ -487,6 +487,7 @@ details.warning .toggle::before { content: "\\25B8  "; }
 details.warning[open] .toggle::before { content: "\\25BE  "; }
 details.warning .hide, details.warning[open] .show { display: none; }
 details.warning[open] .hide { display: inline; }
+details.warning.error { background: #fdecea; border-left-color: #d7373f; }
 """
 
 # Lines between a table's columns; a row's last cell is always its last column, as the cells
@@ -627,14 +628,25 @@ details.notes[open] summary::before { content: "\\25BE  "; }
 """
 
 
-def _logged_warning(text, details, shows="well", note=None, verb=None):
-    """Print a warning to the log, and return it as `_warnings_html` takes it."""
+def _logged_warning(text, details, shows="well", note=None, verb=None, level="warning"):
+    """Print a warning to the log, and return it as `_warnings_html` takes it.
+
+    `level` is ``"warning"`` or ``"error"``. An error is something the report could not do
+    rather than something to look at, and is drawn apart from the warnings so that it is
+    not read as one more of them.
+
+    """
+    if level not in ("warning", "error"):
+        raise ValueError(
+            f"a warning's `level` must be 'warning' or 'error', not {level!r}"
+        )
     print(
-        f"WARNING: {len(details)} {_headline(text, shows, verb, len(details))[0]}\n"
+        f"{level.upper()}: {len(details)} "
+        f"{_headline(text, shows, verb, len(details))[0]}\n"
         + (f"{note}\n" if note else "")
         + details.to_string(index=False)
     )
-    return (text, details, shows, note, verb)
+    return (text, details, shows, note, verb, level)
 
 
 # The prepositions a warning's noun can hang a phrase on, which is what tells a phrase
@@ -736,12 +748,13 @@ def _warnings_html(warnings, heading=True):
     return (
         f"<style>{_WARNINGS_CSS}</style>" + ("<h3>Warnings</h3>" if heading else "")
     ) + "".join(
-        f'<details class="warning"><summary><b>{len(details)}</b> '
+        f'<details class="warning{"" if level == "warning" else " error"}">'
+        f"<summary><b>{len(details)}</b> "
         f'{html.escape(said)} <span class="toggle"><span class="show">show'
         f'</span><span class="hide">hide</span> {noun}</span></summary>'
         + (f"<p>{_note_html(note)}</p>" if note else "")
         + f"{table_html(details)}</details>"
-        for (text, details, shows, note, verb) in warnings
+        for (text, details, shows, note, verb, level) in warnings
         for (said, noun) in [_headline(text, shows, verb, len(details))]
     )
 
@@ -769,7 +782,9 @@ class PlateReport(Report):
             raise ValueError("the warnings slot is already reserved")
         self._warnings_slot = self._reserve_slot()
 
-    def warning(self, text, details, shows="well", note=None, verb=None):
+    def warning(
+        self, text, details, shows="well", note=None, verb=None, level="warning"
+    ):
         """Record a warning, printing it to the log as well.
 
         Args:
@@ -788,9 +803,12 @@ class PlateReport(Report):
                 "3 windows require". It replaces a `{verb}` placeholder in `text`, or
                 precedes it where there is none. Needed only where `text` has a verb to
                 agree, a warning being a noun phrase otherwise.
+            `level` ("warning" or "error")
+                An error is something the report could not do rather than something to
+                look at, and is drawn apart from the warnings so as not to read as one.
 
         """
-        self._warnings.append(_logged_warning(text, details, shows, note, verb))
+        self._warnings.append(_logged_warning(text, details, shows, note, verb, level))
 
     def section_warnings(self, warnings):
         """Append `warnings` here, without a heading, rather than in the report's slot.

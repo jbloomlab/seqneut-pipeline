@@ -1137,6 +1137,9 @@ if no_linear_range:
             ),
             "shows": "dilution window",
             "verb": "falls",
+            # an error rather than a warning: the report could not measure the pool, which
+            # is not one more thing about it to look at
+            "level": "error",
             "note": (
                 "No window of dilutions has a slope within "
                 f"{pool_config['linearity_slope_tol']} of the ideal "
