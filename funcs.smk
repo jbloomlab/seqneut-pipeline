@@ -134,6 +134,12 @@ def process_miscellaneous_plates(misc_plates_d):
             )
         check_no_whitespace(samples["well"], f"miscellaneous_plate {plate} wells")
         misc_plates[plate]["wells"] = samples.set_index("well")["fastq"].to_dict()
+        # Optional, and kept as given rather than defaulted: a pool analysis requires its
+        # plates to have one and to agree, since a titer is comparable only within a date,
+        # and reads it from here rather than from the configuration a second time.
+        misc_plates[plate]["date"] = (
+            str(plate_dict["date"]) if plate_dict.get("date") else None
+        )
 
         # get default barcode parser params, update if specified per plate
         misc_plates[plate]["illumina_barcode_parser_params"] = copy.deepcopy(
@@ -359,18 +365,17 @@ def process_analyze_pools(pools_d, misc_plates):
                 )
             d[key] = values[0]
         # The date puts two pools measured against the same standard on one scale, so it
-        # is reported. It is optional for a miscellaneous plate and is not kept by
-        # `process_miscellaneous_plates`, so it is read from the configuration here. The
+        # is reported. It is optional for a miscellaneous plate but required here, and the
         # plates must agree on it for the same reason they agree on the standard: one
         # titer is reported for the pool, and it is only comparable within a date.
         dates = set()
         for plate in plates:
-            if not config["miscellaneous_plates"][plate].get("date"):
+            if not misc_plates[plate]["date"]:
                 raise ValueError(
                     f"{where} needs a 'date' on its plate {plate!r}, as the date is what "
                     "says which pools' titers can be compared with each other"
                 )
-            dates.add(str(config["miscellaneous_plates"][plate]["date"]))
+            dates.add(misc_plates[plate]["date"])
         if len(dates) != 1:
             raise ValueError(
                 f"the plates of {where} have the different dates {sorted(dates)}, but one "

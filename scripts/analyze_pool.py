@@ -11,6 +11,7 @@ a ratio to add, or which units to leave out of a re-pool.
 """
 
 import math
+import statistics
 import sys
 from pathlib import Path
 
@@ -37,6 +38,7 @@ from pool_funcs import (
     IDEAL_SLOPE,
     analysis_wells,
     barcode_fractions,
+    dilution_means,
     diverging_stocks,
     fit_dilution_windows,
     member_barcodes,
@@ -196,6 +198,19 @@ members = member_barcodes(viral_library, pool_config["pool_members"])
 member_library = viral_library[viral_library["barcode"].isin(members)]
 n_units = pool_units(member_library, pool_by)
 even_share = 1 / n_units
+
+# The columns of the per-barcode composition CSV, named once so that a pool with no linear
+# range writes the same header as one with a composition in it: a reader of these files
+# selects columns by name and should not have to handle two schemas.
+share_cols = ["measured_share"] + (["divided_share"] if equal_volume else [])
+composition_cols = [
+    "barcode",
+    "mean_fraction",
+    "strain",
+    *(["stock"] if "stock" in member_library.columns else []),
+    *addtl_viral_cols,
+    *([f"stock_{c}" for c in share_cols] if pool_by == "stock" else []),
+]
 report.md("""
     ## Experimental summary
 
@@ -603,10 +618,17 @@ if not len(fittable_wells):
         "measure the pool from"
     )
 
+# Each dilution's replicate wells averaged, which is what the slope and the titer are both
+# taken from, so that neither depends on how many replicates of each dilution were measured.
+mean_odds = dilution_means(fittable_wells)
+
 windows = fit_dilution_windows(
     fittable_wells,
     window_dilutions=pool_config["linearity_window_dilutions"],
     slope_tol=pool_config["linearity_slope_tol"],
+    # every dilution the plate holds, so that a window closing over one whose wells all
+    # failed QC is not taken for a run of consecutive dilutions that it is not
+    plate_dilutions=set(samples["dilution_factor"]),
 )
 chosen = analysis_wells(
     windows, fittable_wells, given=pool_config["linear_range_wells"]
@@ -629,6 +651,9 @@ else:
     )
 
 if windows:
+    # the gap column only where a window closes over one, so that the ordinary table is
+    # not widened by a column that is false the whole way down
+    _any_gapped = any(w["spans_gap"] for w in windows)
     report.table(
         pd.DataFrame(
             [
@@ -638,6 +663,7 @@ if windows:
                     "standard error": round_sig(w["slope_se"]),
                     "off ideal by": round_sig(w["deviation"]),
                     "within tolerance": w["within_tol"],
+                    **({"spans a gap": w["spans_gap"]} if _any_gapped else {}),
                 }
                 for w in windows
             ]
@@ -671,12 +697,14 @@ def ideal_height_over(window):
     axes, which is what the odds of the undiluted pool would be if the pool responded to
     dilution ideally over that window.
 
+    Averaged per dilution, as the slope is, so that the titer does not depend on how many
+    replicates of each dilution happened to be measured.
+
     """
-    in_window = fittable_wells[fittable_wells["dilution_factor"].isin(window)]
-    return (
-        in_window["neut_standard_odds"].map(math.log10)
-        - IDEAL_SLOPE * in_window["dilution_factor"].map(math.log10)
-    ).mean()
+    return statistics.fmean(
+        math.log10(mean_odds[dilution]) - IDEAL_SLOPE * math.log10(dilution)
+        for dilution in window
+    )
 
 
 # The titer: how much virus the undiluted pool holds against the standard. The standard is
@@ -1025,17 +1053,18 @@ with report.notes("How can I interact with this plot?"):
 linear_range_warnings = []
 
 # A window spans consecutive dilutions of those that reach the fit, so a dilution whose every
-# well is dropped closes the window over the gap: the window then covers a wider range of the
-# series than its length says, and the composition is read from a middle that is not the
-# middle of the dilutions the plate holds. The ragged-replicate warning above counts the
-# replicates of a dilution and so does not catch one that is missing altogether.
+# well is dropped closes the window over the gap. Such a window is fit and reported but is
+# never within tolerance, so the composition is not read from it; what is worth saying is
+# which dilutions were lost and that a window was excluded for it. The ragged-replicate
+# warning above counts the replicates of a dilution and so does not catch one missing
+# altogether.
 _dropped_dilutions = sorted(
     set(samples["dilution_factor"]) - set(fittable_wells["dilution_factor"])
 )
 if _dropped_dilutions:
     linear_range_warnings.append(
         {
-            "text": "left out of the fit, so a window of dilutions may span the gap",
+            "text": "left out of the fit, leaving a gap in the dilution series",
             "details": pd.DataFrame(
                 [
                     {
@@ -1057,9 +1086,19 @@ if _dropped_dilutions:
             "note": (
                 "Every well at these dilutions either failed a QC threshold or had no "
                 "countable reads, so they are not fit. A window is a run of consecutive "
-                "dilutions among those that are fit, so a window reported here can cover "
-                "a wider span of the series than its number of dilutions suggests. Check "
-                "the windows above against the dilutions the plate actually holds."
+                "dilutions among those that are fit, so a window can close over this gap "
+                "and cover a wider span of the series than its number of dilutions "
+                "suggests. Such a window is marked in the table above and is not eligible "
+                "to be selected, as its middle is not the middle of the dilutions the "
+                "plate holds and its slope can be pulled into tolerance by the wider "
+                "step. The composition is read from a window of genuinely consecutive "
+                "dilutions instead, which may be more dilute than the gap."
+                + (
+                    f" Excluded for this reason: "
+                    f"{', '.join(f'{w[0]}-{w[-1]}' for w in chosen.gap_blocked)}."
+                    if chosen.gap_blocked
+                    else ""
+                )
             ),
         }
     )
@@ -1163,14 +1202,9 @@ report.fill_section_warnings(_linear_range_warnings_slot, linear_range_warnings)
 # what was fit, with the analysis fields empty, and the per-barcode composition is written
 # with its header and no rows.
 if no_linear_range:
-    pd.DataFrame(
-        columns=[
-            "barcode",
-            "mean_fraction",
-            "strain",
-            *(["stock"] if "stock" in member_library.columns else []),
-        ]
-    ).to_csv(snakemake.output.barcode_composition, index=False)
+    pd.DataFrame(columns=composition_cols).to_csv(
+        snakemake.output.barcode_composition, index=False, float_format="%.4g"
+    )
     pd.DataFrame(
         [
             {
@@ -1321,9 +1355,14 @@ if len(non_members):
 
 fractions = barcode_fractions(counts, members, analysis_plate_wells)
 shares = unit_shares(fractions, member_library, pool_by, equal_volume=equal_volume)
-share_cols = ["measured_share"] + (
-    ["divided_share"] if "divided_share" in shares.columns else []
-)
+# the composition CSV's header was built from `share_cols` before the shares were
+# computed, so a disagreement would write a column that is not there or drop one that is
+missing_share_cols = [c for c in share_cols if c not in shares.columns]
+if missing_share_cols:
+    raise ValueError(
+        f"'unit_shares' gave no {missing_share_cols}, which the composition CSV's header "
+        f"names; it gave {sorted(shares.columns)}"
+    )
 
 unit_order = shares["unit"].tolist()
 plotted_shares = shares.merge(
@@ -1416,6 +1455,8 @@ if several_barcodes:
 _present = plotted_shares.loc[plotted_shares["measured_share"] > 0, "measured_share"]
 _n_absent = int((plotted_shares["measured_share"] <= 0).sum())
 if len(_present) > 1:
+    # `< 2` rather than `<= 2`: a unit exactly twofold off even is counted as outside,
+    # the tile reading as how many are within a factor of two of their even share.
     _within_2fold = int(
         ((_present / even_share < 2) & (even_share / _present < 2)).sum()
     )
@@ -1423,17 +1464,38 @@ if len(_present) > 1:
         f"Computed over the {len(_present)} {pool_by}s with reads; {_n_absent} with none "
         "are left out, having no finite fold change."
     )
+
+    def _vs_even(share):
+        """How far a share is from the even share, as a fold change and its direction.
+
+        Named rather than asserted as "over" or "under": absent units leave the present
+        shares summing to more than one, so the lowest present share can itself be above
+        the even share, and a tile saying "under" would then have the direction backwards.
+
+        """
+        if share >= even_share:
+            return f"{share / even_share:.1f}x over"
+        return f"{even_share / share:.1f}x under"
+
     report.stat_tiles(
         {
             f"highest : lowest {pool_by}": (
                 f"{_present.max() / _present.min():.1f}-fold"
             ),
-            "highest vs even share": f"{_present.max() / even_share:.1f}x over",
-            "lowest vs even share": f"{even_share / _present.min():.1f}x under",
+            "highest vs even share": _vs_even(_present.max()),
+            "lowest vs even share": _vs_even(_present.min()),
             f"{pool_by}s within 2-fold of even": f"{_within_2fold} / {len(_present)}",
         },
         captions=[_absent_caption] if _n_absent else [],
     )
+else:
+    # The spread is what decides whether a re-pool is worth doing, so its absence is said
+    # rather than left as a missing block: one unit with reads is a near-total pooling
+    # failure, which is the case most worth being explicit about.
+    report.md(f"""
+        No spread statistics are shown: a fold change between {pool_by}s needs at least
+        two with reads, and {"only one has" if len(_present) == 1 else "none has"} any.
+        """)
 
 panels = [share_panel]
 if several_barcodes:
@@ -1539,7 +1601,7 @@ if pool_by == "stock":
         how="left",
         validate="many_to_one",
     )
-composition.to_csv(
+composition[composition_cols].to_csv(
     snakemake.output.barcode_composition, index=False, float_format="%.4g"
 )
 
@@ -1556,7 +1618,11 @@ pd.DataFrame(
             "n_strains": member_library["strain"].nunique(),
             "n_member_barcodes": len(members),
             "analysis_dilution": chosen.dilution,
-            "analysis_wells": " ".join(analysis_well_labels),
+            # named with the plate whatever the report shows, so that the value can be
+            # pasted into `linear_range_wells` to pin these wells; a single-plate pool's
+            # bare well names are accepted there too, but a multi-plate pool's would be
+            # ambiguous and this file is read without knowing which kind it describes
+            "analysis_wells": " ".join(f"{p}:{w}" for (p, w) in chosen.wells),
             "linear_range_dilutions": (
                 " ".join(str(d) for d in chosen.titer_window)
                 if chosen.titer_window

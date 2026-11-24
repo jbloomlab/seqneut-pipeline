@@ -10,6 +10,7 @@ from pool_funcs import (
     IDEAL_SLOPE,
     analysis_wells,
     barcode_fractions,
+    dilution_means,
     diverging_stocks,
     fit_dilution_windows,
     log_log_slope,
@@ -74,6 +75,43 @@ def library(barcodes):
 
 
 # --- fitting the dilution series -------------------------------------------------------
+
+
+def test_dilution_means_takes_the_geometric_mean():
+    """Replicate wells of a dilution are averaged in log space, not in the odds."""
+    wells = pd.DataFrame(
+        {"dilution_factor": [4, 4, 8], "neut_standard_odds": [0.1, 0.4, 1.0]}
+    )
+    means = dilution_means(wells)
+    # the geometric mean of 0.1 and 0.4, well below their arithmetic mean of 0.25
+    assert means == {4: pytest.approx(math.sqrt(0.1 * 0.4)), 8: pytest.approx(1.0)}
+
+
+def test_dilution_means_rejects_nonpositive_odds():
+    """Odds of zero have no logarithm, so they are refused rather than averaged."""
+    wells = pd.DataFrame({"dilution_factor": [4, 4], "neut_standard_odds": [0.1, 0.0]})
+    with pytest.raises(ValueError, match="not positive"):
+        dilution_means(wells)
+
+
+def test_fit_dilution_windows_weights_each_dilution_equally():
+    """A dilution measured in more replicates does not pull the fit towards itself.
+
+    The slope is taken from each dilution's mean, so adding replicates of one dilution
+    cannot change the fit unless it changes that dilution's mean.
+
+    """
+    wells = ideal_series([2, 4, 8, 16, 32])
+    # one dilution measured four more times, each well repeating an existing one and so
+    # leaving that dilution's mean where it was
+    extra = wells[wells["dilution_factor"] == 4]
+    weighted = pd.concat(
+        [wells] + [extra.assign(well=extra["well"] + f"x{i}") for i in range(4)],
+        ignore_index=True,
+    )
+    assert [w["slope"] for w in fit_dilution_windows(weighted)] == [
+        pytest.approx(w["slope"]) for w in fit_dilution_windows(wells)
+    ]
 
 
 def test_fit_dilution_windows_over_an_ideal_series():
@@ -157,8 +195,9 @@ def test_fit_dilution_windows_closes_over_a_missing_dilution():
 
     A dilution whose every well failed QC does not reach the fit, and the windows then
     close over the gap: a window can cover a wider span of the series than its length
-    suggests. `analyze_pool.py` warns where this happens, as the fit cannot tell a
-    dilution that was never measured from one that was dropped.
+    suggests. Told which dilutions the plate holds, the fit marks such a window and keeps
+    it out of tolerance; without that it cannot tell a dilution never measured from one
+    that was dropped.
 
     """
     # 8 is absent, as it would be with both of its wells failing QC
@@ -167,6 +206,58 @@ def test_fit_dilution_windows_closes_over_a_missing_dilution():
     assert [w["window"] for w in windows] == [[2, 4, 16], [4, 16, 32]]
     # the first window spans 2- to 16-fold, three dilutions covering a threefold step
     assert windows[0]["window"][-1] / windows[0]["window"][0] == 8
+    # not knowing what the plate held, every window is taken for consecutive
+    assert not any(w["spans_gap"] for w in windows)
+    # told that 8 was held, both windows are marked and neither can be selected
+    told = fit_dilution_windows(gapped, plate_dilutions=[2, 4, 8, 16, 32])
+    assert all(w["spans_gap"] for w in told)
+    assert not any(w["within_tol"] for w in told)
+    # the slopes themselves are unchanged; it is only eligibility that differs
+    assert [w["slope"] for w in told] == [w["slope"] for w in windows]
+
+
+def test_fit_dilution_windows_keeps_a_window_clear_of_the_gap():
+    """Only the windows that actually close over the gap are excluded."""
+    # 4 is absent; the windows above it are untouched
+    gapped = series({2: 500.0, 8: 125.0, 16: 62.5, 32: 31.25, 64: 15.625})
+    windows = fit_dilution_windows(gapped, plate_dilutions=[2, 4, 8, 16, 32, 64])
+    gapped_windows = {tuple(w["window"]): w["spans_gap"] for w in windows}
+    assert gapped_windows == {
+        (2, 8, 16): True,
+        (8, 16, 32): False,
+        (16, 32, 64): False,
+    }
+
+
+def test_analysis_wells_passes_over_a_window_spanning_a_gap():
+    """A gap next to saturation must not relocate the linear range into saturation.
+
+    Straddling the gap widens a window's dilution step, which pulls its slope towards the
+    ideal, and being the more concentrated window it would be selected first. The
+    composition would then be read from a saturated well, which locating the linear range
+    exists to prevent.
+
+    """
+    plate_dilutions = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    wells = saturated_then_ideal([1, 2, 4], [8, 16, 32, 64, 128, 256])
+    # both wells of 16 fail QC, leaving a gap just above the saturated end
+    gapped = wells[wells["dilution_factor"] != 16]
+
+    # Not knowing the plate held 16, the window [4, 8, 32] looks like three consecutive
+    # dilutions: its wider step lifts its slope to 0.71 and the next, [8, 32, 64], to
+    # exactly 1.0, so the pool is read at 8-fold, inside the saturated range.
+    unaware = analysis_wells(fit_dilution_windows(gapped), gapped)
+    assert unaware.dilution == 8
+    assert unaware.titer_window == [4, 8, 32]
+
+    # Knowing it, both straddling windows are passed over for a run of dilutions the
+    # plate really holds consecutively, which is clear of saturation.
+    aware = analysis_wells(
+        fit_dilution_windows(gapped, plate_dilutions=plate_dilutions), gapped
+    )
+    assert aware.dilution == 64
+    assert aware.titer_window == [32, 64, 128]
+    assert [list(w) for w in aware.gap_blocked] == [[4, 8, 32], [8, 32, 64]]
 
 
 def test_analysis_wells_takes_the_middle_of_the_first_strict_run():
@@ -337,8 +428,9 @@ def test_analysis_wells_given_with_too_short_a_series():
         (["p1:A3", "p1:A3"], "more than once"),
         ([], "at least one well"),
         (["p1:Z9"], "not wells of"),
-        (["A3"], "named as 'plate:well'"),
+        (["Z9"], "not wells of"),
         (["other:A3"], "not wells of"),
+        (["p1:A3:extra"], "named as 'well' or 'plate:well'"),
     ],
 )
 def test_analysis_wells_rejects_bad_given_wells(given, match):
@@ -346,6 +438,29 @@ def test_analysis_wells_rejects_bad_given_wells(given, match):
     wells = ideal_series([2, 4, 8, 16, 32])
     with pytest.raises(ValueError, match=match):
         analysis_wells(fit_dilution_windows(wells), wells, given=given)
+
+
+def test_analysis_wells_given_takes_a_bare_well_on_one_plate():
+    """A single-plate pool's wells are reported bare, so they are accepted bare.
+
+    Copying the wells the report gives back into `linear_range_wells` to pin them is the
+    obvious way to use it, so the two have to name a well the same way.
+
+    """
+    wells = ideal_series([2, 4, 8, 16, 32])
+    windows = fit_dilution_windows(wells)
+    bare = analysis_wells(windows, wells, given=["A3", "B3"])
+    assert bare.wells == [("p1", "A3"), ("p1", "B3")]
+    # the same wells named with their plate give the same answer
+    qualified = analysis_wells(windows, wells, given=["p1:A3", "p1:B3"])
+    assert bare == qualified
+
+
+def test_analysis_wells_requires_the_plate_with_several_plates():
+    """A bare well name is ambiguous across plates, which name their wells alike."""
+    wells = replicate_plates([2, 4, 8, 16, 32])
+    with pytest.raises(ValueError, match="named as 'plate:well'"):
+        analysis_wells(fit_dilution_windows(wells), wells, given=["A3"])
 
 
 def test_analysis_wells_rejects_given_wells_that_all_fail_qc():

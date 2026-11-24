@@ -621,6 +621,10 @@ rule analyze_pool:
         pool="|".join(map(re.escape, pool_composition_analyses)) or "(?!)",
     conda:
         "environment.yml"
+    resources:
+        # generous; holds the counts of every well of the pool's plates, which is 230 MB
+        # for a 12-well toy plate and grows with the wells and the size of the library
+        mem_mb=4096,
     params:
         pool_config=lambda wc: pool_composition_analyses[wc.pool],
         # optional, and validated by the script

@@ -756,7 +756,7 @@ The keys are:
  - `pooled_by_equal_volume`: whether equal volumes of each stock of a strain went into the pool, which is what the per-stock divided share below assumes. A balanced re-pool, made by adding more of the weak stocks, sets this false.
  - `miscellaneous_plates`: the plates this pool was diluted on, which are replicates of one dilution series where there is more than one.
  - `description`: what the experiment was, shown at the top of the report.
- - `linear_range_wells`: the wells to read the composition from, all at one dilution, overriding the ones located from the dilution series. Each is named `<plate>:<well>`, the plates of a pool naming their wells alike. Described below.
+ - `linear_range_wells`: the wells to read the composition from, all at one dilution, overriding the ones located from the dilution series. Each is named `<plate>:<well>`, the plates of a pool naming their wells alike; a pool measured from a single plate may name a well on its own, as `analysis_wells` in its summary CSV can be pasted here to pin the wells the fit chose. Described below.
  - `pool_wells`: this pool's wells, as `<samples CSV column>: <value>` pairs selecting them from the plate; empty takes every well, which is the case of one pool per plate. Each pool's wells are read as one dilution series, so a plate holding several pools needs this to tell them apart.
  - `pool_members`: the strains the pool was made from, as a single `<viral library column>: <value>` pair; empty takes the whole library. Reads of a library strain the pool was not made from are reported as contamination and left out of every share. A selection taking only some of a strain's barcodes is an error.
  - `min_avg_barcode_count_per_well` and `min_neut_standard_frac_per_well`: a well below either is left out of the dilution-series fit and of the composition. The average is over every barcode counted, the neutralization standard and any non-member included, so that the threshold means the same thing on a plate of a subpool as on one of the whole library.
@@ -767,9 +767,11 @@ The keys are:
 Diluting the pool should divide its viral counts by the dilution factor while leaving the neutralization standard alone, so the standard's share of the counts, as odds, rises along a straight line against the dilution factor on log-log axes for as long as that holds.
 The composition can only be read over the dilutions where it does: a well too concentrated for its counts to fall with dilution measures the assay rather than the pool.
 Every window of `linearity_window_dilutions` consecutive dilutions is fit, and the first whose slope is within `linearity_slope_tol` of the ideal marks where the pool starts responding; the composition is read from the **middle** dilution of that window, which leaves a dilution of margin on either side.
+The replicate wells of a dilution are averaged before the fit, as the geometric mean of their odds, so that the slope and the titer do not depend on how many replicates of each dilution were measured.
 
 A pool with no window within tolerance never clearly responds to being diluted, so there is no dilution at which its composition can be read.
-Its report warns, tabulating the slope of every window and marking the one that came closest, and stops after the well QC and the linear range: it recommends no dilution and reports no composition and no titer, and its composition CSV is written with no rows.
+Its report gives an error, tabulating the slope of every window and marking the one that came closest, and stops after the well QC and the linear range: it recommends no dilution and reports no composition and no titer, and its composition CSV is written with its header and no rows.
+A window that closes over a dilution whose wells all failed QC is fit and reported but is never within tolerance, as its middle is not the middle of the dilutions the plate holds and the wider step can pull its slope into tolerance; the report says which windows were excluded for this.
 Set `linear_range_wells` to read such a pool anyway.
 The titer then comes from the window whose middle dilution is theirs, so that it describes the same dilutions as the composition, and is left empty if no qualifying window does.
 

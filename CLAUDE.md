@@ -46,8 +46,10 @@ commit of that submodule; update periodically with
   --rerun-triggers mtime`, which re-runs just that rule from results that are already
   there. Synthesizing input CSVs this way also reaches cases the test example does not
   contain.
-- `scripts/seqneut_report.py` and `scripts/seqneut_funcs.py` are imported by the analysis
-  scripts and so are tested directly, with `pytest`.
+- The modules the analysis scripts import rather than run — `scripts/seqneut_report.py`,
+  `scripts/seqneut_funcs.py`, `scripts/pool_funcs.py`,
+  `scripts/miscellaneous_plate_funcs.py` and `scripts/miscellaneous_plate_charts.py` — are
+  tested directly, with `pytest`.
 - Ask before running the full `test_example` pipeline: it rewrites ~300 git-tracked files
   under `test_example/results/`, and a rerun yields small floating-point differences that
   should not be committed. The collapsed-barcode run

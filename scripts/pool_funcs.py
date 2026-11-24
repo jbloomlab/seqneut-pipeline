@@ -43,6 +43,10 @@ class AnalysisWells:
             The ``(plate, well)`` of each well to read, all at one dilution. Empty where no
             window of the series is within tolerance, there being no dilution the pool can
             be read at.
+        `gap_blocked` (list)
+            The windows that close over a dilution the plate holds, and so cannot be
+            selected whatever their slope. Reported, as one of them is what the fit would
+            have considered had those wells passed QC.
         `dilution` (int or float or None)
             The dilution those wells are at, or `None` where there are none.
         `titer_window` (list or None)
@@ -63,6 +67,7 @@ class AnalysisWells:
     titer_window: list
     strict: bool
     wells_given: bool
+    gap_blocked: tuple = ()
 
 
 def log_log_slope(x, y):
@@ -96,10 +101,78 @@ def log_log_slope(x, y):
     return slope, math.sqrt(sse / (len(x) - 2) / sxx), mean_y - slope * mean_x
 
 
+def dilution_means(wells):
+    """The geometric mean of the neutralization-standard odds at each dilution.
+
+    Replicate wells of a dilution are averaged before the slope and the titer are taken
+    from them, so that each dilution carries the same weight however many replicates of it
+    were measured: a dilution left out of some replicates, or whose wells mostly failed QC,
+    would otherwise pull the fit towards itself.
+
+    The mean is taken of ``log10(odds)``, which makes it the geometric mean of the odds.
+    That is the right centre on a log-log fit, being the arithmetic mean on the axis the
+    fit is on, and it is also far less moved by a single wild well than the arithmetic mean
+    of the odds themselves.
+
+    Args:
+        `wells` (pandas.DataFrame)
+            Wells with ``dilution_factor`` and ``neut_standard_odds`` columns.
+
+    Returns:
+        Dict mapping each dilution to its mean odds, in increasing order of dilution.
+
+    """
+    nonpositive = sorted(v for v in wells["neut_standard_odds"] if not v > 0)
+    if nonpositive:
+        raise ValueError(
+            f"the neutralization standard odds {nonpositive} are not positive, and a "
+            "logarithm is defined only for a positive value"
+        )
+    # `tolist` rather than leaving these as `numpy` numbers: a `numpy` dilution carries its
+    # type into the reported window and writes as `np.int64(128)`
+    means = (
+        wells.assign(_log_odds=[math.log10(v) for v in wells["neut_standard_odds"]])
+        .groupby("dilution_factor")["_log_odds"]
+        .mean()
+    )
+    return {
+        dilution: 10**log_odds
+        for dilution, log_odds in zip(means.index.tolist(), means.tolist(), strict=True)
+    }
+
+
+def spans_gap(window, plate_dilutions):
+    """Whether `window` skips a dilution the plate holds.
+
+    A window is a run of consecutive dilutions among those that reach the fit, so a
+    dilution whose every well failed QC closes the window over the gap. Such a window
+    covers a wider span of the series than its length says, and its middle is not the
+    middle of the dilutions actually measured. Where the gap sits next to the saturated
+    end this is not merely imprecise: straddling it pulls the slope into tolerance, and the
+    window being the more concentrated one it is then selected first, so the composition
+    would be read from a saturated well, which is the one thing locating the linear range
+    exists to prevent.
+
+    Args:
+        `window` (list)
+            The dilutions of the window.
+        `plate_dilutions` (iterable)
+            Every dilution the plate holds, whether or not its wells reached the fit.
+
+    Returns:
+        True where the plate holds a dilution inside the window's span that the window
+        does not cover.
+
+    """
+    held = [d for d in plate_dilutions if window[0] <= d <= window[-1]]
+    return len(held) > len(window)
+
+
 def fit_dilution_windows(
     wells,
     window_dilutions=DEFAULT_LINEARITY_WINDOW_DILUTIONS,
     slope_tol=DEFAULT_LINEARITY_SLOPE_TOL,
+    plate_dilutions=None,
 ):
     """Fit the slope of every window of `window_dilutions` consecutive dilutions.
 
@@ -113,12 +186,18 @@ def fit_dilution_windows(
             give a slope and its error, and odd, so that a window has a middle dilution.
         `slope_tol` (float)
             How far a window's slope may be from `IDEAL_SLOPE` and still count as ideal.
+        `plate_dilutions` (iterable or None)
+            Every dilution the plate holds, including any whose wells all failed QC. A
+            window that closes over one of those is reported but is not within tolerance,
+            so the composition is never read from it; see `spans_gap`. `None` takes the
+            dilutions of `wells`, under which no window spans a gap.
 
     Returns:
         List of dicts, one per window from the most concentrated end, each with the window's
         ``window`` of dilutions, its ``slope``, ``slope_se`` and ``intercept``, which
-        together place its fitted line, its ``deviation`` from `IDEAL_SLOPE`, and whether
-        it is ``within_tol``. Empty where the series is shorter than one window.
+        together place its fitted line, its ``deviation`` from `IDEAL_SLOPE`, whether it
+        ``spans_gap``, and whether it is ``within_tol``. Empty where the series is shorter
+        than one window.
 
     """
     if window_dilutions < 3 or window_dilutions % 2 == 0:
@@ -127,17 +206,21 @@ def fit_dilution_windows(
             f"{window_dilutions}: fewer than three dilutions cannot give a slope and its "
             "error, and an even window has no middle dilution to read the composition from"
         )
-    # `tolist` rather than `unique`, so the dilutions are Python numbers: a `numpy` one
-    # carries its type into the reported window and writes as `np.int64(128)`
-    dilutions = sorted(set(wells["dilution_factor"].tolist()))
+    # Each dilution once, weighted the same however many replicates of it were measured,
+    # and in increasing order, so that a window is a run of consecutive dilutions.
+    mean_odds = dilution_means(wells)
+    dilutions = sorted(mean_odds)
+    if plate_dilutions is None:
+        plate_dilutions = dilutions
+    plate_dilutions = sorted(set(plate_dilutions))
     windows = []
     for i in range(len(dilutions) - window_dilutions + 1):
         window = dilutions[i : i + window_dilutions]
-        in_window = wells[wells["dilution_factor"].isin(window)]
         slope, slope_se, intercept = log_log_slope(
-            in_window["dilution_factor"], in_window["neut_standard_odds"]
+            window, [mean_odds[d] for d in window]
         )
         deviation = abs(slope - IDEAL_SLOPE)
+        gapped = spans_gap(window, plate_dilutions)
         windows.append(
             {
                 "window": window,
@@ -146,7 +229,12 @@ def fit_dilution_windows(
                 # with the slope, where this window's own fitted line is drawn
                 "intercept": intercept,
                 "deviation": deviation,
-                "within_tol": deviation <= slope_tol,
+                "spans_gap": gapped,
+                # A window that closes over a dilution the plate holds is not trusted
+                # however close its slope comes: it does not describe the run of dilutions
+                # it appears to, and taking it could read the composition from inside
+                # saturation.
+                "within_tol": deviation <= slope_tol and not gapped,
             }
         )
     return windows
@@ -179,14 +267,20 @@ def analysis_wells(windows, wells, given=None):
             columns.
         `given` (list or None)
             The configured wells as ``plate:well`` strings, all at one dilution, or `None`
-            to locate them. A well is named with its plate because the plates of a pool are
-            replicates of one dilution series and so name their wells alike.
+            to locate them. A well of a pool measured from a single plate may be named on
+            its own, as the report names it, there being no second plate to tell it from;
+            where the pool has several plates the plate is required, they being replicates
+            of one dilution series and so naming their wells alike.
 
     Returns:
         `AnalysisWells`.
 
     """
     strict = [w for w in windows if w["within_tol"]]
+    # Close to the ideal slope but for closing over a dilution the plate holds, which is
+    # worth reporting: such a window is what the fit would have taken had those wells
+    # passed QC, and the reader is the one who knows whether the gap matters.
+    gap_blocked = tuple(w["window"] for w in windows if w["spans_gap"])
     if given is None:
         if not strict:
             return AnalysisWells(
@@ -195,6 +289,7 @@ def analysis_wells(windows, wells, given=None):
                 titer_window=None,
                 strict=False,
                 wells_given=False,
+                gap_blocked=gap_blocked,
             )
         window = strict[0]["window"]
         dilution = window[len(window) // 2]
@@ -208,6 +303,7 @@ def analysis_wells(windows, wells, given=None):
             # located from the fit, which only a window within tolerance can do
             strict=True,
             wells_given=False,
+            gap_blocked=gap_blocked,
         )
 
     if not given:
@@ -216,13 +312,26 @@ def analysis_wells(windows, wells, given=None):
         raise ValueError(
             f"'linear_range_wells' names a well more than once: {sorted(given)}"
         )
-    malformed = sorted(w for w in given if len(str(w).split(":")) != 2)
+    # A single-plate pool's wells are reported without a plate, and copying the reported
+    # wells back into `linear_range_wells` to pin them is the obvious way to use this, so a
+    # bare well name is taken to mean that one plate.
+    plates = sorted(set(wells["plate"]))
+    one_plate = len(plates) == 1
+    malformed = sorted(
+        w
+        for w in given
+        if len(str(w).split(":")) != 2 and not (one_plate and ":" not in str(w))
+    )
     if malformed:
+        named_as = "'well' or 'plate:well'" if one_plate else "'plate:well'"
         raise ValueError(
-            f"'linear_range_wells' names {malformed}, but a well is named as "
-            "'plate:well', the plates of a pool naming their wells alike"
+            f"'linear_range_wells' names {malformed}, but a well is named as {named_as}, "
+            "the plates of a pool naming their wells alike"
         )
-    given_pairs = [tuple(str(w).split(":")) for w in given]
+    given_pairs = [
+        tuple(str(w).split(":")) if ":" in str(w) else (plates[0], str(w))
+        for w in given
+    ]
     known = set(wells[["plate", "well"]].itertuples(index=False, name=None))
     unknown = sorted(set(given_pairs) - known)
     if unknown:
@@ -234,7 +343,9 @@ def analysis_wells(windows, wells, given=None):
     is_given = pandas.MultiIndex.from_frame(wells[["plate", "well"]]).isin(
         set(given_pairs)
     )
-    dilutions = sorted(wells.loc[is_given, "dilution_factor"].unique())
+    # `tolist` rather than `unique`, so the dilutions are Python numbers: a `numpy` one
+    # writes into the message as `np.int64(32)`
+    dilutions = sorted(set(wells.loc[is_given, "dilution_factor"].tolist()))
     if len(dilutions) != 1:
         raise ValueError(
             f"the wells of 'linear_range_wells' are at the dilutions {dilutions}, but "
@@ -250,6 +361,7 @@ def analysis_wells(windows, wells, given=None):
         titer_window=centered[0] if centered else None,
         strict=bool(centered),
         wells_given=True,
+        gap_blocked=gap_blocked,
     )
 
 
@@ -519,6 +631,8 @@ def diverging_stocks(shares, viral_library, factor):
         low = group["measured_share"].min()
         high = group["measured_share"].max()
         ratio = high / low if low > 0 else None
+        # `>` rather than `>=`: stocks exactly `factor`-fold apart are within what the
+        # threshold allows, as `max_stock_share_ratio` names the largest ratio accepted
         if ratio is None or ratio > factor:
             rows.append(
                 {

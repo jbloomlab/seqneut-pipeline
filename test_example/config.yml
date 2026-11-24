@@ -164,9 +164,22 @@ analyze_pools:
     miscellaneous_plates: [pool_plate_3]
     description: |
       A synthetic pool whose counts never fall as it is diluted, so no window of dilutions is
-      within tolerance of the ideal slope. The analysis would stop there, and reads it only
-      because `linear_range_wells` names the wells to use; it reports no titer, as there is
-      no fit over those wells to take one from.
+      within tolerance of the ideal slope. It is read only because `linear_range_wells` names
+      the wells to use, and reports no titer, as there is no fit over those wells to take one
+      from. Its wells are named without their plate, which a single-plate pool allows.
     <<: *pool_thresholds
-    # a well is named with its plate, the plates of a pool naming their wells alike
-    linear_range_wells: ["pool_plate_3:A3", "pool_plate_3:B3"]
+    # a bare well name, which a pool measured from one plate allows: with several plates a
+    # well is named `<plate>:<well>`, the plates of a pool naming their wells alike
+    linear_range_wells: ["A3", "B3"]
+
+  pool_not_measured:
+    analyze_by: stock
+    pooled_by_equal_volume: true
+    miscellaneous_plates: [pool_plate_3]
+    description: |
+      The same synthetic pool as `pool_no_linear_range`, with no `linear_range_wells` to
+      read it from anyway, so the analysis reports the error and stops: it gives no
+      recommended dilution, no composition and no titer. Analyzed by stock, so that the
+      composition CSV it writes with no rows still carries the stock columns.
+    <<: *pool_thresholds
+    addtl_viral_cols_to_show: [subgroup]

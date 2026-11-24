@@ -85,14 +85,15 @@ def misc_plates(example_config):
     """The example's plates, in the shape the ``process_`` functions take them in.
 
     Built here rather than through ``process_miscellaneous_plates``, which reads each
-    plate's samples CSV for its wells; only the library and the standard set are read
-    from a plate by the functions under test.
+    plate's samples CSV for its wells; only the library, the standard set and the date are
+    read from a plate by the functions under test.
 
     """
     return {
         plate: {
             "viral_library": d["viral_library"],
             "neut_standard_set": d["neut_standard_set"],
+            "date": str(d["date"]) if d.get("date") else None,
         }
         for (plate, d) in example_config["miscellaneous_plates"].items()
     }
