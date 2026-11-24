@@ -568,10 +568,10 @@ report.chart(
 report.fill_section_warnings(_well_qc_warnings_slot, well_qc_warnings)
 
 
-# --- the linear range of the dilution series ----------------------------------------------
+# --- identifying the linear range ---------------------------------------------------------
 
 report.md("""
-    ## The linear range of the dilution series
+    ## Identifying the linear range
     """)
 
 _linear_range_warnings_slot = report.reserve_section_warnings()
@@ -1389,7 +1389,7 @@ several_barcodes = (
 )
 
 report.md("""
-    ### Pool composition
+    ## Pool composition
     """)
 
 _composition_warnings_slot = report.reserve_section_warnings()
