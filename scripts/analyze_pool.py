@@ -995,15 +995,6 @@ else:
         on the wells at this chosen dilution factor.
         """)
 
-with report.notes("How can I interact with this plot?"):
-    report.md("""
-        By default, the linear fit for the window containing the recommended dilution
-        factor is displayed. The line is solid across the window, continuing fainter
-        through the rest of the dilution range. Multiple windows can be selected by shift
-        clicking the windows in the legend. The ideal slope (+1) line can be overlayed if a
-        single window is selected for comparison purposes.
-        """)
-
 if not chosen.wells_given and not no_linear_range:
     report.md(f"**Recommended dilution factor: {chosen.dilution}-fold**")
 
@@ -1019,6 +1010,15 @@ series_chart = (
     .resolve_legend(color="independent")
 )
 report.chart(series_chart.configure_axisX(labelOverlap="greedy"))
+
+with report.notes("How can I interact with this plot?"):
+    report.md("""
+        By default, the linear fit for the window containing the recommended dilution
+        factor is displayed. The line is solid across the window, continuing fainter
+        through the rest of the dilution range. Multiple windows can be selected by shift
+        clicking the windows in the legend. The ideal slope (+1) line can be overlayed if a
+        single window is selected for comparison purposes.
+        """)
 
 # Collected as the section is built and written into the slot left at the top of it, each
 # being about the fit this section tabulates and so read before rather than after it.
@@ -1406,6 +1406,32 @@ if several_barcodes:
         examined for cases where there are multiple barcodes.
         """)
 
+# How far from even the pool actually is, which the plot shows but does not quantify: the
+# spread decides whether a re-pool is worth doing and by how much. Over the units with reads,
+# a unit with none having no finite fold change to the rest; they are counted beside it, and
+# the warning below the plot names them.
+_present = plotted_shares.loc[plotted_shares["measured_share"] > 0, "measured_share"]
+_n_absent = int((plotted_shares["measured_share"] <= 0).sum())
+if len(_present) > 1:
+    _within_2fold = int(
+        ((_present / even_share < 2) & (even_share / _present < 2)).sum()
+    )
+    _absent_caption = (
+        f"Computed over the {len(_present)} {pool_by}s with reads; {_n_absent} with none "
+        "are left out, having no finite fold change."
+    )
+    report.stat_tiles(
+        {
+            f"highest : lowest {pool_by}": (
+                f"{_present.max() / _present.min():.1f}-fold"
+            ),
+            "highest vs even share": f"{_present.max() / even_share:.1f}x over",
+            "lowest vs even share": f"{even_share / _present.min():.1f}x under",
+            f"{pool_by}s within 2-fold of even": f"{_within_2fold} / {len(_present)}",
+        },
+        captions=[_absent_caption] if _n_absent else [],
+    )
+
 panels = [share_panel]
 if several_barcodes:
     panels.append(
@@ -1433,36 +1459,6 @@ report.chart(
     .configure_axis(grid=False)
     .configure_axisX(labelOverlap="greedy")
 )
-
-# How far from even the pool actually is, which the plot shows but does not quantify: the
-# spread decides whether a re-pool is worth doing and by how much. Over the units with reads,
-# a unit with none having no finite fold change to the rest; they are counted beside it, and
-# the warning below names them.
-_present = plotted_shares.loc[plotted_shares["measured_share"] > 0, "measured_share"]
-_n_absent = int((plotted_shares["measured_share"] <= 0).sum())
-if len(_present) > 1:
-    _within_2fold = int(
-        ((_present / even_share < 2) & (even_share / _present < 2)).sum()
-    )
-    _even_caption = (
-        f"An even share is {round_sig(100 * even_share)}% of the pool, over {n_units} "
-        f"{pool_by}s."
-    )
-    _absent_caption = (
-        f"Computed over the {len(_present)} {pool_by}s with reads; {_n_absent} with none "
-        "are left out, having no finite fold change."
-    )
-    report.stat_tiles(
-        {
-            f"highest : lowest {pool_by}": (
-                f"{round_sig(_present.max() / _present.min())}-fold"
-            ),
-            "highest vs even share": f"{round_sig(_present.max() / even_share)}x over",
-            "lowest vs even share": f"{round_sig(even_share / _present.min())}x under",
-            f"{pool_by}s within 2-fold of even": f"{_within_2fold} / {len(_present)}",
-        },
-        captions=[_even_caption] + ([_absent_caption] if _n_absent else []),
-    )
 
 # A unit with no reads draws a bar of no length, so it is named here as well: on the plot it
 # is indistinguishable from one too weak to see, and it is the case that matters most.
