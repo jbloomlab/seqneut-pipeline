@@ -367,12 +367,12 @@ with report.notes("What each fate means"):
 # --- which wells measure the pool ---------------------------------------------------------
 
 report.md("""
-    ## Barcode level QC
+    ## Well level QC
     """)
 
 # before the section's text, which a reader otherwise has to get past to learn that
 # something needs their attention
-_barcode_qc_warnings_slot = report.reserve_section_warnings()
+_well_qc_warnings_slot = report.reserve_section_warnings()
 
 report.md(f"""
     Each well needs to have enough barcode counts to accurately assess the composition of
@@ -380,7 +380,7 @@ report.md(f"""
     {pool_config["min_avg_barcode_count_per_well"]} counts per barcode.
 
     There also needs to be sufficient counts of the neutralization standard barcodes for
-    normalization purposes and a well fails if fewer than
+    normalization and a well fails if fewer than
     {round_sig(100 * pool_config["min_neut_standard_frac_per_well"])}% of the total barcode
     counts are from neutralization standard barcodes. Additionally, as the dilution series
     progresses, the fraction of barcode counts from the neutralization standard should
@@ -455,11 +455,11 @@ well_qc = (
 )
 
 empty_wells = sorted(well_qc.loc[well_qc["total_count"] <= 0, "well_name"])
-# Collected here and appended at the end of the section, so that a warning about these
-# wells is read with the plot of them rather than before the thresholds are introduced.
-barcode_qc_warnings = []
+# Collected as the section is built and written into the slot left at the top of it, these
+# wells being what a reader needs to know about before reading the thresholds against them.
+well_qc_warnings = []
 if empty_wells:
-    barcode_qc_warnings.append(
+    well_qc_warnings.append(
         {
             "text": "with zero barcode counts",
             "details": well_qc.loc[
@@ -565,7 +565,7 @@ report.chart(
     .configure_axis(grid=False)
     .configure_axisX(labelOverlap="greedy")
 )
-report.fill_section_warnings(_barcode_qc_warnings_slot, barcode_qc_warnings)
+report.fill_section_warnings(_well_qc_warnings_slot, well_qc_warnings)
 
 
 # --- the linear range of the dilution series ----------------------------------------------
@@ -577,24 +577,23 @@ report.md("""
 _linear_range_warnings_slot = report.reserve_section_warnings()
 
 report.md(f"""
-    The linear range for a pool is determined by examining how the fraction of
-    neutralization standard counts changes across the dilution series. At high
-    concentrations of the viral pool (low dilution factor), it is possible to saturate the
-    cellular capacity to produce barcoded nucleic acid. In this regime, adding less virus
-    doesn't result in a corresponding decrease in viral barcode counts and so the fraction
-    of neutralization standard barcodes remains relatively consistent. As the pool is
-    diluted further, there should be a point where a linear relationship is observed
-    between the share of neutralization standard counts and the dilution factor.
+    The linear range for a pool is determined by examining how the share of neutralization
+    standard counts changes across the dilution series. At high concentrations of the viral
+    pool (low dilution factor), it is possible to saturate the cellular capacity to produce
+    barcoded nucleic acid. In this regime, adding less virus doesn't necessarily result in a
+    corresponding decrease in viral barcode counts and so the fraction of neutralization
+    standard barcodes remains relatively consistent. As the pool is diluted further, there
+    should be a point where a linear relationship (on a log-scale) is observed between the
+    share of neutralization standard counts and the dilution factor.
 
     To determine this point, lines are fit to a series of
     {pool_config["linearity_window_dilutions"]} consecutive dilutions with a sliding window
-    of 1 dilution. In ideal conditions this slope would be {IDEAL_SLOPE:.0f}, meaning a
+    of 1 dilution. In ideal conditions this slope would be {IDEAL_SLOPE:+.0f}, meaning a
     2-fold dilution of the library pool would result in a 2-fold increase in the amount of
-    neutralization standard. To determine the appropriate dilution factor for the pool, we
-    have a tolerance set here for {pool_config["linearity_slope_tol"]} around that ideal
-    slope of {IDEAL_SLOPE:.1f}. A pool with no window within that tolerance never clearly
-    responds to being diluted, and is reported as an error rather than read anyway. This is
-    quantified in the following table:
+    neutralization standard. The first (most concentrated) dilution window with a slope of
+    {IDEAL_SLOPE:+.0f} +/- {pool_config["linearity_slope_tol"]} is selected and the middle
+    dilution from this window is the recommended dilution factor. This is quantified in the
+    following table:
     """)
 
 fittable_wells = well_qc[well_qc["fittable"]]
@@ -960,40 +959,28 @@ if windows and chosen_label is not None:
         .transform_filter(selected_windows),
     ]
 
-if chosen.wells_given:
-    report.md("""
-        The plot below displays the neutralization standard odds versus the reciprocal
-        dilution factor on a log-log scale. The dilutions set in `linear_range_wells` are
-        marked with a dashed vertical line. The downstream compositional analysis of the
-        pool is based on the wells at this chosen dilution factor.
-        """)
-else:
-    report.md("""
-        The plot below displays the neutralization standard odds versus the reciprocal
-        dilution factor on a log-log scale. The fit to the window the composition is read
-        from is drawn, with the middle dilution of that window marked by a dashed vertical
-        line, and its slope carried faintly across the rest of the series, which is where
-        a window too saturated to describe the dilute end shows itself. Click a window in
-        the legend to draw that one instead, shift-click to draw several together, and
-        click the plot to draw them all: a pool that breaks cleanly into responding to
-        dilution has the fits of its later windows lying along one line, where a pool that
-        only approaches it gradually has them fanning apart. The downstream compositional
-        analysis of the pool is based on the wells at this chosen dilution factor.
-        """)
+# The dashed vertical marks the dilution read from, which the wells were set to on the
+# explicit path and the fit recommends on the automatic one.
+_marked_dilution = (
+    "the dilutions set in `linear_range_wells`"
+    if chosen.wells_given
+    else "the recommended dilution"
+)
+report.md(f"""
+    The plot below displays the neutralization standard odds (fraction of standard / 1 -
+    fraction of standard) versus the reciprocal dilution factor on a log-log scale. The
+    linear fit to the dilution windows are drawn with {_marked_dilution} marked by a dashed
+    vertical line. The downstream compositional analysis of the pool is based on the wells
+    at this chosen dilution factor.
+    """)
 
-if ideal_intercept is not None:
-    report.md(f"""
-        Check *ideal slope line* below the plot to draw the ideal slope of
-        {IDEAL_SLOPE:+.0f}: a dashed black line of what the odds would do if each dilution
-        step divided the viral counts by that step, rather than a fit to the wells. It
-        belongs to the window selected, at the height that carries the ideal slope through
-        that window's wells, so it moves with the fit it is there to be compared against. It
-        is drawn at full strength over that window's own dilutions, where its wells are
-        claimed to follow the ideal, and faint across the rest of the series, where they are
-        not. A fit parallel to it responds to dilution as it should; one flattening away
-        from it at the concentrated end is saturated. Selecting more than one window hides
-        it, a reference line per window being several lines at several heights rather than
-        something to read the fits against.
+with report.notes("How can I interact with this plot?"):
+    report.md("""
+        By default, the linear fit for the window containing the recommended dilution
+        factor is displayed. The line is solid across the window, continuing fainter
+        through the rest of the dilution range. Multiple windows can be selected by shift
+        clicking the windows in the legend. The ideal slope (+1) line can be overlayed if a
+        single window is selected for comparison purposes.
         """)
 
 if not chosen.wells_given:
@@ -1012,8 +999,8 @@ series_chart = (
 )
 report.chart(series_chart.configure_axisX(labelOverlap="greedy"))
 
-# Collected here and appended at the end of the section, each being about the fit this
-# section tabulates and so read with it rather than ahead of it.
+# Collected as the section is built and written into the slot left at the top of it, each
+# being about the fit this section tabulates and so read before rather than after it.
 linear_range_warnings = []
 
 # A window spans consecutive dilutions of those that reach the fit, so a dilution whose every
@@ -1352,6 +1339,36 @@ report.chart(
     .configure_axis(grid=False)
     .configure_axisX(labelOverlap="greedy")
 )
+
+# How far from even the pool actually is, which the plot shows but does not quantify: the
+# spread decides whether a re-pool is worth doing and by how much. Over the units with reads,
+# a unit with none having no finite fold change to the rest; they are counted beside it, and
+# the warning below names them.
+_present = plotted_shares.loc[plotted_shares["measured_share"] > 0, "measured_share"]
+_n_absent = int((plotted_shares["measured_share"] <= 0).sum())
+if len(_present) > 1:
+    _within_2fold = int(
+        ((_present / even_share < 2) & (even_share / _present < 2)).sum()
+    )
+    _even_caption = (
+        f"An even share is {round_sig(100 * even_share)}% of the pool, over {n_units} "
+        f"{pool_by}s."
+    )
+    _absent_caption = (
+        f"Computed over the {len(_present)} {pool_by}s with reads; {_n_absent} with none "
+        "are left out, having no finite fold change."
+    )
+    report.stat_tiles(
+        {
+            f"highest : lowest {pool_by}": (
+                f"{round_sig(_present.max() / _present.min())}-fold"
+            ),
+            "highest vs even share": f"{round_sig(_present.max() / even_share)}x over",
+            "lowest vs even share": f"{round_sig(even_share / _present.min())}x under",
+            f"{pool_by}s within 2-fold of even": f"{_within_2fold} / {len(_present)}",
+        },
+        captions=[_even_caption] + ([_absent_caption] if _n_absent else []),
+    )
 
 # A unit with no reads draws a bar of no length, so it is named here as well: on the plot it
 # is indistinguishable from one too weak to see, and it is the case that matters most.
