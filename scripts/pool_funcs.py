@@ -543,15 +543,12 @@ def barcode_fractions(counts, members, plate_wells):
     )
 
 
-def unit_shares(fractions, viral_library, pool_by, equal_volume=None):
+def unit_shares(fractions, viral_library, pool_by):
     """Each `pool_by` unit's share of the pool, summed over its barcodes.
 
-    Under ``stock`` two shares are reported, because they are two different quantities. The
-    measured share is the sum over that stock's own barcodes, which is what the tube
-    actually holds. The divided share is the strain's share split equally among its stocks,
-    which is what a project balancing per strain pipettes; it holds only where the strain's
-    tubes went into the pool at equal volumes, so it is reported only when `equal_volume`
-    says they did.
+    Under ``stock`` the share is what that one tube holds, measured from its own barcodes,
+    which is the quantity a volume per tube is read off. A strain held as several tubes
+    therefore gets a share for each rather than one share to divide between them.
 
     Args:
         `fractions` (pandas.DataFrame)
@@ -560,13 +557,9 @@ def unit_shares(fractions, viral_library, pool_by, equal_volume=None):
             The members of the pool, with ``barcode``, ``strain`` and any ``stock``.
         `pool_by` (str)
             The unit to report, one of `POOL_BY_OPTIONS`.
-        `equal_volume` (bool or None)
-            Whether a strain's stocks went in at equal volumes, which the divided share
-            assumes. Required to report one.
 
     Returns:
-        `pandas.DataFrame` with ``unit``, ``strain``, ``measured_share``, and
-        ``divided_share`` where it applies.
+        `pandas.DataFrame` with ``unit``, ``strain`` and ``measured_share``.
 
     """
     if pool_by not in POOL_BY_OPTIONS:
@@ -588,24 +581,22 @@ def unit_shares(fractions, viral_library, pool_by, equal_volume=None):
             strain=pandas.NamedAgg("strain", "first"),
         )
     )
-    if pool_by == "stock" and equal_volume:
-        per_strain = labeled.groupby("strain")["mean_fraction"].sum()
-        stocks_per_strain = labeled.groupby("strain")["stock"].nunique()
-        shares["divided_share"] = shares["strain"].map(per_strain / stocks_per_strain)
-    elif pool_by != "stock" and equal_volume:
-        # a strain or a barcode is its own unit, so there is nothing to divide
-        shares["divided_share"] = shares["measured_share"]
     return shares.sort_values("measured_share", ascending=False).reset_index(drop=True)
 
 
 def diverging_stocks(shares, viral_library, factor):
     """Strains whose stocks' measured shares differ by more than `factor`.
 
-    Two tubes of one strain should hold about the same amount of virus where they went in
-    at equal volumes, so a strain whose tubes disagree is worth seeing: it says one tube
-    grew poorly, which is what these plates exist to catch. A tube with no reads at all is
-    reported without a ratio, there being nothing to divide by; a strain with no reads from
-    any of its tubes is a low-titer result rather than a disagreement, and is left out.
+    A strain whose tubes disagree is worth seeing whatever volumes they went in at. Added
+    at equal volumes they should hold about the same amount of virus, so a disagreement
+    says one tube grew poorly, which is what these plates exist to catch; added to a
+    chosen ratio they should differ by about that ratio, so a disagreement far wider than
+    any ratio intended says the same thing. Which it is cannot be read off the shares, so
+    the ratio is reported and left to a reader who knows what went in.
+
+    A tube with no reads at all is reported without a ratio, there being nothing to divide
+    by; a strain with no reads from any of its tubes is a low-titer result rather than a
+    disagreement, and is left out.
 
     Args:
         `shares` (pandas.DataFrame)

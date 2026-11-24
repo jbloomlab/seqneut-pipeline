@@ -124,12 +124,7 @@ def defaults_of(process, section, misc_plates, required):
         (
             "analyze_pools",
             "process_analyze_pools",
-            [
-                "analyze_by",
-                "pooled_by_equal_volume",
-                "miscellaneous_plates",
-                "description",
-            ],
+            ["analyze_by", "miscellaneous_plates", "description"],
             POOL_THRESHOLDS,
         ),
     ],
@@ -179,7 +174,7 @@ def test_pool_linearity_defaults_match_pool_funcs(
         funcs_smk["process_analyze_pools"],
         example_config["analyze_pools"],
         misc_plates,
-        ["analyze_by", "pooled_by_equal_volume", "miscellaneous_plates", "description"],
+        ["analyze_by", "miscellaneous_plates", "description"],
     )
     for config_key, constant in [
         ("linearity_window_dilutions", "DEFAULT_LINEARITY_WINDOW_DILUTIONS"),

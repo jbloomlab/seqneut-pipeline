@@ -731,7 +731,6 @@ analyze_pools:
 
   <pool_name>:
     analyze_by: <strain, barcode, or stock>
-    pooled_by_equal_volume: <true or false>
     miscellaneous_plates: [<plate_name>, ...]
     description: <markdown describing the experiment>
     # the rest are optional, shown with their defaults
@@ -753,7 +752,6 @@ Where several pools were diluted on one physical plate, give the plate one entry
 The keys are:
 
  - `analyze_by`: the unit that an equal share of the pool is an equal share *of*, which is `strain`, `barcode`, or `stock`. An even share is one over the number of these among the pool's members, and it is what the report plots each unit against. `stock` needs a `stock` column in the viral library naming the tube of every barcode, and each tube must hold one strain.
- - `pooled_by_equal_volume`: whether equal volumes of each stock of a strain went into the pool, which is what the per-stock divided share below assumes. A balanced re-pool, made by adding more of the weak stocks, sets this false.
  - `miscellaneous_plates`: the plates this pool was diluted on, which are replicates of one dilution series where there is more than one.
  - `description`: what the experiment was, shown at the top of the report.
  - `linear_range_wells`: the wells to read the composition from, all at one dilution, overriding the ones located from the dilution series. Each is named `<plate>:<well>`, the plates of a pool naming their wells alike; a pool measured from a single plate may name a well on its own, as `analysis_wells` in its summary CSV can be pasted here to pin the wells the fit chose. Described below.
@@ -778,9 +776,8 @@ The titer then comes from the window whose middle dilution is theirs, so that it
 `titer_vs_neut_standard` is how much virus the undiluted pool holds against the neutralization standard, in relative rather than infectious units.
 It is only comparable between pools read against the same standard on the same date, which is why the summary CSV names the date, the plates, and the standard set, and says which window of dilutions the titer came from.
 
-Under `analyze_by: stock`, each stock gets two shares, which are different quantities: its **measured** share is what that tube itself holds, while its **divided** share is its strain's share split equally among the strain's stocks, which is what a project balancing per strain pipettes.
-Only the measured share is reported where `pooled_by_equal_volume` is false, since dividing a strain's share equally among tubes that went in unequally would describe none of them.
-Where it is true, a strain whose tubes differ in measured share by more than `max_stock_share_ratio` is reported: at equal volumes they should hold about the same amount of virus, so a disagreement says one tube grew poorly.
+Under `analyze_by: stock`, a stock's share is what that one tube holds, measured from its own barcodes, which is the quantity a volume per tube is read off; a strain held as several tubes gets a share for each.
+A strain whose tubes differ in measured share by more than `max_stock_share_ratio` is reported, which is read against the volumes that went in: tubes added at equal volumes should hold about the same amount of virus, and tubes added to a chosen ratio should differ by about that ratio, so a disagreement wider than any ratio intended says one tube grew poorly.
 
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.

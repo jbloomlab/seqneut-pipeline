@@ -127,7 +127,6 @@ analyze_single_well_infections:
 analyze_pools:
   pool_whole_library:
     analyze_by: strain
-    pooled_by_equal_volume: true
     miscellaneous_plates: [pool_plate_1]
     description: |
       A synthetic pool of the whole library, infected over a serial dilution that is
@@ -143,7 +142,6 @@ analyze_pools:
 
   pool_subgroup_by_stock:
     analyze_by: stock
-    pooled_by_equal_volume: true
     miscellaneous_plates: [pool_plate_2]
     description: |
       A synthetic pool of just the `group_a` strains, measured per stock: one strain is
@@ -159,8 +157,6 @@ analyze_pools:
 
   pool_no_linear_range:
     analyze_by: barcode
-    # the two stocks of a strain were not pipetted equally into this pool
-    pooled_by_equal_volume: false
     miscellaneous_plates: [pool_plate_3]
     description: |
       A synthetic pool whose counts never fall as it is diluted, so no window of dilutions is
@@ -174,7 +170,6 @@ analyze_pools:
 
   pool_not_measured:
     analyze_by: stock
-    pooled_by_equal_volume: true
     miscellaneous_plates: [pool_plate_3]
     description: |
       The same synthetic pool as `pool_no_linear_range`, with no `linear_range_wells` to

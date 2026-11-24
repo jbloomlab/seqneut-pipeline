@@ -721,36 +721,26 @@ def test_unit_shares_sums_a_unit_over_its_barcodes():
     }
 
 
-def test_unit_shares_divides_a_strain_among_its_stocks():
-    """The divided share splits a strain's share equally among its stocks.
+def test_unit_shares_measures_each_stock_of_a_strain_on_its_own():
+    """A strain held as several tubes gets a share per tube, not one share to divide.
 
-    This is what the existing project scripts compute and what a project balancing per
-    strain pipettes, and it differs from the measured share whenever a strain's stocks
-    grew differently: here 0.5 and 0.2 measured against 0.35 divided.
+    Volume is the only thing that can be changed, and it is set per tube, so what each
+    tube itself holds is the quantity a volume is read off; the tubes of a strain are not
+    assumed to hold the same amount.
 
     """
     lib = library({"AA": ("s1", "s1_a"), "CC": ("s1", "s1_b"), "GG": ("s2", "s2_a")})
     fractions = pd.DataFrame(
         {"barcode": ["AA", "CC", "GG"], "mean_fraction": [0.5, 0.2, 0.3]}
     )
-    shares = unit_shares(fractions, lib, "stock", equal_volume=True)
-    assert dict(zip(shares["unit"], shares["divided_share"])) == {
-        "s1_a": pytest.approx(0.35),
-        "s1_b": pytest.approx(0.35),
+    shares = unit_shares(fractions, lib, "stock")
+    assert dict(zip(shares["unit"], shares["measured_share"])) == {
+        "s1_a": pytest.approx(0.5),
+        "s1_b": pytest.approx(0.2),
         "s2_a": pytest.approx(0.3),
     }
-
-
-def test_unit_shares_omits_the_divided_share_without_equal_volume():
-    """Dividing a strain's share among its stocks assumes they went in equally."""
-    lib = library({"AA": ("s1", "s1_a"), "CC": ("s1", "s1_b")})
-    fractions = pd.DataFrame({"barcode": ["AA", "CC"], "mean_fraction": [0.8, 0.2]})
-    shares = unit_shares(fractions, lib, "stock", equal_volume=False)
-    assert "divided_share" not in shares.columns
-    assert dict(zip(shares["unit"], shares["measured_share"])) == {
-        "s1_a": pytest.approx(0.8),
-        "s1_b": pytest.approx(0.2),
-    }
+    # the two tubes of `s1` keep their own shares rather than both taking the mean 0.35
+    assert shares.columns.tolist() == ["unit", "measured_share", "strain"]
 
 
 @pytest.mark.parametrize("pool_by", ["barcode", "strain", "stock"])
@@ -765,19 +755,18 @@ def test_unit_shares_always_names_the_strain(pool_by):
     fractions = pd.DataFrame(
         {"barcode": ["AA", "CC", "GG"], "mean_fraction": [0.5, 0.2, 0.3]}
     )
-    shares = unit_shares(fractions, lib, pool_by, equal_volume=True)
+    shares = unit_shares(fractions, lib, pool_by)
     assert {"unit", "strain", "measured_share"} <= set(shares.columns)
     assert set(shares["strain"]) == {"s1", "s2"}
     assert shares["measured_share"].sum() == pytest.approx(1.0)
 
 
-def test_unit_shares_by_strain_has_equal_measured_and_divided_shares():
-    """A strain is its own unit, so there is nothing to divide."""
+def test_unit_shares_by_strain_sums_the_barcodes_of_the_strain():
+    """A strain is its own unit, so its share is the sum over all of its barcodes."""
     lib = library({"AA": ("s1", "s1_a"), "CC": ("s1", "s1_b")})
     fractions = pd.DataFrame({"barcode": ["AA", "CC"], "mean_fraction": [0.8, 0.2]})
-    shares = unit_shares(fractions, lib, "strain", equal_volume=True)
+    shares = unit_shares(fractions, lib, "strain")
     assert shares["measured_share"].tolist() == pytest.approx([1.0])
-    assert shares["divided_share"].tolist() == pytest.approx([1.0])
 
 
 # --- stocks of one strain that disagree ---------------------------------------------------

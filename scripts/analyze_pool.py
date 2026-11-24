@@ -83,7 +83,6 @@ pool_config = snakemake.params.pool_config
 date = pool_config["date"]
 plates = pool_config["miscellaneous_plates"]
 pool_by = pool_config["analyze_by"]
-equal_volume = pool_config["pooled_by_equal_volume"]
 max_stock_share_ratio = pool_config["max_stock_share_ratio"]
 
 print(f"Analyzing pool {pool} from {date}, by {pool_by}")
@@ -202,14 +201,13 @@ even_share = 1 / n_units
 # The columns of the per-barcode composition CSV, named once so that a pool with no linear
 # range writes the same header as one with a composition in it: a reader of these files
 # selects columns by name and should not have to handle two schemas.
-share_cols = ["measured_share"] + (["divided_share"] if equal_volume else [])
 composition_cols = [
     "barcode",
     "mean_fraction",
     "strain",
     *(["stock"] if "stock" in member_library.columns else []),
     *addtl_viral_cols,
-    *([f"stock_{c}" for c in share_cols] if pool_by == "stock" else []),
+    *(["stock_measured_share"] if pool_by == "stock" else []),
 ]
 report.md("""
     ## Experimental summary
@@ -1213,7 +1211,6 @@ if no_linear_range:
                 "miscellaneous_plates": " ".join(plates),
                 "neut_standard_set": pool_config["neut_standard_set"],
                 "analyze_by": pool_by,
-                "pooled_by_equal_volume": equal_volume,
                 f"n_{pool_by}s": n_units,
                 "n_strains": member_library["strain"].nunique(),
                 "n_member_barcodes": len(members),
@@ -1354,15 +1351,7 @@ if len(non_members):
 # --- each unit's share of the pool --------------------------------------------------------
 
 fractions = barcode_fractions(counts, members, analysis_plate_wells)
-shares = unit_shares(fractions, member_library, pool_by, equal_volume=equal_volume)
-# the composition CSV's header was built from `share_cols` before the shares were
-# computed, so a disagreement would write a column that is not there or drop one that is
-missing_share_cols = [c for c in share_cols if c not in shares.columns]
-if missing_share_cols:
-    raise ValueError(
-        f"'unit_shares' gave no {missing_share_cols}, which the composition CSV's header "
-        f"names; it gave {sorted(shares.columns)}"
-    )
+shares = unit_shares(fractions, member_library, pool_by)
 
 unit_order = shares["unit"].tolist()
 plotted_shares = shares.merge(
@@ -1399,7 +1388,7 @@ share_panel = alt.layer(
         tooltip=[
             "unit:N",
             "strain:N",
-            *[f"{c}:Q" for c in share_cols],
+            "measured_share:Q",
             *[lookup_tooltip(strain_annotations, c) for c in addtl_viral_cols],
         ],
         **hover_stroke,
@@ -1539,7 +1528,7 @@ if len(absent):
         ].rename(columns={"unit": pool_by})
     )
 
-if pool_by == "stock" and equal_volume:
+if pool_by == "stock":
     diverging = diverging_stocks(shares, member_library, max_stock_share_ratio)
     if len(diverging):
         # slotted into this subsection rather than the report's block: it is about the
@@ -1564,7 +1553,10 @@ if pool_by == "stock" and equal_volume:
                         "At least one viral strain is present in multiple stocks that "
                         "were pooled here. This warning is triggered when the difference "
                         "between stocks of the same strain in their measured share of "
-                        f"the pool exceeds {max_stock_share_ratio}-fold. Some possible "
+                        f"the pool exceeds {max_stock_share_ratio}-fold. Read the ratio "
+                        "against the volumes that went in: stocks added at equal volumes "
+                        "should hold about the same amount of virus, and stocks added to "
+                        "a chosen ratio should differ by about that ratio. Some possible "
                         "explanations include: mistakes when pooling, inaccuracies in "
                         "titering, differences in viral growth. A blank ratio means the "
                         "weakest stock has no reads at all."
@@ -1595,8 +1587,8 @@ composition = (
 if pool_by == "stock":
     composition = composition.merge(
         shares.rename(
-            columns={"unit": "stock", **{c: f"stock_{c}" for c in share_cols}}
-        )[["stock", *[f"stock_{c}" for c in share_cols]]],
+            columns={"unit": "stock", "measured_share": "stock_measured_share"}
+        )[["stock", "stock_measured_share"]],
         on="stock",
         how="left",
         validate="many_to_one",
@@ -1613,7 +1605,6 @@ pd.DataFrame(
             "miscellaneous_plates": " ".join(plates),
             "neut_standard_set": pool_config["neut_standard_set"],
             "analyze_by": pool_by,
-            "pooled_by_equal_volume": equal_volume,
             f"n_{pool_by}s": n_units,
             "n_strains": member_library["strain"].nunique(),
             "n_member_barcodes": len(members),

@@ -306,7 +306,6 @@ def process_analyze_pools(pools_d, misc_plates):
     }
     required = {
         "analyze_by",
-        "pooled_by_equal_volume",
         "miscellaneous_plates",
         "description",
     }
@@ -323,24 +322,11 @@ def process_analyze_pools(pools_d, misc_plates):
                 f"{sorted(required | set(defaults))}"
             )
         # A key that is null counts as absent, so an optional one takes its default; a
-        # `--configfile` override can only reset a key by setting it to null. The
-        # exception is `pooled_by_equal_volume`, where null is not false: it is required
-        # and checked below, as neither value is safe to assume.
-        given = {
-            key: value
-            for (key, value) in entry.items()
-            if value is not None or key == "pooled_by_equal_volume"
-        }
+        # `--configfile` override can only reset a key by setting it to null.
+        given = {key: value for (key, value) in entry.items() if value is not None}
         if not required.issubset(given):
             raise ValueError(f"{where} lacks {sorted(required - set(given))}")
         d = {**copy.deepcopy(defaults), **given}
-
-        if not isinstance(d["pooled_by_equal_volume"], bool):
-            raise ValueError(
-                f"{where} 'pooled_by_equal_volume' must be true or false, not "
-                f"{d['pooled_by_equal_volume']!r}: it says whether a strain's stocks went "
-                "into the pool at equal volumes, which the per-stock divided share assumes"
-            )
 
         plates = d["miscellaneous_plates"]
         if not isinstance(plates, list) or not plates:
