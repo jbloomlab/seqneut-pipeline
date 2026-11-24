@@ -40,16 +40,19 @@ class AnalysisWells:
 
     Attributes:
         `wells` (list)
-            The ``(plate, well)`` of each well to read, all at one dilution.
-        `dilution` (int or float)
-            The dilution those wells are at.
+            The ``(plate, well)`` of each well to read, all at one dilution. Empty where no
+            window of the series is within tolerance, there being no dilution the pool can
+            be read at.
+        `dilution` (int or float or None)
+            The dilution those wells are at, or `None` where there are none.
         `titer_window` (list or None)
             The dilutions of the window the titer is computed over, or `None` where no
             strict window gives one and the titer is therefore not reported.
         `strict` (bool)
-            Whether a window within tolerance gives the titer. Always true where the wells
-            were located from the fit, which only a window within tolerance can do, and
-            false where configured wells sit at a dilution no such window centers.
+            Whether a window within tolerance gives the titer. True where the wells were
+            located from the fit, which only such a window can do, and false where no
+            window is within tolerance or where configured wells sit at a dilution none
+            centers.
         `wells_given` (bool)
             Whether the wells were configured rather than located from the fit.
 
@@ -155,10 +158,12 @@ def analysis_wells(windows, wells, given=None):
     Without `given`, the wells are the middle dilution of the first strictly linear window,
     rather than its most concentrated edge, so that there is a dilution of margin on either
     side: at the edge the pool has only just started responding, and a slightly misplaced
-    onset would put the wells outside the linear range altogether. A pool with no window
-    within tolerance raises: it never clearly responds to being diluted, which is a
-    question about the pool rather than one to settle by loosening the tolerance, so the
-    wells to read it from are named explicitly or not at all.
+    onset would put the wells outside the linear range altogether. Where no window is
+    within tolerance the pool never clearly responds to being diluted, and no wells are
+    returned: there is no dilution at which what it holds can be read, and reading it at
+    one anyway would report a composition the series does not support. The caller reports
+    that rather than a composition, and `linear_range_wells` names the wells to read it
+    from where that is the intent.
 
     With `given`, those wells are read whatever the fit says, and the titer comes from the
     window whose middle dilution is theirs. A dilution lies in several overlapping windows whose
@@ -184,26 +189,12 @@ def analysis_wells(windows, wells, given=None):
     strict = [w for w in windows if w["within_tol"]]
     if given is None:
         if not strict:
-            # The window that came closest is named, that being what a reader needs in
-            # order to judge whether the pool is worth reading at all and which wells to
-            # name if it is.
-            closest = min(windows, key=lambda w: w["deviation"], default=None)
-            closest_msg = (
-                (
-                    f"; the closest is {closest['window'][0]}-{closest['window'][-1]}, "
-                    f"whose slope is {closest['slope']:+.3g} "
-                    f"+/- {closest['slope_se']:.3g}, off the ideal by "
-                    f"{closest['deviation']:.3g}"
-                )
-                if closest is not None
-                else ", there being no window of dilutions to fit at all"
-            )
-            raise ValueError(
-                "no window of dilutions has a slope within tolerance of the ideal "
-                f"{IDEAL_SLOPE:+.0f}, so the pool never clearly responds to being diluted "
-                "and there is no linear range to read its composition from"
-                f"{closest_msg}. Check the pool and the series before trusting it, and "
-                "set 'linear_range_wells' to read it from particular wells anyway"
+            return AnalysisWells(
+                wells=[],
+                dilution=None,
+                titer_window=None,
+                strict=False,
+                wells_given=False,
             )
         window = strict[0]["window"]
         dilution = window[len(window) // 2]

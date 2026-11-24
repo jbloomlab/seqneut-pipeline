@@ -183,13 +183,13 @@ def test_analysis_wells_takes_the_middle_of_the_first_strict_run():
     )
 
 
-def test_analysis_wells_raises_where_only_the_noise_would_admit_a_run():
-    """A pool whose every window misses the tolerance raises rather than being read.
+def test_analysis_wells_chooses_nothing_where_only_the_noise_would_admit_a_run():
+    """A pool whose every window misses the tolerance is not read at all.
 
     Modeled on the most saturated window of a real equal-volume pool, whose slope of
     -0.416 on a standard error of 0.106 is far off the ideal but not by much more than its
-    own noise. Such a pool does not clearly respond to being diluted, and the composition
-    is not read from it unless `linear_range_wells` names the wells.
+    own noise. Such a pool does not clearly respond to being diluted, so no wells are
+    chosen and the report says so, unless `linear_range_wells` names the wells.
 
     """
     noisy = pd.DataFrame(
@@ -212,11 +212,11 @@ def test_analysis_wells_raises_where_only_the_noise_would_admit_a_run():
     )
     windows = fit_dilution_windows(noisy)
     assert not any(w["within_tol"] for w in windows)
-    with pytest.raises(ValueError, match="never clearly responds to being diluted"):
-        analysis_wells(windows, noisy)
-    # the closest window is named, so a reader can judge the pool and name wells for it
-    with pytest.raises(ValueError, match=r"the closest is 2-8"):
-        analysis_wells(windows, noisy)
+    chosen = analysis_wells(windows, noisy)
+    assert chosen.wells == []
+    assert chosen.dilution is None
+    # the windows are still fit and returned, the report tabulating them with its warning
+    assert [w["window"] for w in windows] == [[2, 4, 8]]
 
 
 def test_analysis_wells_passes_over_a_saturated_run_for_a_strict_one():
@@ -260,18 +260,23 @@ def test_analysis_wells_passes_over_a_saturated_run_for_a_strict_one():
     assert chosen.dilution == 16
 
 
-def test_analysis_wells_raises_when_no_run_qualifies():
-    """A pool that never responds to dilution cannot be read from any well."""
+def test_analysis_wells_chooses_nothing_when_no_run_qualifies():
+    """A pool that never responds to dilution is read from no well at all."""
     flat = series({2: 100.0, 4: 100.0, 8: 100.0, 16: 100.0})
-    with pytest.raises(ValueError, match="linear range"):
-        analysis_wells(fit_dilution_windows(flat), flat)
+    chosen = analysis_wells(fit_dilution_windows(flat), flat)
+    assert chosen.wells == []
+    assert chosen.dilution is None
+    assert chosen.titer_window is None
+    assert not chosen.strict
+    assert not chosen.wells_given
 
 
-def test_analysis_wells_raises_when_the_series_is_too_short():
-    """Too few dilutions to fit a window, with no wells given, is an error."""
+def test_analysis_wells_chooses_nothing_when_the_series_is_too_short():
+    """Too few dilutions to fit a window, with no wells given, chooses no wells."""
     short = ideal_series([2, 4])
-    with pytest.raises(ValueError, match="linear range"):
-        analysis_wells(fit_dilution_windows(short), short)
+    chosen = analysis_wells(fit_dilution_windows(short), short)
+    assert chosen.wells == []
+    assert chosen.dilution is None
 
 
 def test_analysis_wells_given_takes_the_run_they_center():

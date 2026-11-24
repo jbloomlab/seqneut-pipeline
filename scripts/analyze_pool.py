@@ -613,10 +613,20 @@ chosen = analysis_wells(
 )
 analysis_plate_wells = chosen.wells
 analysis_well_labels = [well_label(p, w) for (p, w) in chosen.wells]
-print(
-    f"Reading the composition from wells {analysis_well_labels} at "
-    f"{chosen.dilution}-fold"
-)
+# No window of the series responds to dilution as it should, so there is no dilution at
+# which what the pool holds can be read. The report says so and stops short of a
+# composition rather than reading one from a dilution the series does not support.
+no_linear_range = not chosen.wells
+if no_linear_range:
+    print(
+        "No window of dilutions is within tolerance of the ideal slope, so no composition "
+        "is read"
+    )
+else:
+    print(
+        f"Reading the composition from wells {analysis_well_labels} at "
+        f"{chosen.dilution}-fold"
+    )
 
 if windows:
     report.table(
@@ -770,8 +780,10 @@ series_layers += [
             "neut_standard_count:Q",
         ],
     ),
-    # the dilution the composition is read from
-    alt.Chart(pd.DataFrame({"dilution_factor": [chosen.dilution]}))
+    # the dilution the composition is read from, where there is one
+    alt.Chart(
+        pd.DataFrame({"dilution_factor": [] if no_linear_range else [chosen.dilution]})
+    )
     .mark_rule(color="black", strokeDash=[2, 2])
     .encode(dilution_axis),
 ]
@@ -961,18 +973,27 @@ if windows and chosen_label is not None:
 
 # The dashed vertical marks the dilution read from, which the wells were set to on the
 # explicit path and the fit recommends on the automatic one.
-_marked_dilution = (
-    "the dilutions set in `linear_range_wells`"
-    if chosen.wells_given
-    else "the recommended dilution"
-)
-report.md(f"""
-    The plot below displays the neutralization standard odds (fraction of standard / 1 -
-    fraction of standard) versus the reciprocal dilution factor on a log-log scale. The
-    linear fit to the dilution windows are drawn with {_marked_dilution} marked by a dashed
-    vertical line. The downstream compositional analysis of the pool is based on the wells
-    at this chosen dilution factor.
-    """)
+if no_linear_range:
+    report.md("""
+        The plot below displays the neutralization standard odds (fraction of standard / 1
+        - fraction of standard) versus the reciprocal dilution factor on a log-log scale,
+        with the linear fit to each dilution window. No window is within tolerance of the
+        ideal slope, so no dilution is marked and the pool's composition is not read; the
+        warning above this section gives the slope of every window.
+        """)
+else:
+    _marked_dilution = (
+        "the dilutions set in `linear_range_wells`"
+        if chosen.wells_given
+        else "the recommended dilution"
+    )
+    report.md(f"""
+        The plot below displays the neutralization standard odds (fraction of standard / 1
+        - fraction of standard) versus the reciprocal dilution factor on a log-log scale.
+        The linear fit to the dilution windows are drawn with {_marked_dilution} marked by
+        a dashed vertical line. The downstream compositional analysis of the pool is based
+        on the wells at this chosen dilution factor.
+        """)
 
 with report.notes("How can I interact with this plot?"):
     report.md("""
@@ -983,7 +1004,7 @@ with report.notes("How can I interact with this plot?"):
         single window is selected for comparison purposes.
         """)
 
-if not chosen.wells_given:
+if not chosen.wells_given and not no_linear_range:
     report.md(f"**Recommended dilution factor: {chosen.dilution}-fold**")
 
 series_chart = (
@@ -1096,7 +1117,80 @@ if len(failing_analysis):
         }
     )
 
+if no_linear_range:
+    _closest = min(windows, key=lambda w: w["deviation"], default=None)
+    linear_range_warnings.append(
+        {
+            "text": "{verb} outside tolerance of the ideal slope, so the pool is "
+            "not measured",
+            "details": pd.DataFrame(
+                [
+                    {
+                        "dilutions": f"{w['window'][0]}-{w['window'][-1]}",
+                        "slope": round_sig(w["slope"]),
+                        "standard error": round_sig(w["slope_se"]),
+                        "off ideal by": round_sig(w["deviation"]),
+                        "closest": w is _closest,
+                    }
+                    for w in windows
+                ]
+            ),
+            "shows": "dilution window",
+            "verb": "falls",
+            "note": (
+                "No window of dilutions has a slope within "
+                f"{pool_config['linearity_slope_tol']} of the ideal "
+                f"{IDEAL_SLOPE:+.0f}, so the pool never clearly responds to being diluted "
+                "and there is no dilution at which its composition can be read. This "
+                "report therefore stops at the wells and their QC: it gives no "
+                "recommended dilution factor, no composition and no titer. Check the "
+                "pool and the dilution series, and set `linear_range_wells` to read it "
+                "from particular wells anyway."
+            ),
+        }
+    )
+
 report.fill_section_warnings(_linear_range_warnings_slot, linear_range_warnings)
+
+
+# --- a pool with no linear range stops here -----------------------------------------------
+
+# Everything below reads the wells at the chosen dilution, of which there are none. The
+# outputs are still written, being declared by the rule: the summary records the pool and
+# what was fit, with the analysis fields empty, and the per-barcode composition is written
+# with its header and no rows.
+if no_linear_range:
+    pd.DataFrame(
+        columns=[
+            "barcode",
+            "mean_fraction",
+            "strain",
+            *(["stock"] if "stock" in member_library.columns else []),
+        ]
+    ).to_csv(snakemake.output.barcode_composition, index=False)
+    pd.DataFrame(
+        [
+            {
+                "pool": pool,
+                "date": date,
+                "miscellaneous_plates": " ".join(plates),
+                "neut_standard_set": pool_config["neut_standard_set"],
+                "analyze_by": pool_by,
+                "pooled_by_equal_volume": equal_volume,
+                f"n_{pool_by}s": n_units,
+                "n_strains": member_library["strain"].nunique(),
+                "n_member_barcodes": len(members),
+                "analysis_dilution": None,
+                "analysis_wells": None,
+                "linear_range_dilutions": None,
+                "linear_range_strict": False,
+                "analysis_wells_given": False,
+                "titer_vs_neut_standard": None,
+            }
+        ]
+    ).to_csv(snakemake.output.pool_summary, index=False, float_format="%.4g")
+    report.write(snakemake.output.html)
+    sys.exit(0)
 
 
 # --- invalid and discarded barcodes -------------------------------------------------------

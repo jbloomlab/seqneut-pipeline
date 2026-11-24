@@ -768,8 +768,9 @@ Diluting the pool should divide its viral counts by the dilution factor while le
 The composition can only be read over the dilutions where it does: a well too concentrated for its counts to fall with dilution measures the assay rather than the pool.
 Every window of `linearity_window_dilutions` consecutive dilutions is fit, and the first whose slope is within `linearity_slope_tol` of the ideal marks where the pool starts responding; the composition is read from the **middle** dilution of that window, which leaves a dilution of margin on either side.
 
-A pool with no window within tolerance is an error naming the window that came closest: it never clearly responds to being diluted, which is a question about the pool rather than one to settle by loosening the tolerance.
-Set `linear_range_wells` to read such a pool anyway, after inspecting the slope of every window, which the report tabulates.
+A pool with no window within tolerance never clearly responds to being diluted, so there is no dilution at which its composition can be read.
+Its report warns, tabulating the slope of every window and marking the one that came closest, and stops after the well QC and the linear range: it recommends no dilution and reports no composition and no titer, and its composition CSV is written with no rows.
+Set `linear_range_wells` to read such a pool anyway.
 The titer then comes from the window whose middle dilution is theirs, so that it describes the same dilutions as the composition, and is left empty if no qualifying window does.
 
 `titer_vs_neut_standard` is how much virus the undiluted pool holds against the neutralization standard, in relative rather than infectious units.
