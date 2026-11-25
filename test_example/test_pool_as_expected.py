@@ -46,15 +46,6 @@ for analysis, plate in ANALYSES.items():
             index=False
         )
 
-    # the divided share is reported only where the pool was made with equal volumes
-    planted_divided = "stock_divided_share" in planted.columns and (
-        planted["stock_divided_share"].notna().any()
-    )
-    assert planted_divided == ("stock_divided_share" in actual.columns), (
-        f"{analysis} reports a divided per-stock share where none was planted, or the "
-        "other way round"
-    )
-
     summary = pd.read_csv(f"results/pool_composition/{analysis}_pool_summary.csv")
     assert len(summary) == 1, f"{analysis} summary is not one row"
     summary = summary.iloc[0]
@@ -87,4 +78,50 @@ for analysis, plate in ANALYSES.items():
             f"{planted_summary['linear_range_dilutions']} qualified"
         )
 
-print(f"pool analyses match what was planted in all {len(ANALYSES)} of them")
+# `pool_not_measured` reads the same flat plate with no `linear_range_wells`, so there is no
+# dilution to read it at: it is the one analysis that writes its CSVs empty rather than
+# reproducing a plan, and what is checked is that it reports nothing rather than guessing.
+UNMEASURED = "pool_not_measured"
+
+unmeasured = pd.read_csv(
+    f"results/pool_composition/{UNMEASURED}_barcode_composition.csv"
+)
+assert (
+    unmeasured.empty
+), f"{UNMEASURED} reports a composition although it was never read"
+assert "stock_measured_share" in unmeasured.columns, (
+    f"{UNMEASURED} is analyzed by stock, so its empty composition must still carry the "
+    "stock columns a reader of the CSV expects"
+)
+
+unmeasured_summary = pd.read_csv(
+    f"results/pool_composition/{UNMEASURED}_pool_summary.csv"
+)
+assert len(unmeasured_summary) == 1, f"{UNMEASURED} summary is not one row"
+unmeasured_summary = unmeasured_summary.iloc[0]
+for column in [
+    "analysis_dilution",
+    "analysis_wells",
+    "linear_range_dilutions",
+    "titer_vs_neut_standard",
+]:
+    assert pd.isna(unmeasured_summary[column]), (
+        f"{UNMEASURED} reports {column} as {unmeasured_summary[column]!r}, but no "
+        "dilution was ever read"
+    )
+# the pool is still described, so the row says what was measured even though nothing was
+for column in [
+    "date",
+    "miscellaneous_plates",
+    "neut_standard_set",
+    "n_member_barcodes",
+]:
+    assert not pd.isna(unmeasured_summary[column]), (
+        f"{UNMEASURED} leaves {column} empty, but it describes the experiment rather "
+        "than its result"
+    )
+
+print(
+    f"pool analyses match what was planted in all {len(ANALYSES)} of them, "
+    f"and {UNMEASURED} reports nothing"
+)

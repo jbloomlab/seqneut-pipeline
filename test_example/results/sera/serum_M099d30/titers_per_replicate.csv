@@ -1,6 +1,6 @@
 group,serum,virus,plate,replicate,titer,titer_bound,titer_as,titer_units,nt50,midpoint,top,bottom,slope,dropped_by_qc
 serum,M099d30,A/India/Pun-NIV312851/2021,plate11,plate11-CAAGAACCCAAATATA,1344,interpolated,midpoint,reciprocal_dilution,1428,1344,0.7726,0,10,False
-serum,M099d30,A/India/Pun-NIV312851/2021,plate11,plate11-ACAGCAAATACTCACA,3896,interpolated,midpoint,reciprocal_dilution,4594,3896,0.8079,0,2.939,False
+serum,M099d30,A/India/Pun-NIV312851/2021,plate11,plate11-ACAGCAAATACTCACA,3896,interpolated,midpoint,reciprocal_dilution,4594,3896,0.8079,0,2.938,False
 serum,M099d30,A/India/Pun-NIV312851/2021,plate11,plate11-GTAGCTATAACTAATA,1355,interpolated,midpoint,reciprocal_dilution,1420,1355,0.9149,0,4.012,False
 serum,M099d30,A/India/Pun-NIV312851/2021,plate2,plate2-ACAGCAAATACTCACA,2090,interpolated,midpoint,reciprocal_dilution,2526,2090,0.8192,0,2.372,False
 serum,M099d30,A/India/Pun-NIV312851/2021,plate2,plate2-CAAGAACCCAAATATA,1811,interpolated,midpoint,reciprocal_dilution,1811,1811,1,0,6.84,False

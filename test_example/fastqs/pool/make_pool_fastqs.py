@@ -226,9 +226,7 @@ def write_plate(plate, wells, unparsed_barcode, pool_column=None):
     return rows
 
 
-def expected_composition(
-    plate, wells, library, members, analysis_dilution, pool_by, equal_volume
-):
+def expected_composition(plate, wells, library, members, analysis_dilution, pool_by):
     """What the analysis should find for each member barcode of a pool.
 
     The per-stock shares are planted only where the analysis reports them, which is when it
@@ -251,8 +249,6 @@ def expected_composition(
         stock = lib.loc[barcode, "stock"]
         strain = lib.loc[barcode, "strain"]
         same_stock = [b for b in members if lib.loc[b, "stock"] == stock]
-        same_strain = [b for b in members if lib.loc[b, "strain"] == strain]
-        n_stocks = len({lib.loc[b, "stock"] for b in same_strain})
         row = {
             "pool": plate,
             "barcode": barcode,
@@ -262,10 +258,6 @@ def expected_composition(
         }
         if pool_by == "stock":
             row["stock_measured_share"] = sum(fractions[b] for b in same_stock)
-            if equal_volume:
-                row["stock_divided_share"] = (
-                    sum(fractions[b] for b in same_strain) / n_stocks
-                )
         rows.append(row)
     return rows
 
@@ -330,7 +322,6 @@ def main():
         plate_1_members,
         analysis_dilution_1,
         "strain",
-        True,
     )
     summary_rows.append(
         {
@@ -390,7 +381,7 @@ def main():
     # as a plate holding several pools must
     write_plate("pool_plate_2", wells_2, unparsed, pool_column="subgroup_pool")
     composition_rows += expected_composition(
-        "pool_plate_2", wells_2, library, members_2, analysis_dilution_2, "stock", True
+        "pool_plate_2", wells_2, library, members_2, analysis_dilution_2, "stock"
     )
     summary_rows.append(
         {
@@ -420,7 +411,7 @@ def main():
     write_plate("pool_plate_3", wells_3, unparsed)
     given_dilution = DILUTIONS[2]
     composition_rows += expected_composition(
-        "pool_plate_3", wells_3, library, all_barcodes, given_dilution, "barcode", False
+        "pool_plate_3", wells_3, library, all_barcodes, given_dilution, "barcode"
     )
     summary_rows.append(
         {

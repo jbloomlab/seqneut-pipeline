@@ -1,6 +1,6 @@
 group,plate,serum,virus,replicate,ic50,ic50_bound,midpoint,midpoint_bound,midpoint_bound_type,slope,top,bottom,r2,rmsd
 serum,plate11,M099d30,A/India/Pun-NIV312851/2021,plate11-CAAGAACCCAAATATA,0.0007004,interpolated,0.0007442,0.0007442,interpolated,10,0.7726,0,0.8804,0.1364
-serum,plate11,M099d30,A/India/Pun-NIV312851/2021,plate11-ACAGCAAATACTCACA,0.0002177,interpolated,0.0002567,0.0002567,interpolated,2.939,0.8079,0,0.8982,0.1252
+serum,plate11,M099d30,A/India/Pun-NIV312851/2021,plate11-ACAGCAAATACTCACA,0.0002177,interpolated,0.0002567,0.0002567,interpolated,2.938,0.8079,0,0.8982,0.1252
 serum,plate11,M099d30,A/India/Pun-NIV312851/2021,plate11-GTAGCTATAACTAATA,0.0007043,interpolated,0.0007378,0.0007378,interpolated,4.012,0.9149,0,0.9553,0.09225
 serum,plate11,M099d30,A/Utah/27/2022,plate11-ACAATGTGACTCACCC,0.0008155,interpolated,0.0008155,0.0008155,interpolated,5.385,1,0,1,0.0006374
 serum,plate11,M099d30,A/Utah/27/2022,plate11-TCCTTGTAATTCAACT,0.0007921,interpolated,0.0007942,0.0007942,interpolated,5.882,0.9923,0,0.9994,0.0111
@@ -219,12 +219,12 @@ serum,plate11,M099d0,A/India-PUN-NIV328484/2021,plate11-GATCTAATAATACGGC,0.00168
 serum,plate11,M099d0,A/India-PUN-NIV328484/2021,plate11-TTGTCCCGAGACAACA,0.002305,interpolated,0.002334,0.002334,interpolated,9.99,0.9415,0,0.9618,0.08725
 serum,plate11,Y044d30,A/Bangladesh/3210810034/2021,plate11-AACTATAGATCTAGAA,0.001651,interpolated,0.001651,0.001651,interpolated,4.983,1,0,1,0.0005001
 serum,plate11,Y044d30,A/Bangladesh/3210810034/2021,plate11-ACAAAAGTACCTCTAC,0.002341,interpolated,0.002341,0.002341,interpolated,2.842,1,0,1,0.001297
-serum,plate11,Y044d30,A/Bangladesh/8036/2021,plate11-ATACCTCAACCTTGAA,0.0008339,interpolated,0.0008339,0.0008339,interpolated,8.096,1,0,1,0.000674
+serum,plate11,Y044d30,A/Bangladesh/8036/2021,plate11-ATACCTCAACCTTGAA,0.000834,interpolated,0.000834,0.000834,interpolated,8.096,1,0,1,0.000674
 serum,plate11,Y044d30,A/Bangladesh/8036/2021,plate11-CAGTTCTGCGACCAGC,0.0001872,interpolated,0.0001913,0.0001913,interpolated,10,0.9036,0,0.9831,0.05158
 serum,plate11,Y044d30,A/Bangladesh/8036/2021,plate11-ACGGGGCCCAGGTAAT,0.0006173,interpolated,0.0006173,0.0006173,interpolated,9.807,1,0,1,0.0007576
 serum,plate11,Y044d30,A/Perth/1/2022,plate11-CTGCACGAGAGACTTC,0.0008219,interpolated,0.0008271,0.0008271,interpolated,10,0.9691,0,0.9939,0.03784
 serum,plate11,Y044d30,A/Perth/1/2022,plate11-TTGGGGAAATATATAA,0.001102,interpolated,0.001107,0.001107,interpolated,9.99,0.9772,0,0.9967,0.02788
-serum,plate11,Y044d30,A/Perth/1/2022,plate11-AGCCCCGTGAGAAGCA,0.0002386,interpolated,0.0002386,0.0002386,interpolated,9.982,1,0,1,0.000384
+serum,plate11,Y044d30,A/Perth/1/2022,plate11-AGCCCCGTGAGAAGCA,0.0002385,interpolated,0.0002385,0.0002385,interpolated,10,1,0,1,0.000384
 serum,plate11,Y044d30,A/Wisconsin/588/2019,plate11-GAAGAAACTATAACCA,0.0009552,interpolated,0.0009552,0.0009552,interpolated,5.371,1,0,1,0.0009873
 serum,plate11,Y044d30,A/Wisconsin/588/2019,plate11-TATATTAGTAACATAA,0.0008613,interpolated,0.0008613,0.0008613,interpolated,7.26,1,0,1,0.0005469
 serum,plate11,Y044d30,A/Wisconsin/588/2019,plate11-AGTCCTATCCTCAAAT,0.0008608,interpolated,0.0008608,0.0008608,interpolated,7,1,0,1,0.001136
@@ -242,7 +242,7 @@ serum,plate11,Y044d30,A/California/07/2009,plate11-GACACAGAACCCATGC,0.0001056,in
 serum,plate11,Y044d30,A/California/07/2009,plate11-CCTTTCTCAAAACATA,6.715e-05,interpolated,6.715e-05,6.715e-05,interpolated,1.702,1,0,0.9994,0.009781
 serum,plate11,Y044d30,A/California/07/2009,plate11-CATGTGAATTCGCCCA,0.0001479,interpolated,0.0001479,0.0001479,interpolated,2.719,1,0,1,0.000174
 serum,plate11,Y044d30,A/Chester/5355/2022,plate11-TCATATAAAGAAAAGG,0.0002478,interpolated,0.0002509,0.0002509,interpolated,10,0.941,0,0.9873,0.05155
-serum,plate11,Y044d30,A/Chester/5355/2022,plate11-CCTCAAAATAACAAGC,0.001145,interpolated,0.001166,0.001166,interpolated,9.951,0.9172,0,0.9531,0.1014
+serum,plate11,Y044d30,A/Chester/5355/2022,plate11-CCTCAAAATAACAAGC,0.001145,interpolated,0.001166,0.001166,interpolated,9.95,0.9172,0,0.9531,0.1014
 serum,plate11,Y044d30,A/Chester/5355/2022,plate11-AAAAAACGCATGTAGA,0.0009428,interpolated,0.0009497,0.0009497,interpolated,10,0.9648,0,0.992,0.04316
 serum,plate11,Y044d30,A/India-Pune-Nivcov2221170/2022,plate11-CGTTTAAACAATGAAG,0.0008163,interpolated,0.0008163,0.0008163,interpolated,9.99,1,0,1,7.382e-05
 serum,plate11,Y044d30,A/India-Pune-Nivcov2221170/2022,plate11-AAATCTACCGCATTAT,0.0006173,interpolated,0.0006173,0.0006173,interpolated,9.007,1,0,1,2.521e-05
@@ -259,7 +259,7 @@ serum,plate11,Y044d30,A/Brisbane/02/2018,plate11-ATCCGATTTAAAGGCA,6.537e-05,inte
 serum,plate11,Y044d30,A/Brisbane/02/2018,plate11-ACGACATGATCAAACG,8.909e-05,interpolated,0.000103,0.000103,interpolated,1.924,0.878,0,0.9881,0.04099
 serum,plate11,Y044d30,A/Michigan/19/2021,plate11-AGAGAAAAAACAGTGA,0.0009596,interpolated,0.0009621,0.0009621,interpolated,10,0.9873,0,0.999,0.01551
 serum,plate11,Y044d30,A/Michigan/19/2021,plate11-TAATGAGCTTTATGGT,0.0007988,interpolated,0.0007988,0.0007988,interpolated,8.47,1,0,1,0.001087
-serum,plate11,Y044d30,A/Michigan/19/2021,plate11-AACGTTAACAAATGAA,0.001243,interpolated,0.001248,0.001248,interpolated,9.749,0.9794,0,0.9973,0.02523
+serum,plate11,Y044d30,A/Michigan/19/2021,plate11-AACGTTAACAAATGAA,0.001243,interpolated,0.001248,0.001248,interpolated,9.753,0.9794,0,0.9973,0.02523
 serum,plate11,Y044d30,A/Michigan/45/2015,plate11-ACAAAGTCTCGAGAAG,7.242e-05,interpolated,7.242e-05,7.242e-05,interpolated,2.792,1,0,1,0.0007205
 serum,plate11,Y044d30,A/Michigan/45/2015,plate11-TTGAAAAAATCATAAA,0.0001118,interpolated,0.0001262,0.0001262,interpolated,1.791,0.9021,0,0.9832,0.05065
 serum,plate11,Y044d30,A/Michigan/45/2015,plate11-CACCTAGGATCGCACT,8.566e-05,interpolated,8.566e-05,8.566e-05,interpolated,1.913,1,0,0.9999,0.003615
@@ -272,7 +272,7 @@ serum,plate11,Y044d30,A/India-PUN-NIV328484/2021,plate11-TCTGTTCCGGCCCGAA,0.0008
 serum,plate11,Y044d30,A/India-PUN-NIV328484/2021,plate11-TTGTCCCGAGACAACA,0.0008045,interpolated,0.0008167,0.0008167,interpolated,9.982,0.9303,0,0.9674,0.0854
 serum,plate11,Y044d30,A/Ghana/2080/2020,plate11-GTAGTGCATCATTGAT,4.619e-05,interpolated,4.619e-05,4.619e-05,interpolated,4.239,1,0,1,0.0004772
 serum,plate11,Y044d30,A/Ghana/2080/2020,plate11-CAGCAAAAGCATCACC,6.24e-05,interpolated,6.24e-05,6.24e-05,interpolated,4.468,1,0,1,0.000347
-serum,plate11,Y044d30,A/Ghana/2080/2020,plate11-GCAATCCCGCAATTTG,5.994e-05,interpolated,6.083e-05,6.083e-05,interpolated,9.002,0.938,0,0.9939,0.031
+serum,plate11,Y044d30,A/Ghana/2080/2020,plate11-GCAATCCCGCAATTTG,5.986e-05,interpolated,6.076e-05,6.076e-05,interpolated,8.914,0.938,0,0.9939,0.031
 serum,plate11,Y044d30,A/Togo/0274/2021,plate11-TAGCAGATGTATCAAT,6.895e-05,interpolated,6.895e-05,6.895e-05,interpolated,4.407,1,0,1,0.0005855
 serum,plate11,Y044d30,A/Togo/0274/2021,plate11-AACGAATGAATTTCTT,2.211e-05,interpolated,2.211e-05,2.211e-05,interpolated,1.017,1,0,0.9748,0.05698
 serum,plate11,Y044d30,A/Togo/0274/2021,plate11-GTAACATTATACGATT,4.325e-05,interpolated,4.325e-05,4.325e-05,interpolated,2.103,1,0,0.9985,0.01603
@@ -281,7 +281,7 @@ serum,plate11,Y044d30,A/Utah/27/2022,plate11-TAAATAACTCGTATTT,0.0009584,interpol
 serum,plate11,Y044d30,A/Utah/27/2022,plate11-TCCTTGTAATTCAACT,0.0006173,interpolated,0.0006173,0.0006173,interpolated,9.807,1,0,1,0.001086
 serum,plate11,Y044d30,A/Newcastle/2/2022,plate11-CAAATATATCTTCATG,0.001004,interpolated,0.001011,0.001011,interpolated,9.997,0.9692,0,0.994,0.03772
 serum,plate11,Y044d30,A/Newcastle/2/2022,plate11-TTCACTAAGATTTCAT,0.0008555,interpolated,0.0008555,0.0008555,interpolated,7.583,1,0,1,0.0004771
-serum,plate11,Y044d30,A/Newcastle/2/2022,plate11-GCCCAAGTAGGTGCAA,0.001331,interpolated,0.001339,0.001339,interpolated,7.597,0.9769,0,0.9965,0.02832
+serum,plate11,Y044d30,A/Newcastle/2/2022,plate11-GCCCAAGTAGGTGCAA,0.001331,interpolated,0.001339,0.001339,interpolated,7.598,0.9769,0,0.9965,0.02832
 serum,plate11,Y044d30,A/Washington/23/2020,plate11-GAACTGGCGTCAATCA,0.0001743,interpolated,0.0003009,0.0003009,interpolated,1.27,0.75,0,0.8241,0.123
 serum,plate11,Y044d30,A/Washington/23/2020,plate11-ACGGAATCCCCTGAGA,0.000246,interpolated,0.000251,0.000251,interpolated,10,0.9095,0,0.9694,0.07839
 serum,plate11,Y044d30,A/Washington/23/2020,plate11-GGATAAGAAAACTACT,0.000928,interpolated,0.0009284,0.0009284,interpolated,10,0.9978,0,1,0.002818
@@ -299,14 +299,14 @@ serum,plate11,Y044d30,A/Ghana/138/2020,plate11-GACTATGGTCTAAAAA,4.327e-05,interp
 serum,plate11,Y044d30,A/Ghana/138/2020,plate11-CCAGTTCCCTTCGATG,4.925e-05,interpolated,4.925e-05,4.925e-05,interpolated,3.164,1,0,1,0.001607
 serum,plate11,Y044d30,A/SouthAfrica/R14850/2021,plate11-TACTCAACAAGATAAA,0.002742,interpolated,0.002742,0.002742,interpolated,8.855,1,0,1,0.0002883
 serum,plate11,Y044d30,A/SouthAfrica/R14850/2021,plate11-AACTCCGCAGACACTG,0.001823,interpolated,0.001869,0.001869,interpolated,4.993,0.9405,0,0.9727,0.07284
-serum,plate11,Y044d30,A/SouthAfrica/R14850/2021,plate11-GAGACGTACGAAATTA,0.001397,interpolated,0.001457,0.001457,interpolated,8.42,0.8503,0,0.9439,0.1008
+serum,plate11,Y044d30,A/SouthAfrica/R14850/2021,plate11-GAGACGTACGAAATTA,0.001392,interpolated,0.001453,0.001453,interpolated,8.305,0.8503,0,0.9439,0.1008
 serum,plate11,Y044d30,A/Belgium/H0017/2022,plate11-GTAAAGCAAATCCATT,7.162e-05,interpolated,7.162e-05,7.162e-05,interpolated,4.24,1,0,1,0.0007074
 serum,plate11,Y044d30,A/Belgium/H0017/2022,plate11-AATGAAAGTTAGCATT,7.614e-05,interpolated,7.614e-05,7.614e-05,interpolated,10,1,0,1,0.0006125
 serum,plate11,Y044d30,A/Belgium/H0017/2022,plate11-ATGTCCATAAAAAATA,5.455e-05,interpolated,5.455e-05,5.455e-05,interpolated,3.223,1,0,1,0.0007895
 serum,plate11,Y044d30,A/Paris/30353/2021,plate11-ACATAAGAACCCTATA,0.0001584,interpolated,0.0001584,0.0001584,interpolated,10,1,0,1,0.000134
 serum,plate11,Y044d30,A/Paris/30353/2021,plate11-ACATTTCCCTCGATAT,9.973e-05,interpolated,9.973e-05,9.973e-05,interpolated,2.13,1,0,1,0.001579
 serum,plate11,Y044d30,A/Paris/30353/2021,plate11-GTTTGACAATCACTAC,5.174e-05,interpolated,5.174e-05,5.174e-05,interpolated,3.381,1,0,1,0.0005848
-serum,plate11,Y044d30,A/Bangladesh/8002/2021,plate11-AGTGTCCCTAAGAGGC,0.0008532,interpolated,0.0008532,0.0008532,interpolated,8.724,1,0,1,0.0001676
+serum,plate11,Y044d30,A/Bangladesh/8002/2021,plate11-AGTGTCCCTAAGAGGC,0.0008532,interpolated,0.0008532,0.0008532,interpolated,8.723,1,0,1,0.0001676
 serum,plate11,Y044d30,A/Bangladesh/8002/2021,plate11-GCAACGCCAAATAATT,0.0008361,interpolated,0.0008361,0.0008361,interpolated,9.166,1,0,1,0.0001865
 serum,plate11,Y044d30,A/Bangladesh/8002/2021,plate11-TCTGCTAAACTAAGTA,0.0007865,interpolated,0.0007865,0.0007865,interpolated,9.58,1,0,1,0.000672
 serum,plate11,Y044d30,A/SouthAfrica/R16462/2021,plate11-CTAGCAGATTGTATAA,2.438e-05,interpolated,3.315e-05,3.315e-05,interpolated,2.157,0.7577,0,0.9998,0.004157
@@ -318,7 +318,7 @@ serum,plate11,Y044d30,A/Bangladesh/2221/2021,plate11-GACAGCAATGCATACA,0.0004802,
 serum,plate11,Y044d30,A/Niger/10217/2021,plate11-CATCAACCGCCATTTC,6.851e-05,interpolated,6.851e-05,6.851e-05,interpolated,3.69,1,0,1,0.0001274
 serum,plate11,Y044d30,A/Niger/10217/2021,plate11-AAATAAGTACGCAAAT,8.553e-05,interpolated,8.553e-05,8.553e-05,interpolated,3.426,1,0,1,0.0001454
 serum,plate11,Y044d30,A/Niger/10217/2021,plate11-GAACGATTGTAATTTT,9.213e-05,interpolated,9.213e-05,9.213e-05,interpolated,4.08,1,0,1,8.584e-05
-serum,plate11,Y044d30,A/Brisbane/48/2022,plate11-GAGCTCTAAAGCAACA,0.001237,interpolated,0.001252,0.001252,interpolated,9.746,0.9465,0,0.981,0.0655
+serum,plate11,Y044d30,A/Brisbane/48/2022,plate11-GAGCTCTAAAGCAACA,0.001237,interpolated,0.001252,0.001252,interpolated,9.747,0.9465,0,0.981,0.0655
 serum,plate11,Y044d30,A/Brisbane/48/2022,plate11-TTATGATCTAAACAGA,0.0008356,interpolated,0.0008356,0.0008356,interpolated,8.456,1,0,1,0.0003333
 serum,plate11,Y044d30,A/Brisbane/48/2022,plate11-CCCTATGCTGCGTATT,0.0006558,interpolated,0.0006558,0.0006558,interpolated,3.295,1,0,1,0.000544
 serum,plate11,Y044d30,A/England/220200318/2022,plate11-CGTAATACATTTAAGA,6.792e-05,interpolated,6.792e-05,6.792e-05,interpolated,10,1,0,1,0.0007281

@@ -1,2 +1,2 @@
-pool,date,miscellaneous_plates,neut_standard_set,analyze_by,pooled_by_equal_volume,n_stocks,n_strains,n_member_barcodes,analysis_dilution,analysis_wells,linear_range_dilutions,linear_range_strict,analysis_wells_given,titer_vs_neut_standard
-pool_subgroup_by_stock,2023-08-03,pool_plate_2,loes2023,stock,True,4,3,4,8,A3 B3,4 8 16,True,False,64.93
+pool,date,miscellaneous_plates,neut_standard_set,analyze_by,n_stocks,n_strains,n_member_barcodes,analysis_dilution,analysis_wells,linear_range_dilutions,linear_range_strict,analysis_wells_given,titer_vs_neut_standard
+pool_subgroup_by_stock,2023-08-03,pool_plate_2,loes2023,stock,4,3,4,8,pool_plate_2:A3 pool_plate_2:B3,4 8 16,True,False,64.93
