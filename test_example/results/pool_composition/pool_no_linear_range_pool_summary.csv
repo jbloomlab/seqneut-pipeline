@@ -1,0 +1,2 @@
+pool,date,miscellaneous_plates,neut_standard_set,analyze_by,n_barcodes,n_strains,n_member_barcodes,analysis_dilution,analysis_wells,linear_range_dilutions,linear_range_strict,analysis_wells_given,titer_vs_neut_standard
+pool_no_linear_range,2023-08-03,pool_plate_3,loes2023,barcode,8,6,8,8,pool_plate_3:A3 pool_plate_3:B3,,False,True,

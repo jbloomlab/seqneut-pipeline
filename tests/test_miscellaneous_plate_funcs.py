@@ -221,6 +221,35 @@ def test_report_puts_warnings_at_the_reserved_slot(tmp_path):
     assert html.index("Z9") < html.index(">Second</h2>")
 
 
+@pytest.mark.parametrize(
+    "shows,n,expected",
+    [
+        ("well", 1, "<b>1</b> well "),
+        ("well", 3, "<b>3</b> wells "),
+        ("strain", 2, "<b>2</b> strains "),
+        # a noun with a phrase hanging off it pluralizes its head, not its last word
+        ("window of dilutions", 1, "<b>1</b> window of dilutions "),
+        ("window of dilutions", 3, "<b>3</b> windows of dilutions "),
+        # a compound noun ends in its head, so there the last word does take the plural
+        ("dilution window", 1, "<b>1</b> dilution window "),
+        ("dilution window", 3, "<b>3</b> dilution windows "),
+        # a compound noun that then hangs a phrase off itself
+        (
+            "dilution window of the series",
+            2,
+            "<b>2</b> dilution windows of the series ",
+        ),
+    ],
+)
+def test_report_warning_counts_what_it_shows(tmp_path, shows, n, expected):
+    """A warning's headline counts what it shows, pluralized where there is more than one."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.warning("to look at", pd.DataFrame({"thing": list(range(n))}), shows=shows)
+    report.write(out := tmp_path / "r.html")
+    assert expected in out.read_text()
+
+
 def test_report_without_warnings_has_no_warnings_section(tmp_path):
     """The reserved slot stays empty when nothing was warned about."""
     report = PlateReport(title="t")
@@ -456,8 +485,9 @@ def test_report_section_warnings(tmp_path):
     report.md("## After")
     report.write(out := tmp_path / "r.html")
     html = out.read_text()
-    assert html.count(">Warnings</h3>") == 1
-    assert html.index(">Titers</h2>") < html.index(">Warnings</h3>")
+    # no heading of their own: they read as part of the section they are added to
+    assert ">Warnings</h3>" not in html
+    assert html.index(">Titers</h2>") < html.index("<b>2</b> wells with zero titer")
     assert html.index("<b>2</b> wells with zero titer") < html.index(
         "absent from &lt;log&gt;"
     )
@@ -469,7 +499,172 @@ def test_report_section_warnings(tmp_path):
     assert len(report.warnings) == 1
 
 
+def test_report_warning_levels_are_drawn_apart(tmp_path):
+    """An error carries a class a warning does not, so the two are told apart on sight."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.md("## Titers")
+    report.section_warnings(
+        [
+            {
+                "text": "with zero titer",
+                "details": pd.DataFrame({"well": ["A1"]}),
+            },
+            {
+                "text": "{verb} outside tolerance, so the pool is not measured",
+                "details": pd.DataFrame({"window": ["2-8"]}),
+                "shows": "dilution window",
+                "verb": "falls",
+                "level": "error",
+            },
+        ]
+    )
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert '<details class="warning">' in html
+    assert '<details class="warning error">' in html
+    # the error styling is defined, not merely named by a class
+    assert "details.warning.error" in html
+
+
+def test_report_warning_level_must_be_known(tmp_path):
+    """A level that is neither a warning nor an error is an error in itself."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    with pytest.raises(ValueError, match="'warning' or 'error'"):
+        report.section_warnings(
+            [
+                {
+                    "text": "with zero titer",
+                    "details": pd.DataFrame({"well": ["A1"]}),
+                    "level": "critical",
+                }
+            ]
+        )
+
+
+def test_report_section_warnings_fill_a_slot_left_at_the_section_top(tmp_path):
+    """A section's warnings are written above the content they qualify, not below it."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.md("## Titers")
+    slot = report.reserve_section_warnings()
+    report.md("the table a reader sees the warning against")
+    # found while building the section, but belonging at the top of it
+    report.fill_section_warnings(
+        slot,
+        [{"text": "with zero titer", "details": pd.DataFrame({"well": ["A1"]})}],
+    )
+    report.md("## After")
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert ">Warnings</h3>" not in html
+    assert (
+        html.index(">Titers</h2>")
+        < html.index("<b>1</b> well with zero titer")
+        < html.index("the table a reader sees the warning against")
+        < html.index(">After</h2>")
+    )
+    assert len(report.warnings) == 1
+
+
+def test_report_section_warnings_leave_an_unused_slot_empty(tmp_path):
+    """A section that finds no warning writes nothing where its slot was left."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.md("## Titers")
+    slot = report.reserve_section_warnings()
+    report.fill_section_warnings(slot, [])
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert ">Warnings</h3>" not in html
+    assert "warning" not in html
+    assert report.warnings == []
+
+
 def test_table_html_headers_wrap(tmp_path):
     """Headers are escaped and wrapped in the element that caps their width."""
     out = table_html(pd.DataFrame({"non-neut <reads>": [3]}))
     assert '<div class="head">non&#8209;neut &lt;reads&gt;</div>' in out
+
+
+@pytest.mark.parametrize(
+    "text,verb,n,expected",
+    [
+        # the verb agrees with the count, inverted from the noun: plural takes the bare form
+        (
+            "a wider tolerance",
+            "requires",
+            1,
+            "<b>1</b> window requires a wider tolerance",
+        ),
+        (
+            "a wider tolerance",
+            "requires",
+            3,
+            "<b>3</b> windows require a wider tolerance",
+        ),
+        # a `{verb}` placeholder lets the verb sit inside the sentence
+        ("that {verb} checking", "needs", 1, "<b>1</b> window that needs checking"),
+        ("that {verb} checking", "needs", 2, "<b>2</b> windows that need checking"),
+        # a verb whose singular ends in a sibilant drops the whole "es"
+        ("the fit", "misses", 2, "<b>2</b> windows miss the fit"),
+        # and one in a consonant plus "y" restores it
+        ("the ideal", "defies", 2, "<b>2</b> windows defy the ideal"),
+    ],
+)
+def test_report_warning_verb_agrees_with_count(tmp_path, text, verb, n, expected):
+    """A warning's verb agrees with how many rows it shows."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.warning(
+        text, pd.DataFrame({"thing": list(range(n))}), shows="window", verb=verb
+    )
+    report.write(out := tmp_path / "r.html")
+    assert expected in out.read_text()
+
+
+def test_report_warning_verb_must_be_third_person_singular():
+    """A bare-form verb is refused, as it cannot be inflected back to the singular."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    with pytest.raises(ValueError, match="third-person singular"):
+        report.warning(
+            "a wider tolerance",
+            pd.DataFrame({"thing": [1, 2]}),
+            shows="window",
+            verb="require",
+        )
+
+
+def test_report_warning_note_renders_markdown(tmp_path):
+    """A warning's note is markdown, so a backticked name reads as code."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.warning(
+        "to look at",
+        pd.DataFrame({"thing": [1]}),
+        note="the column `titer_vs_neut_standard` is **empty**",
+    )
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert "<code>titer_vs_neut_standard</code>" in html
+    assert "<strong>empty</strong>" in html
+    # the note is a line within the warning's line, not a block, so it is not double-wrapped
+    assert "<p><p>" not in html
+
+
+def test_report_warning_note_escapes_html(tmp_path):
+    """A note's markdown is rendered, but a tag in it reaches the page as text."""
+    report = PlateReport(title="t")
+    report.reserve_warnings()
+    report.warning(
+        "to look at",
+        pd.DataFrame({"thing": [1]}),
+        note="`a` <script>alert(1)</script> & <log>",
+    )
+    report.write(out := tmp_path / "r.html")
+    html = out.read_text()
+    assert "<code>a</code>" in html
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;log&gt;" in html

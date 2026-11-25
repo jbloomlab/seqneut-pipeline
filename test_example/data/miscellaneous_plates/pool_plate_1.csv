@@ -1,0 +1,11 @@
+well,fastq,dilution_factor,replicate
+A1,fastqs/pool/pool_plate_1/A1.fastq.gz,2,1
+B1,fastqs/pool/pool_plate_1/B1.fastq.gz,2,2
+A2,fastqs/pool/pool_plate_1/A2.fastq.gz,4,1
+B2,fastqs/pool/pool_plate_1/B2.fastq.gz,4,2
+A3,fastqs/pool/pool_plate_1/A3.fastq.gz,8,1
+B3,fastqs/pool/pool_plate_1/B3.fastq.gz,8,2
+A4,fastqs/pool/pool_plate_1/A4.fastq.gz,16,1
+B4,fastqs/pool/pool_plate_1/B4.fastq.gz,16,2
+A5,fastqs/pool/pool_plate_1/A5.fastq.gz,32,1
+B5,fastqs/pool/pool_plate_1/B5.fastq.gz,32,2

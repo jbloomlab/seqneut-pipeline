@@ -84,7 +84,9 @@ from miscellaneous_plate_charts import (
     WellPanels,
     carried_forward_stroke,
     category_fill,
+    fate_fill,
     lookup_tooltip,
+    order_fates,
     stroke_width,
     well_hover,
 )
@@ -965,8 +967,8 @@ fates_plotted = narrow_for_altair(
         _infected_plate_wells, on=["plate", "well"], validate="many_to_one"
     )[["unit_label", "fate", "count"]]
 )
-# the legend lists the fates in this order, and the notes explain them in it too
-fate_order = sorted(fates_plotted["fate"].unique(), reverse=True)
+fate_order, _stack_order = order_fates(fates_plotted["fate"])
+fates_plotted = fates_plotted.assign(fate_order=_stack_order)
 # A well with no reads outside the neutralization standard has no composition to divide,
 # so it has no bar, as in the chart of valid reads below.
 composition_long = (
@@ -1038,13 +1040,8 @@ _panels = [
             "count:Q", title="reads", scale=alt.Scale(nice=False, padding=3)
         ),
         panels.well_axis(well_order, labeled=panels.labels_wells(0, 4)),
-        alt.Fill(
-            "fate:N",
-            sort=fate_order,
-            scale=alt.Scale(scheme="tableau10"),
-            legend=alt.Legend(orient=panels.legend_orient, columns=1),
-        ),
-        alt.Order("fate:N", sort="descending"),
+        fate_fill(fate_order, panels.legend_orient),
+        alt.Order("fate_order:Q"),
         stroke=_stroke,
         strokeWidth=stroke_width(_hover, STROKE_WIDTH_HOVERED, STROKE_WIDTH),
         tooltip=[*well_tooltips, "fate:N", "count:Q"],

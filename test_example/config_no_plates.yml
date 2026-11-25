@@ -22,3 +22,7 @@ sera_override_defaults:
 # Nor are the single-well plates analyzed, so that this run also covers a project that does
 # not use `analyze_single_well_infections`, which most projects do not.
 analyze_single_well_infections:
+
+# Nor are the pool plates analyzed, so that this run also covers a project that does not use
+# `analyze_pools`, which most projects do not.
+analyze_pools:

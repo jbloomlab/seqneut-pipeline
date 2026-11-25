@@ -151,16 +151,31 @@ except NameError:  # if not defined
 single_well_infection_analyses = process_single_well_infections(
     config.get("analyze_single_well_infections") or {}, miscellaneous_plates
 )
+
+# Optional section; absent or null means no pools are analyzed. Named apart from the
+# configuration key for the same reason as the single-well analyses above.
+pool_composition_analyses = process_analyze_pools(
+    config.get("analyze_pools") or {}, miscellaneous_plates
+)
 # HTMLs of the pipeline's own analyses of miscellaneous plates, merged with the project's
 # `add_htmls_to_docs` only in `build_docs`: a project can assign that dict after including
 # this file, which would discard anything added to it here.
 pipeline_htmls_to_docs = {}
+if single_well_infection_analyses or pool_composition_analyses:
+    # Both analyses go under one heading, each in its own subsection, so a project that
+    # configures either gets just that subsection.
+    pipeline_htmls_to_docs["Library quality-control"] = {}
 if single_well_infection_analyses:
-    pipeline_htmls_to_docs["Library quality-control"] = {
-        "Single virus per well infections": {
-            name: f"results/single_well_infections/{name}_analyze_single_well_infections.html"
-            for name in single_well_infection_analyses
-        }
+    pipeline_htmls_to_docs["Library quality-control"][
+        "Single virus per well infections"
+    ] = {
+        name: f"results/single_well_infections/{name}_analyze_single_well_infections.html"
+        for name in single_well_infection_analyses
+    }
+if pool_composition_analyses:
+    pipeline_htmls_to_docs["Library quality-control"]["Pool composition"] = {
+        name: f"results/pool_composition/{name}_analyze_pool.html"
+        for name in pool_composition_analyses
     }
 
 
@@ -223,6 +238,9 @@ if plates:
         input:
             report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
             funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
+            plate_charts_module=os.path.join(
+                pipeline_subdir, "scripts/miscellaneous_plate_charts.py"
+            ),
             count_csvs=lambda wc: expand(
                 rules.count_barcodes.output.counts,
                 sample=plates[wc.plate]["samples"]["sample"],
@@ -557,6 +575,64 @@ rule analyze_single_well_infections:
         "scripts/analyze_single_well_infections.py"
 
 
+rule analyze_pool:
+    """Measure the composition of a library pool sequenced over a serial dilution.
+
+    Writes each unit's share of the pool and the pool's titer against the neutralization
+    standard; what to re-pool from those is left to the project.
+
+    """
+    input:
+        **{
+            suffix: lambda wc, suffix=suffix: [
+                f"results/miscellaneous_plates/{plate}/{well}_{suffix}.csv"
+                for plate in pool_composition_analyses[wc.pool]["miscellaneous_plates"]
+                for well in miscellaneous_plates[plate]["wells"]
+            ]
+            for suffix in ["counts", "fates", "invalid"]
+        },
+        samples_csvs=lambda wc: [
+            config["miscellaneous_plates"][plate]["samples_csv"]
+            for plate in pool_composition_analyses[wc.pool]["miscellaneous_plates"]
+        ],
+        viral_library=lambda wc: config["viral_libraries"][
+            pool_composition_analyses[wc.pool]["viral_library"]
+        ],
+        neut_standard_set=lambda wc: config["neut_standard_sets"][
+            pool_composition_analyses[wc.pool]["neut_standard_set"]
+        ],
+        report_module=os.path.join(pipeline_subdir, "scripts/seqneut_report.py"),
+        funcs_module=os.path.join(pipeline_subdir, "scripts/seqneut_funcs.py"),
+        plate_funcs_module=os.path.join(
+            pipeline_subdir, "scripts/miscellaneous_plate_funcs.py"
+        ),
+        plate_charts_module=os.path.join(
+            pipeline_subdir, "scripts/miscellaneous_plate_charts.py"
+        ),
+        pool_funcs_module=os.path.join(pipeline_subdir, "scripts/pool_funcs.py"),
+    output:
+        html="results/pool_composition/{pool}_analyze_pool.html",
+        barcode_composition="results/pool_composition/{pool}_barcode_composition.csv",
+        pool_summary="results/pool_composition/{pool}_pool_summary.csv",
+    log:
+        "results/logs/analyze_pool_{pool}.txt",
+    wildcard_constraints:
+        # `(?!)` matches nothing, for when there are no pool analyses
+        pool="|".join(map(re.escape, pool_composition_analyses)) or "(?!)",
+    conda:
+        "environment.yml"
+    resources:
+        # generous; holds the counts of every well of the pool's plates, which is 230 MB
+        # for a 12-well toy plate and grows with the wells and the size of the library
+        mem_mb=4096,
+    params:
+        pool_config=lambda wc: pool_composition_analyses[wc.pool],
+        # optional, and validated by the script
+        discarded_barcodes=config.get("discarded_barcodes") or {},
+    script:
+        "scripts/analyze_pool.py"
+
+
 rule build_docs:
     """Build the HTML documentation.
 
@@ -656,6 +732,11 @@ seqneut_pipeline_outputs = [
         f"results/single_well_infections/{name}_{suffix}.csv"
         for name in single_well_infection_analyses
         for suffix in ["well_composition", "expected_barcode_reads"]
+    ],
+    *[
+        f"results/pool_composition/{name}_{suffix}.csv"
+        for name in pool_composition_analyses
+        for suffix in ["barcode_composition", "pool_summary"]
     ],
     # the report HTMLs are not listed here, as they are inputs to `build_docs`
     rules.build_docs.output.docs,

@@ -69,6 +69,11 @@ jobs:
         shell: bash -el {0}
         run: cd test_example && python test_single_well_as_expected.py && cd ..
 
+      - name: test pool analyses as expected
+        # the synthetic pool plates plant a known composition and linear range
+        shell: bash -el {0}
+        run: cd test_example && python test_pool_as_expected.py && cd ..
+
       - name: test the viral libraries were validated
         shell: bash -el {0}
         run: >
@@ -89,6 +94,7 @@ jobs:
           --configfile config_collapse_strain_barcodes.yml
           && python test_titers_as_expected.py
           expected_titers_for_test_collapse_strain_barcodes.csv
+          && python test_pool_as_expected.py
           && cd ..
 
       - name: run pipeline on test example with no plates

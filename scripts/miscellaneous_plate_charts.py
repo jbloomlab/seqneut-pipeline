@@ -31,6 +31,22 @@ CARRIED_FORWARD_LABELS = {True: "carried forward", False: "dropped"}
 RETAINED_COLOR = "black"
 DROPPED_COLOR = "#cc00cc"
 
+# The color of each fate of a read, and the order the legends and notes list them in: the
+# read that was counted first, then the ways reading one can fail. Fixed per fate so that a
+# fate reads the same across reports and whether or not the other fates occur, a color taken
+# from a `vega` scheme being assigned by a category's position among those present and so
+# shifting as soon as one fate has no reads. The colors are from `tableau10`.
+FATE_COLORS = {
+    "valid barcode": "#4c78a8",
+    "unparseable barcode": "#f58518",
+    "read too short": "#eeca3b",
+    "low quality barcode": "#e45756",
+    "invalid outer flank": "#72b7b2",
+    "invalid barcode": "#54a24b",
+    "failed chastity filter": "#b279a2",
+    "discarded barcode": "#ff9da6",
+}
+
 
 class WellPanels:
     """How the panels of a chart of wells are laid out.
@@ -179,6 +195,46 @@ def category_fill(field, title, categories, legend_orient, scheme=None, range_=N
         sort=categories,
         scale=scale,
         legend=alt.Legend(labelLimit=LABEL_LIMIT, orient=legend_orient, columns=1),
+    )
+
+
+def order_fates(fates):
+    """How a chart of read fates draws them, so a fate always looks the same.
+
+    A bar stacks in the order its fates are colored in, which the label alone cannot convey
+    to Vega, so the position in that order is returned to sort on.
+
+    Args:
+        `fates` (pandas.Series)
+            The `fate` column of what the chart draws, not necessarily holding every fate.
+
+    Returns:
+        The 2-tuple `(fate_order, stack_order)`: the fates drawn in the order `FATE_COLORS`
+        gives them, for the legend and the notes, and each row's position in that order.
+
+    """
+    unknown = sorted(set(fates) - set(FATE_COLORS))
+    if unknown:
+        raise ValueError(f"no color in `FATE_COLORS` for fate(s) {unknown}")
+    fate_order = [fate for fate in FATE_COLORS if fate in set(fates)]
+    return fate_order, fates.map({fate: i for (i, fate) in enumerate(fate_order)})
+
+
+def fate_colors(fate_order):
+    """Scale coloring each fate of `fate_order`, as `order_fates` returns it."""
+    return alt.Scale(
+        domain=fate_order, range=[FATE_COLORS[fate] for fate in fate_order]
+    )
+
+
+def fate_fill(fate_order, legend_orient):
+    """Fill of a stacked bar of read fates, `fate_order` as `order_fates` returns it."""
+    return category_fill(
+        "fate",
+        "fate of the read",
+        fate_order,
+        legend_orient,
+        range_=[FATE_COLORS[fate] for fate in fate_order],
     )
 
 

@@ -134,6 +134,12 @@ def process_miscellaneous_plates(misc_plates_d):
             )
         check_no_whitespace(samples["well"], f"miscellaneous_plate {plate} wells")
         misc_plates[plate]["wells"] = samples.set_index("well")["fastq"].to_dict()
+        # Optional, and kept as given rather than defaulted: a pool analysis requires its
+        # plates to have one and to agree, since a titer is comparable only within a date,
+        # and reads it from here rather than from the configuration a second time.
+        misc_plates[plate]["date"] = (
+            str(plate_dict["date"]) if plate_dict.get("date") else None
+        )
 
         # get default barcode parser params, update if specified per plate
         misc_plates[plate]["illumina_barcode_parser_params"] = copy.deepcopy(
@@ -256,6 +262,113 @@ def process_single_well_infections(single_well_d, misc_plates):
                 f"{where} 'final_viral_library' {d['final_viral_library']!r} is not a key "
                 f"of `viral_libraries`, {sorted(viral_libraries)}"
             )
+
+        processed[name] = d
+
+    return processed
+
+
+def process_analyze_pools(pools_d, misc_plates):
+    """Process the ``analyze_pools`` section of the configuration.
+
+    Checks only what the workflow needs settled before anything runs, which is the keys of
+    each entry, its plates, the library and neutralization standard set of those plates, and
+    their date, all of which name inputs or parameters of the analysis. The values
+    themselves are checked by ``scripts/analyze_pool.py``, which uses them.
+
+    Args:
+        `pools_d` (dict)
+            The section, keyed by the name of each pool.
+        `misc_plates` (dict)
+            The processed ``miscellaneous_plates``, from `process_miscellaneous_plates`.
+
+    Returns:
+        dict keyed like `pools_d`, each entry with every optional key filled in with its
+        default and the ``viral_library``, ``neut_standard_set`` and ``date`` its plates
+        share added.
+
+    """
+    # The optional keys and their defaults, applied here and nowhere else. The well-QC and
+    # linearity thresholds only decide which wells are trusted and which dilutions are read,
+    # so a project need only set one it wants to differ; `linear_range_wells` overrides the
+    # fit, `pool_wells` picks this pool's wells off a plate holding several pools, and the
+    # rest describe the pool's membership and what the report shows.
+    defaults = {
+        "linear_range_wells": None,
+        "pool_wells": {},
+        "pool_members": {},
+        "min_avg_barcode_count_per_well": 500,
+        "min_neut_standard_frac_per_well": 0.001,
+        "linearity_window_dilutions": 3,
+        "linearity_slope_tol": 0.3,
+        "max_stock_share_ratio": 3,
+        "addtl_viral_cols_to_show": [],
+    }
+    required = {
+        "analyze_by",
+        "miscellaneous_plates",
+        "description",
+    }
+    check_no_whitespace(pools_d, "analyze_pools names")
+    processed = {}
+    for name, entry in pools_d.items():
+        where = f"analyze_pools {name!r}"
+        if not isinstance(entry, dict):
+            raise ValueError(f"{where} must be a mapping of its configuration keys")
+        unknown = set(entry) - required - set(defaults)
+        if unknown:
+            raise ValueError(
+                f"{where} has unknown keys {sorted(unknown)}; the valid keys are "
+                f"{sorted(required | set(defaults))}"
+            )
+        # A key that is null counts as absent, so an optional one takes its default; a
+        # `--configfile` override can only reset a key by setting it to null.
+        given = {key: value for (key, value) in entry.items() if value is not None}
+        if not required.issubset(given):
+            raise ValueError(f"{where} lacks {sorted(required - set(given))}")
+        d = {**copy.deepcopy(defaults), **given}
+
+        plates = d["miscellaneous_plates"]
+        if not isinstance(plates, list) or not plates:
+            raise ValueError(f"{where} must list at least one miscellaneous plate")
+        if len(plates) != len(set(plates)):
+            raise ValueError(f"{where} lists a plate more than once: {plates}")
+        unknown_plates = sorted(set(plates) - set(misc_plates))
+        if unknown_plates:
+            raise ValueError(
+                f"{where} names plates that are not `miscellaneous_plates`: "
+                f"{unknown_plates}; those are {sorted(misc_plates)}"
+            )
+        # The plates are replicates of one dilution series of one pool, read together
+        # against one whitelist, so they have to agree on the library and the
+        # neutralization standard set, which are then the rule's inputs.
+        for key in ["viral_library", "neut_standard_set"]:
+            values = sorted({misc_plates[plate][key] for plate in plates})
+            if len(values) != 1:
+                raise ValueError(
+                    f"the plates of {where} have different values of {key!r}, {values}, "
+                    "but are analyzed together and so must share one"
+                )
+            d[key] = values[0]
+        # The date puts two pools measured against the same standard on one scale, so it
+        # is reported. It is optional for a miscellaneous plate but required here, and the
+        # plates must agree on it for the same reason they agree on the standard: one
+        # titer is reported for the pool, and it is only comparable within a date.
+        dates = set()
+        for plate in plates:
+            if not misc_plates[plate]["date"]:
+                raise ValueError(
+                    f"{where} needs a 'date' on its plate {plate!r}, as the date is what "
+                    "says which pools' titers can be compared with each other"
+                )
+            dates.add(misc_plates[plate]["date"])
+        if len(dates) != 1:
+            raise ValueError(
+                f"the plates of {where} have the different dates {sorted(dates)}, but one "
+                "titer is reported for the pool and a titer is comparable only within a "
+                "date"
+            )
+        (d["date"],) = dates
 
         processed[name] = d
 

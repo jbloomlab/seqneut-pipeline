@@ -12,8 +12,10 @@ import html
 import re
 from pathlib import Path
 
+import markdown
 import numpy
 import pandas
+from miscellaneous_plate_charts import FATE_COLORS
 from seqneut_report import Report
 
 # The plate layout that a well name is read as, so that `B6` becomes a row and a column and
@@ -71,6 +73,13 @@ FATE_EXPLANATIONS = {
         "the read did not pass the Illumina chastity filter for signal purity."
     ),
 }
+
+# every fate a report explains must also have a color, and no other
+if set(FATE_COLORS) != set(FATE_EXPLANATIONS):
+    raise ValueError(
+        "`FATE_COLORS` and `FATE_EXPLANATIONS` must cover the same fates, but differ on "
+        f"{sorted(set(FATE_COLORS) ^ set(FATE_EXPLANATIONS))}"
+    )
 
 
 def well_position(well):
@@ -371,7 +380,9 @@ def check_fates_add_up(fates, tallies):
             )
 
 
-def table_html(df, index=False, marked=None, marked_color="#cc00cc", group=None):
+def table_html(
+    df, index=False, marked=None, marked_color="#cc00cc", group=None, bold=None
+):
     """HTML for `df` in a scrolling box, with floats to four significant digits.
 
     The arguments are those of `PlateReport.table`.
@@ -387,6 +398,10 @@ def table_html(df, index=False, marked=None, marked_color="#cc00cc", group=None)
     if marked is not None and marked.any():
         text.loc[marked.to_numpy()] = text.loc[marked.to_numpy()].map(
             lambda v: f'<span style="color: {marked_color}">{v}</span>'
+        )
+    if bold is not None and bold.any():
+        text.loc[bold.to_numpy()] = text.loc[bold.to_numpy()].map(
+            lambda v: f"<b>{v}</b>" if v else v
         )
     if group is None:
         table = text.rename(columns=_header_html).to_html(
@@ -472,6 +487,7 @@ details.warning .toggle::before { content: "\\25B8  "; }
 details.warning[open] .toggle::before { content: "\\25BE  "; }
 details.warning .hide, details.warning[open] .show { display: none; }
 details.warning[open] .hide { display: inline; }
+details.warning.error { background: #fdecea; border-left-color: #d7373f; }
 """
 
 # Lines between a table's columns; a row's last cell is always its last column, as the cells
@@ -612,26 +628,134 @@ details.notes[open] summary::before { content: "\\25BE  "; }
 """
 
 
-def _logged_warning(text, details, shows="well", note=None):
-    """Print a warning to the log, and return it as `_warnings_html` takes it."""
+def _logged_warning(text, details, shows="well", note=None, verb=None, level="warning"):
+    """Print a warning to the log, and return it as `_warnings_html` takes it.
+
+    `level` is ``"warning"`` or ``"error"``. An error is something the report could not do
+    rather than something to look at, and is drawn apart from the warnings so that it is
+    not read as one more of them.
+
+    """
+    if level not in ("warning", "error"):
+        raise ValueError(
+            f"a warning's `level` must be 'warning' or 'error', not {level!r}"
+        )
     print(
-        f"WARNING: {text}\n"
+        f"{level.upper()}: {len(details)} "
+        f"{_headline(text, shows, verb, len(details))[0]}\n"
         + (f"{note}\n" if note else "")
         + details.to_string(index=False)
     )
-    return (text, details, shows, note)
+    return (text, details, shows, note, verb, level)
 
 
-def _warnings_html(warnings):
-    """HTML for `warnings` under a heading, each a line that opens its table."""
-    return f"<style>{_WARNINGS_CSS}</style><h3>Warnings</h3>" + "".join(
-        f'<details class="warning"><summary><b>{len(details)}</b> {noun} '
-        f'{html.escape(text)} <span class="toggle"><span class="show">show'
+# The prepositions a warning's noun can hang a phrase on, which is what tells a phrase
+# apart from a compound noun and so where the head of the noun is.
+_NOUN_PREPOSITIONS = ("of", "in", "on", "for", "from", "with", "without", "per")
+
+
+def _plural_noun(noun):
+    """`noun` in the plural, inflecting its head rather than simply its last word.
+
+    What a warning shows can be more than one word, and which of them takes the plural
+    depends on where the head is: a phrase hangs off its head, as in "window of
+    dilutions", while a compound noun ends in it, as in "dilution window".
+
+    """
+    words = noun.split(" ")
+    # the head is the last word, unless a preposition follows it and makes the rest a
+    # phrase describing it
+    i = next(
+        (i - 1 for (i, w) in enumerate(words) if w in _NOUN_PREPOSITIONS),
+        len(words) - 1,
+    )
+    if i < 0:
+        raise ValueError(
+            f"`shows` begins with a preposition and so has no head: {noun!r}"
+        )
+    words[i] = f"{words[i]}s"
+    return " ".join(words)
+
+
+def _plural_verb(verb):
+    """`verb` agreeing with a plural subject, given the third-person singular of it.
+
+    Agreement runs the opposite way to a noun's, so a plural subject takes the bare
+    form: "1 window requires" against "3 windows require". Only the first word is
+    inflected, the rest of a phrase being carried along unchanged.
+
+    """
+    head, _, rest = verb.partition(" ")
+    if head.endswith(("ies",)):
+        head = f"{head[:-3]}y"
+    elif head.endswith(("ses", "xes", "zes", "ches", "shes")):
+        head = head[:-2]
+    elif head.endswith("s"):
+        head = head[:-1]
+    else:
+        raise ValueError(
+            f"`verb` must be the third-person singular, as 'requires' rather than "
+            f"'require', but is {verb!r}"
+        )
+    return f"{head}{rest and ' ' + rest}"
+
+
+def _note_html(note):
+    """`note` rendered from markdown, as the prose of a report is.
+
+    A note names columns and carries values from the config and the data, so it is escaped
+    before being rendered: `markdown` passes a raw tag through untouched, and a value
+    holding one would otherwise reach the page as markup. Escaping first leaves every
+    markdown construct intact, none of which is written with angle brackets.
+
+    A note is a line within a warning's line rather than a block of its own, so the
+    paragraph `markdown` wraps it in is unwrapped again.
+
+    """
+    rendered = markdown.markdown(html.escape(note), extensions=["sane_lists"])
+    inner = re.fullmatch(r"<p>(.*)</p>", rendered, re.DOTALL)
+    return inner.group(1) if inner else rendered
+
+
+def _headline(text, shows, verb, n):
+    """What a warning says after its count, and the noun on its own, agreeing with `n`.
+
+    `verb` is substituted into `text` for a `{verb}` placeholder, or prefixed to it where
+    `text` has none, so that a sentence can carry its verb anywhere in it.
+
+    Returns:
+        The 2-tuple `(said, noun)`: everything following the count, and what the warning
+        shows, which the line repeats on its own in the toggle.
+
+    """
+    noun = shows if n == 1 else _plural_noun(shows)
+    if verb is not None:
+        inflected = verb if n == 1 else _plural_verb(verb)
+        text = (
+            text.format(verb=inflected) if "{verb}" in text else f"{inflected} {text}"
+        )
+    return f"{noun} {text}", noun
+
+
+def _warnings_html(warnings, heading=True):
+    """HTML for `warnings`, each a line that opens its table.
+
+    `heading` writes them under a "Warnings" heading, for the block that gathers those of
+    the report as a whole. The warnings of one section carry none: they open the section
+    they are about, where a heading would separate them from it.
+
+    """
+    return (
+        f"<style>{_WARNINGS_CSS}</style>" + ("<h3>Warnings</h3>" if heading else "")
+    ) + "".join(
+        f'<details class="warning{"" if level == "warning" else " error"}">'
+        f"<summary><b>{len(details)}</b> "
+        f'{html.escape(said)} <span class="toggle"><span class="show">show'
         f'</span><span class="hide">hide</span> {noun}</span></summary>'
-        + (f"<p>{html.escape(note)}</p>" if note else "")
+        + (f"<p>{_note_html(note)}</p>" if note else "")
         + f"{table_html(details)}</details>"
-        for (text, details, shows, note) in warnings
-        for noun in [shows if len(details) == 1 else shows + "s"]
+        for (text, details, shows, note, verb, level) in warnings
+        for (said, noun) in [_headline(text, shows, verb, len(details))]
     )
 
 
@@ -658,7 +782,9 @@ class PlateReport(Report):
             raise ValueError("the warnings slot is already reserved")
         self._warnings_slot = self._reserve_slot()
 
-    def warning(self, text, details, shows="well", note=None):
+    def warning(
+        self, text, details, shows="well", note=None, verb=None, level="warning"
+    ):
         """Record a warning, printing it to the log as well.
 
         Args:
@@ -671,12 +797,21 @@ class PlateReport(Report):
                 What a row of `details` is.
             `note` (str or None)
                 A line shown in the dropdown above `details`.
+            `verb` (str or None)
+                A verb of `text`, in the third-person singular, inflected to agree with
+                how many rows `details` has: "requires" to read as "1 window requires" and
+                "3 windows require". It replaces a `{verb}` placeholder in `text`, or
+                precedes it where there is none. Needed only where `text` has a verb to
+                agree, a warning being a noun phrase otherwise.
+            `level` ("warning" or "error")
+                An error is something the report could not do rather than something to
+                look at, and is drawn apart from the warnings so as not to read as one.
 
         """
-        self._warnings.append(_logged_warning(text, details, shows, note))
+        self._warnings.append(_logged_warning(text, details, shows, note, verb, level))
 
     def section_warnings(self, warnings):
-        """Append `warnings` here, under their own heading, rather than in the slot.
+        """Append `warnings` here, without a heading, rather than in the report's slot.
 
         For warnings about one section, which are read with it. Each is a dict of the
         arguments of `warning`, and nothing is appended if there are none.
@@ -685,14 +820,44 @@ class PlateReport(Report):
         warnings = [_logged_warning(**w) for w in warnings]
         if warnings:
             self._section_warnings += warnings
-            self._append(_warnings_html(warnings))
+            self._append(_warnings_html(warnings, heading=False))
+
+    def reserve_section_warnings(self):
+        """Leave a slot for the warnings of the section starting here.
+
+        Returns a token for `fill_section_warnings`. A section's warnings are found as it
+        is built but belong at the top of it, where they are read before the tables and
+        charts they qualify.
+
+        """
+        return self._reserve_slot()
+
+    def fill_section_warnings(self, token, warnings):
+        """Write `warnings` into the slot `reserve_section_warnings` returned `token` for.
+
+        Each is a dict of the arguments of `warning`; the slot is left empty where there
+        are none.
+
+        """
+        warnings = [_logged_warning(**w) for w in warnings]
+        if warnings:
+            self._section_warnings += warnings
+            self._fill_slot(token, _warnings_html(warnings, heading=False))
 
     @property
     def warnings(self):
         """The warnings recorded so far, those of the slot and then those of sections."""
         return self._warnings + self._section_warnings
 
-    def table(self, df, index=False, marked=None, marked_color="#cc00cc", group=None):
+    def table(
+        self,
+        df,
+        index=False,
+        marked=None,
+        marked_color="#cc00cc",
+        group=None,
+        bold=None,
+    ):
         """Append `df` as a table, with floats to four significant digits.
 
         Args:
@@ -709,9 +874,13 @@ class PlateReport(Report):
                 `label`, where `columns` is a list, or a dict mapping each column to its
                 sub-header; and draw the rows that agree on all the other columns together,
                 where they first appear, with those columns as one cell spanning them.
+            `bold` (pandas.Series or None)
+                Boolean mask of rows drawn in bold, to pick out the one a reader should
+                look at first. Weight rather than color, so it carries without relying on
+                one being distinguishable.
 
         """
-        self._append(table_html(df, index, marked, marked_color, group))
+        self._append(table_html(df, index, marked, marked_color, group, bold))
 
     @contextlib.contextmanager
     def notes(self, summary):

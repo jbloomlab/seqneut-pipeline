@@ -703,19 +703,109 @@ The keys are:
 
 The four thresholds only decide which wells are flagged and warned about.
 
-`analyze_by` says what each well was infected with, and so how its barcodes are counted. The `samples_csv` of every plate of the analysis names that for each well in a column of the same name, as does the viral library for each barcode. A blank in that column marks an uninfected well, which should hold only the neutralization standard. `analyze_by` is one of:
+`analyze_by` says what each well was infected with, and so how its barcodes are counted.
+The `samples_csv` of every plate of the analysis names that for each well in a column of the same name, as does the viral library for each barcode.
+A blank in that column marks an uninfected well, which should hold only the neutralization standard.
+`analyze_by` is one of:
 
  - `strain`: the well should hold every barcode of that strain, however many there are.
  - `barcode`: the well should hold that one barcode and nothing else. Choose this when each barcode of a strain was grown as its own stock and put in its own well.
  - `stock`: the well should hold every barcode of the stock tube named in its `stock` column. This option is useful when single-barcode and multi-barcode stocks of the same strain are mixed. The viral library must have a `stock` column giving the tube of every barcode, and the barcodes of a tube must be of one strain.
 
-The output CSVs give what each well was infected with in an `expected_strain`, `expected_barcode`, or `expected_stock` column, according to the `analyze_by` of the analysis. Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`. Where `analyze_by` is not `strain`, the samples CSV may also have a `strain` column, which is checked against the library.
+The output CSVs give what each well was infected with in an `expected_strain`, `expected_barcode`, or `expected_stock` column, according to the `analyze_by` of the analysis.
+Analyzing by barcode or stock, the composition CSV also gives that unit's strain as `expected_strain`.
+Where `analyze_by` is not `strain`, the samples CSV may also have a `strain` column, which is checked against the library.
 
-A strain, barcode, or stock can be in more than one well, of one plate or several. Each well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of the plate that it belongs in. Where several of those wells are equally near, the composition CSV counts them in `top_other_unit_wells_equally_near` and the report names them all, the traced well being only one of the candidates. Material belonging only on other plates is traced to the first of its wells there, given by `top_other_unit_plate` and `top_other_unit_well`.
+A strain, barcode, or stock can be in more than one well, of one plate or several.
+Each well is analyzed on its own, and material belonging elsewhere is traced to the nearest well of the plate that it belongs in.
+Where several of those wells are equally near, the composition CSV counts them in `top_other_unit_wells_equally_near` and the report names them all, the traced well being only one of the candidates.
+Material belonging only on other plates is traced to the first of its wells there, given by `top_other_unit_plate` and `top_other_unit_well`.
 
-An optional `dilution_factor` column in the samples CSV must have the same value for every infected well of the analysis, as their titers are compared. Anything in the library that no well was infected from is reported as not assayed.
+An optional `dilution_factor` column in the samples CSV must have the same value for every infected well of the analysis, as their titers are compared.
+Anything in the library that no well was infected from is reported as not assayed.
 
-The titer of a well is its expected barcode reads divided by its neutralization-standard reads, in relative rather than infectious units. These titers should be interpreted carefully, as they assume each infection was performed in the linear range (where there is a linear relationship between the amount of input virus and the resulting spike-in normalized counts), which may not be true for every virus.
+The titer of a well is its expected barcode reads divided by its neutralization-standard reads, in relative rather than infectious units.
+These titers should be interpreted carefully, as they assume each infection was performed in the linear range (where there is a linear relationship between the amount of input virus and the resulting spike-in normalized counts), which may not be true for every virus.
+
+### analyze_pools
+An optional key that analyzes miscellaneous plates infected with a library pool over a serial dilution, to measure how much of the pool each unit of the library contributes.
+If you do not have any such plates, leave this key out or set it to null.
+
+The pipeline measures the pool and stops there.
+It computes no volumes, no ratio to add, and no judgement about which units are too weak to re-pool: those depend on how a project re-pools, and are computed in the project from the CSVs this writes.
+
+Each entry is one pool, reported on its own page of the docs under *Library quality-control*:
+
+```yaml
+analyze_pools:
+
+  <pool_name>:
+    analyze_by: <strain, barcode, or stock>
+    miscellaneous_plates: [<plate_name>, ...]
+    description: <markdown describing the experiment>
+    # the rest are optional, shown with their defaults
+    linear_range_wells: null
+    pool_wells: {}
+    pool_members: {}
+    min_avg_barcode_count_per_well: 500
+    min_neut_standard_frac_per_well: 0.001
+    linearity_window_dilutions: 3
+    linearity_slope_tol: 0.3
+    max_stock_share_ratio: 3
+    addtl_viral_cols_to_show: []
+```
+
+Each plate needs a `date`, and its `samples_csv` a `dilution_factor` and a `replicate` for every well: the dilution the pool was at, and which replicate of the dilution series the well belongs to.
+Listing several plates measures the pool as replicates of one dilution series, their wells fit and read together, so they must share a `viral_library`, a `neut_standard_set` and a `date`.
+A replicate of the series is a plate's replicate, each plate numbering its own from one.
+The report summarizes the experiment by the replicates and dilutions it holds, and warns where a dilution was measured in fewer replicates than the rest of the series.
+Where several pools were diluted on one physical plate, give the plate one entry under the top-level `miscellaneous_plates` and each pool its own `analyze_pools` entry, with `pool_wells` picking that pool's wells out of the plate.
+
+The keys are:
+
+ - `analyze_by`: the unit that an equal share of the pool is an equal share *of*, which is `strain`, `barcode`, or `stock`. An even share is one over the number of these among the pool's members, and it is what the report plots each unit against. `stock` needs a `stock` column in the viral library naming the tube of every barcode, and each tube must hold one strain.
+ - `miscellaneous_plates`: the plates this pool was diluted on, which are replicates of one dilution series where there is more than one.
+ - `description`: what the experiment was, shown at the top of the report.
+ - `linear_range_wells`: the wells to read the composition from, overriding the ones located from the dilution series. Each is named `<plate>:<well>`, the plates of a pool naming their wells alike; a pool measured from a single plate may name a well on its own, so that `analysis_wells` from its summary CSV can be pasted here to pin the wells the fit chose. Described below.
+ - `pool_wells`: this pool's wells, as `<samples CSV column>: <value>` pairs selecting them from the plate; empty takes every well, which is the case of one pool per plate. Each pool's wells are read as one dilution series, so a plate holding several pools needs this to tell them apart.
+ - `pool_members`: the strains the pool was made from, as a single `<viral library column>: <value>` pair; empty takes the whole library. Reads of a library strain the pool was not made from are reported as contamination and left out of every share. A selection taking only some of a strain's barcodes is an error.
+ - `min_avg_barcode_count_per_well` and `min_neut_standard_frac_per_well`: a well below either is left out of the dilution-series fit and of the composition. The average is over every barcode counted, the neutralization standard and any non-member included, so that the threshold means the same thing on a plate of a subpool as on one of the whole library.
+ - `linearity_window_dilutions` and `linearity_slope_tol`: how the linear range is located, described below. The window must be an odd number of at least three.
+ - `max_stock_share_ratio`: under `analyze_by: stock`, report a strain whose stocks differ in measured share by more than this many fold.
+ - `addtl_viral_cols_to_show`: a list of viral library columns to show in the report and the output CSV, each of which must be constant across the barcodes of a strain.
+
+Diluting the pool should divide its viral counts by the dilution factor while leaving the neutralization standard alone, so the standard's share of the counts, as odds, rises along a straight line against the dilution factor on log-log axes for as long as that holds.
+The composition can only be read over the dilutions where it does: a well too concentrated for its counts to fall with dilution measures the assay rather than the pool.
+Every window of `linearity_window_dilutions` consecutive dilutions is fit, and the first whose slope is within `linearity_slope_tol` of the ideal marks where the pool starts responding.
+The composition is read from the **middle** dilution of that window, which leaves a dilution of margin on either side.
+The replicate wells of a dilution are averaged before the fit, as the geometric mean of their odds, so that the slope and the titer do not depend on how many replicates of each dilution were measured.
+The standard error a window reports is accordingly the scatter of its dilution means about its fitted line, rather than that of its individual wells, so it measures how straight the series is rather than how well the replicates of a dilution agree.
+
+An *ideal slope line* checkbox below the linear-range plot draws a line of the ideal slope over the selected window, dashed where the fits are solid.
+Only its height is fit, so it is what the odds would do if each dilution step divided the viral counts by that step, and a saturated pool shows as wells lying above it at the concentrated end.
+It is drawn only while a single window is selected, and is off by default.
+
+A pool with no window within tolerance never clearly responds to being diluted, so there is no dilution at which its composition can be read.
+Its report gives an error, tabulating the slope of every window and marking the one that came closest, and stops after the well QC and the linear range.
+It recommends no dilution and reports no composition and no titer, and its composition CSV is written with its header and no rows.
+A window that closes over a dilution whose wells all failed QC is fit and reported but is never within tolerance, as its middle is not the middle of the dilutions the plate holds and the wider step can pull its slope into tolerance.
+The report says which windows were excluded for this.
+`linear_range_wells` reads such a pool anyway, from the wells it names, whatever the fit says.
+The wells must all be at one dilution, since the composition is read at one, and must be wells that passed the well QC, a well that failed it not being trusted to measure the pool.
+The titer then comes from the window whose middle dilution is theirs, so that it describes the same dilutions as the composition.
+Where no window within tolerance centers on that dilution, the composition is still read but no titer is reported.
+
+The composition section quantifies how far from even the pool is, which the plot shows but does not measure.
+It gives the fold change between the most and least represented unit, each of those two extremes against an even share, and how many units are within 2-fold of one.
+These are computed over the units with reads, a unit with none having no finite fold change to the rest; those are counted beside the statistics and named in a warning below the plot.
+Where only one unit has reads there is no spread to report and the section says so, that being a near-total pooling failure rather than a missing block.
+
+`titer_vs_neut_standard` is how much virus the undiluted pool holds against the neutralization standard, in relative rather than infectious units.
+It is only comparable between pools read against the same standard on the same date, which is why the summary CSV names the date, the plates, and the standard set, and says which window of dilutions the titer came from.
+
+Under `analyze_by: stock`, a stock's share is what that one tube holds, measured from its own barcodes, which is the quantity a volume per tube is read off; a strain held as several tubes gets a share for each.
+A strain whose tubes differ in measured share by more than `max_stock_share_ratio` is reported, which is read against the volumes that went in.
+Tubes added at equal volumes should hold about the same amount of virus, and tubes added to a chosen ratio should differ by about that ratio, so a disagreement wider than any ratio intended says one tube grew poorly.
 
 ## Results of running the pipeline
 The results of running the pipeline are put in the `./results/` subdirectory of your main repo.
@@ -766,6 +856,11 @@ The set of full created outputs are as follows (note only some will be tracked d
     - `./results/single_well_infections/{analysis_name}_well_composition.csv`: for each well, the reads in each category described in the report, the neutralization-standard and discarded reads, the titer, the flags, and the largest contaminant and where it came from. You should track this in the repo.
     - `./results/single_well_infections/{analysis_name}_expected_barcode_reads.csv`: for each well, the reads of each barcode it was expected to hold, to show whether all of a strain's barcodes turned up. You should track this in the repo.
     - `./results/single_well_infections/{analysis_name}_analyze_single_well_infections.html`: HTML report of the analysis. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
+
+  - Outputs related to the analyses of library pools, if `analyze_pools` is configured:
+    - `./results/pool_composition/{pool_name}_barcode_composition.csv`: for each barcode of the pool's members, including any with no reads, its mean share of the member reads over the wells the composition was read from, along with its strain, its stock, and any `addtl_viral_cols_to_show`. This is what a project aggregates to compute its own re-pooling. You should track this in the repo.
+    - `./results/pool_composition/{pool_name}_pool_summary.csv`: one row describing the pool as a whole, including `titer_vs_neut_standard` and where it came from. You should track this in the repo.
+    - `./results/pool_composition/{pool_name}_analyze_pool.html`: HTML report of the analysis. You do not need to track this as it can be rendered separately in the GitHub Pages docs as described in that section of this documentation.
 
   - HTML documentation of results is placed in `./results/docs`. This subdirectory does not need to be tracked in the GitHub repo, but can be display via GitHub Pages as described below.
 

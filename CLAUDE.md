@@ -46,9 +46,10 @@ commit of that submodule; update periodically with
   --rerun-triggers mtime`, which re-runs just that rule from results that are already
   there. Synthesizing input CSVs this way also reaches cases the test example does not
   contain.
-- `scripts/seqneut_report.py` and `scripts/seqneut_funcs.py` are imported by the analysis
-  scripts and so are tested directly, with `pytest`.
-- Ask before running the full `test_example` pipeline: it rewrites ~300 git-tracked files
+- A module in `scripts/` that the analysis scripts import rather than a rule runs, which is
+  the one that reads nothing from `snakemake`, is tested directly in `tests/`, with
+  `pytest`.
+- Ask before running the full `test_example` pipeline: it rewrites ~500 git-tracked files
   under `test_example/results/`, and a rerun yields small floating-point differences that
   should not be committed. The collapsed-barcode run
   (`--configfile config_collapse_strain_barcodes.yml`) overwrites the same results, so run
